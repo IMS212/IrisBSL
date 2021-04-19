@@ -18,42 +18,40 @@ import net.coderbot.iris.shaderpack.ProgramDirectives;
 import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ProgramSource;
 import net.coderbot.iris.shadows.EmptyShadowMapRenderer;
-import net.coderbot.iris.uniforms.CommonUniforms;
-import net.coderbot.iris.uniforms.SamplerUniforms;
+import net.coderbot.iris.uniforms.*;
+import net.coderbot.iris.uniforms.custom.CustomUniforms;
+import net.minecraft.client.render.RenderLayer;
+import net.minecraft.util.Identifier;
 import org.lwjgl.opengl.GL15C;
+import org.lwjgl.opengl.GL20C;
+import org.lwjgl.opengl.GL30C;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.util.Pair;
-import org.lwjgl.opengl.GL20C;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL30C;
 
-public class CompositeRenderer {
+public class DeferredRenderer {
 	private final RenderTargets renderTargets;
 
 	private final ImmutableList<Pass> passes;
 	private final ImmutableList<SwapPass> swapPasses;
-	private final GlFramebuffer baseline;
+	public static GlFramebuffer baseline;
 	private final EmptyShadowMapRenderer shadowMapRenderer;
 	private final BuiltinNoiseTexture noiseTexture;
 
 	final CenterDepthSampler centerDepthSampler;
 
-	public CompositeRenderer(ProgramSet pack, RenderTargets renderTargets, EmptyShadowMapRenderer shadowMapRenderer) {
+	public DeferredRenderer(ProgramSet pack, RenderTargets renderTargets, EmptyShadowMapRenderer shadowMapRenderer) {
 		centerDepthSampler = new CenterDepthSampler(renderTargets);
-
 		final List<Pair<Program, ProgramDirectives>> programs = new ArrayList<>();
 
-		for (ProgramSource source : pack.getComposite()) {
+		for (ProgramSource source : pack.getDeferred()) {
 			if (source == null || !source.isValid()) {
 				continue;
 			}
 
 			programs.add(createProgram(source));
 		}
-
-		pack.getCompositeFinal().map(this::createProgram).ifPresent(programs::add);
 
 		final ImmutableList.Builder<Pass> passes = ImmutableList.builder();
 
@@ -72,6 +70,10 @@ public class CompositeRenderer {
 			for (int i = 0; i < stageWritesToAlt.length; i++) {
 				stageWritesToAlt[i] = !stageWritesToAlt[i];
 			}
+
+			stageWritesToAlt[0] = true;
+			stageWritesToAlt[4] = true;
+			stageWritesToAlt[5] = true;
 
 			GlFramebuffer framebuffer = renderTargets.createColorFramebuffer(stageWritesToAlt, drawBuffers);
 
@@ -101,7 +103,7 @@ public class CompositeRenderer {
 		this.passes = passes.build();
 		this.renderTargets = renderTargets;
 
-		this.baseline = renderTargets.createFramebufferWritingToMain(new int[] {0});
+		this.baseline = renderTargets.createFramebufferWritingToAlt(new int[] {0});
 
 		// TODO: We don't actually fully swap the content, we merely copy it from alt to main
 		// This works for the most part, but it's not perfect. A better approach would be creating secondary
@@ -125,7 +127,9 @@ public class CompositeRenderer {
 
 		this.shadowMapRenderer = shadowMapRenderer;
 
+		final int noiseTextureResolution = pack.getPackDirectives().getNoiseTextureResolution();
 		this.noiseTexture = new BuiltinNoiseTexture();
+
 	}
 
 	private static final class Pass {
@@ -148,9 +152,6 @@ public class CompositeRenderer {
 	public void renderAll() {
 		centerDepthSampler.endWorldRendering();
 
-		RenderSystem.disableBlend();
-		RenderSystem.disableAlphaTest();
-
 		final Framebuffer main = MinecraftClient.getInstance().getFramebuffer();
 		final int baseWidth = main.textureWidth;
 		final int baseHeight = main.textureHeight;
@@ -167,17 +168,30 @@ public class CompositeRenderer {
 
 		bindTexture(SamplerUniforms.SHADOW_TEX_0, shadowMapRenderer.getDepthTextureId());
 		bindTexture(SamplerUniforms.SHADOW_TEX_1, shadowMapRenderer.getDepthTextureId());
-		GlStateManager.activeTexture(GL30.GL_TEXTURE15);
-		noiseTexture.bind();
+
+		//bindTexture(SamplerUniforms.SHADOW_COLOR_0, shadowMapRenderer.getShadowFb().getColorAttachment(0));
+		//bindTexture(SamplerUniforms.SHADOW_COLOR_1, shadowMapRenderer.shadowColor1);
+//
+		//bindTexture(SamplerUniforms.NOISE_TEX, noiseTexture.getTextureId());
+		BuiltinNoiseTexture.bind();
+
+		//final Identifier CLOUDS = new Identifier("textures/environment/clouds.png");
+
+		//GlStateManager.activeTexture(GL20C.GL_TEXTURE10);
+		//MinecraftClient.getInstance().getTextureManager().bindTexture(CLOUDS);
+		//int id = MinecraftClient.getInstance().getTextureManager().getTexture(CLOUDS).getGlId();
+
+		//bindTexture(SamplerUniforms.COLOR_TEX_7, id);
 
 		FullScreenQuadRenderer.INSTANCE.begin();
 
 		for (Pass renderPass : passes) {
-			if (!renderPass.isLastPass) {
-				renderPass.framebuffer.bind();
-			} else {
-				main.beginWrite(false);
-			}
+			//if (!renderPass.isLastPass) {
+			renderPass.framebuffer.bind();
+			//} else {
+			//main.beginWrite(false);
+			//baseline.bind();
+			//}
 
 			bindRenderTarget(SamplerUniforms.COLOR_TEX_0, renderTargets.get(0), renderPass.stageReadsFromAlt[0]);
 			bindRenderTarget(SamplerUniforms.COLOR_TEX_1, renderTargets.get(1), renderPass.stageReadsFromAlt[1]);
@@ -204,12 +218,12 @@ public class CompositeRenderer {
 			//
 			// Thus, the following call transfers the content of colortex0 and the depth buffer into the main Minecraft
 			// framebuffer.
-			FramebufferBlitter.copyFramebufferContent(this.baseline, main);
+			//FramebufferBlitter.copyFramebufferContent(this.baseline, main);
 		} else {
 			// We still need to copy the depth buffer content as finalized in the gbuffer pass to the main framebuffer.
 			//
 			// This is needed for things like on-screen overlays to work properly.
-			FramebufferBlitter.copyDepthBufferContent(this.baseline, main);
+			//FramebufferBlitter.copyDepthBufferContent(this.baseline, main);
 
 			for (SwapPass swapPass : swapPasses) {
 				swapPass.from.bindAsReadBuffer();
@@ -250,7 +264,7 @@ public class CompositeRenderer {
 
 		try {
 			builder = ProgramBuilder.begin(source.getName(), source.getVertexSource().orElse(null), source.getGeometrySource().orElse(null),
-				source.getFragmentSource().orElse(null));
+					source.getFragmentSource().orElse(null));
 		} catch (RuntimeException e) {
 			// TODO: Better error handling
 			throw new RuntimeException("Shader compilation failed!", e);
@@ -259,6 +273,8 @@ public class CompositeRenderer {
 		CommonUniforms.addCommonUniforms(builder, source.getParent().getPack().getIdMap(), source.getParent().getPackDirectives());
 		SamplerUniforms.addCompositeSamplerUniforms(builder);
 		SamplerUniforms.addDepthSamplerUniforms(builder);
+
+
 
 		builder.uniform1f(UniformUpdateFrequency.PER_FRAME, "centerDepthSmooth", this.centerDepthSampler::getCenterDepthSmoothSample);
 
@@ -269,6 +285,5 @@ public class CompositeRenderer {
 		for (Pass renderPass : passes) {
 			renderPass.destroy();
 		}
-
 	}
 }

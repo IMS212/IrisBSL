@@ -10,11 +10,8 @@ import net.coderbot.iris.gl.program.ProgramBuilder;
 import net.coderbot.iris.gl.uniform.UniformUpdateFrequency;
 import net.coderbot.iris.layer.GbufferProgram;
 import net.coderbot.iris.postprocess.CompositeRenderer;
-import net.coderbot.iris.rendertarget.NativeImageBackedNoiseTexture;
-import net.coderbot.iris.rendertarget.NativeImageBackedSingleColorTexture;
-import net.coderbot.iris.rendertarget.RenderTarget;
-import net.coderbot.iris.rendertarget.RenderTargets;
-import net.coderbot.iris.rendertarget.SingleColorTexture;
+import net.coderbot.iris.postprocess.DeferredRenderer;
+import net.coderbot.iris.rendertarget.*;
 import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ProgramSource;
 import net.coderbot.iris.shadows.EmptyShadowMapRenderer;
@@ -84,9 +81,10 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 
 	private final EmptyShadowMapRenderer shadowMapRenderer;
 	private final CompositeRenderer compositeRenderer;
+	private final DeferredRenderer deferredRenderer;
 	private final NativeImageBackedSingleColorTexture normals;
 	private final NativeImageBackedSingleColorTexture specular;
-	private final NativeImageBackedNoiseTexture noise;
+	private final BuiltinNoiseTexture noise;
 
 	private final int waterId;
 	private final float sunPathRotation;
@@ -150,13 +148,13 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 		specular = new NativeImageBackedSingleColorTexture(0, 0, 0, 0);
 
 		final int noiseTextureResolution = programs.getPackDirectives().getNoiseTextureResolution();
-		noise = new NativeImageBackedNoiseTexture(noiseTextureResolution);
+		noise = new BuiltinNoiseTexture();
 
 		GlStateManager.activeTexture(GL20C.GL_TEXTURE0);
 
 		this.shadowMapRenderer = new EmptyShadowMapRenderer(2048);
 		this.compositeRenderer = new CompositeRenderer(programs, renderTargets, shadowMapRenderer);
-
+		this.deferredRenderer = new DeferredRenderer(programs, renderTargets, shadowMapRenderer);
 
 		// first optimization pass
 		this.customUniforms.optimise();
@@ -413,7 +411,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 			// TODO: Binding the texture here is ugly and hacky. It would be better to have a utility function to set up
 			// a given program and bind the required textures instead.
 			GlStateManager.activeTexture(GL15C.GL_TEXTURE0 + SamplerUniforms.NOISE_TEX);
-			GlStateManager.bindTexture(noise.getGlId());
+			noise.bind();
 			GlStateManager.activeTexture(GL15C.GL_TEXTURE2);
 			GlStateManager.bindTexture(normals.getGlId());
 			GlStateManager.activeTexture(GL15C.GL_TEXTURE3);
@@ -486,6 +484,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 		//
 		// This destroys all of the loaded composite programs as well.
 		compositeRenderer.destroy();
+		deferredRenderer.destroy();
 
 		// Destroy our render targets
 		//
@@ -499,7 +498,6 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 		// Destroy the static samplers (specular, normals, and noise)
 		specular.close();
 		normals.close();
-		noise.close();
 	}
 
 	private static void destroyPasses(Pass... passes) {
@@ -562,6 +560,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 	public void beginTranslucents() {
 		// We need to copy the current depth texture so that depthtex1 and depthtex2 can contain the depth values for
 		// all non-translucent content, as required.
+		deferredRenderer.renderAll();
 		baseline.bind();
 		GlStateManager.bindTexture(renderTargets.getDepthTextureNoTranslucents().getTextureId());
 		GL20C.glCopyTexImage2D(GL20C.GL_TEXTURE_2D, 0, GL20C.GL_DEPTH_COMPONENT, 0, 0, renderTargets.getCurrentWidth(),
