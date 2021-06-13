@@ -298,6 +298,8 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 	}
 
 	private Shader createShadowShader(String name, ProgramSource source, AlphaTest fallbackAlpha, VertexFormat vertexFormat, boolean hasColorAttrib) throws IOException {
+		if (source == null || !source.isValid()) return null;
+
 		GlFramebuffer framebuffer = this.shadowMapRenderer.getFramebuffer();
 
 		ExtendedShader extendedShader = NewShaderTests.create(name, source, framebuffer, framebuffer, baseline, fallbackAlpha, vertexFormat, updateNotifier, this);

@@ -1,28 +1,31 @@
 {
-  "schemaVersion": 1,
-  "id": "iris",
-  "version": "${version}",
+    "schemaVersion": 1,
+    "id": "iris",
+    "version": "${version}",
 
-  "name": "Iris",
-  "description": "A new shaders mod for Minecraft intended to be compatible with existing ShadersMod/Optifine shaders",
-  "authors": [
-    "coderbot"
-  ],
-  "contact": {
-    "homepage": "https://github.com/IrisShaders/Iris",
-    "sources": "https://github.com/IrisShaders/Iris.git",
-    "issues": "https://github.com/IrisShaders/Iris/issues"
-  },
+    "name": "Iris",
+    "description": "A new shaders mod for Minecraft intended to be compatible with existing ShadersMod/Optifine shaders",
+    "authors": [
+        "coderbot"
+    ],
+    "contact": {
+        "homepage": "https://github.com/IrisShaders/Iris",
+        "sources": "https://github.com/IrisShaders/Iris.git",
+        "issues": "https://github.com/IrisShaders/Iris/issues"
+    },
 
-  "license": "LGPL-3.0-only",
-  "icon": "assets/iris/iris-logo.png",
+    "license": "LGPL-3.0-only",
+    "icon": "assets/iris/iris-logo.png",
 
-  "environment": "client",
-  "entrypoints": {
-    "client": [
-      "net.coderbot.iris.Iris"
-    ]
-  },
+    "environment": "client",
+    "entrypoints": {
+        "client": [
+            "net.coderbot.iris.Iris"
+        ],
+        "modmenu": [
+            "net.coderbot.iris.config.IrisModMenu"
+        ]
+    },
 
   "mixins": [
     "mixins.iris.json",

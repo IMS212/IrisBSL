@@ -31,6 +31,7 @@ import net.coderbot.iris.uniforms.FrameUpdateNotifier;
 import net.coderbot.iris.uniforms.SamplerUniforms;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.texture.AbstractTexture;
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL15C;
@@ -263,6 +264,10 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 		GbufferProgram toUse = programStack.get(programStack.size() - 1);
 
 		useProgram(toUse);
+	}
+
+	public RenderTargets getRenderTargets() {
+		return renderTargets;
 	}
 
 	private Pass getPass(GbufferProgram program) {

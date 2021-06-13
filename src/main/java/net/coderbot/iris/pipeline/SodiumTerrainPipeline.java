@@ -9,6 +9,7 @@ import net.coderbot.iris.gl.program.ProgramUniforms;
 import net.coderbot.iris.pipeline.newshader.CoreWorldRenderingPipeline;
 import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ProgramSource;
+import net.coderbot.iris.shaderpack.ShaderPack;
 import net.coderbot.iris.shaderpack.transform.BuiltinUniformReplacementTransformer;
 import net.coderbot.iris.shaderpack.transform.StringTransformations;
 import net.coderbot.iris.shaderpack.transform.Transformations;

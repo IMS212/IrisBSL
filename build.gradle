@@ -10,6 +10,12 @@ archivesBaseName = project.archives_base_name
 version = project.mod_version
 group = project.maven_group
 
+repositories {
+	maven {
+		url "https://maven.terraformersmc.com/releases/"
+	}
+}
+
 minecraft {
 	accessWidener = file("src/main/resources/iris.accesswidener")
 }
@@ -30,6 +36,9 @@ dependencies {
 
 	// Required by fabric-lifecycle-events-v1
 	includeFabricApiModule "fabric-api-base"
+
+	// Config screen integration
+	modImplementation "com.terraformersmc:modmenu:2.0.0-beta.7"
 }
 
 def includeFabricApiModule(String moduleName) {

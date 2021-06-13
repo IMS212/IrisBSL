@@ -61,7 +61,7 @@ public class ProgramBuilder extends ProgramUniforms.Builder {
 		fragment = buildShader(ShaderType.FRAGMENT, name + ".fsh", fragmentSource);
 
 		int programId;
-		
+
 		if (geometry != null) {
 			programId = ProgramCreator.create(name, vertex, geometry, fragment);
 		} else {

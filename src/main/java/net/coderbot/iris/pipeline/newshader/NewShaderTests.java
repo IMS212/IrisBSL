@@ -1,5 +1,6 @@
 package net.coderbot.iris.pipeline.newshader;
 
+import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.blending.AlphaTest;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
 import net.coderbot.iris.gl.shader.ShaderType;

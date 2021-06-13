@@ -63,9 +63,41 @@ public class MixinTranslationStorage {
 		}
 	}
 
+	@Inject(method = "hasTranslation", at = @At("HEAD"), cancellable = true)
+	private void iris$addLanguageEntriesToTranslationChecks(String key, CallbackInfoReturnable<Boolean> cir) {
+		ShaderPack pack = Iris.getCurrentPack().orElse(null);
+
+		if (pack == null) {
+			// If no shaderpack is loaded, do not try to process language overrides.
+			//
+			// This prevents a cryptic NullPointerException when shaderpack loading fails for some reason.
+			return;
+		}
+
+		// Minecraft loads the "en_us" language code by default, and any other code will be right after it.
+		//
+		// So we also check if the user is loading a special language, and if the shaderpack has support for that
+		// language. If they do, we load that, but if they do not, we load "en_us" instead.
+		Map<String, Map<String, String>> languageMap = pack.getLangMap();
+
+		if (!translations.containsKey(key)) {
+			languageCodes.forEach(code -> {
+				Map<String, String> translations = languageMap.get(code);
+
+				if (translations != null) {
+					String translation = translations.get(key);
+
+					if (translation != null) {
+						cir.setReturnValue(true);
+					}
+				}
+			});
+		}
+	}
+
 	@Inject(method = LOAD, at = @At("HEAD"))
 	private static void check(ResourceManager resourceManager, List<LanguageDefinition> definitions, CallbackInfoReturnable<TranslationStorage> cir) {
-		// make sure the language codes dont carry over!
+		// Make sure the language codes dont carry over!
 		languageCodes.clear();
 
 		// Reverse order due to how minecraft has English and then the primary language in the language definitions list

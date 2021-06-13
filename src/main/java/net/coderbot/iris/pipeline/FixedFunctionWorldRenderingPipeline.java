@@ -9,6 +9,9 @@ import net.minecraft.client.render.Camera;
 import java.util.List;
 
 public class FixedFunctionWorldRenderingPipeline implements WorldRenderingPipeline {
+	public FixedFunctionWorldRenderingPipeline() {
+
+	}
 	@Override
 	public void beginWorldRendering() {
 		// Use the default Minecraft framebuffer and ensure that no programs are in use

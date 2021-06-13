@@ -1,5 +1,7 @@
 package net.coderbot.iris.shaderpack.transform;
 
+import net.coderbot.iris.Iris;
+
 import java.util.function.Supplier;
 
 class Tests {
@@ -42,9 +44,9 @@ class Tests {
 		}
 
 		if (!expected.equals(actual)) {
-			System.err.println("Test \"" + name + "\" failed: Expected " + expected + ", got " + actual);
+			Iris.logger.debug("Test \"" + name + "\" failed: Expected " + expected + ", got " + actual);
 		} else {
-			System.out.println("Test \"" + name + "\" passed");
+			Iris.logger.debug("Test \"" + name + "\" passed");
 		}
 	}
 }

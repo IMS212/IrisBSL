@@ -8,6 +8,22 @@
   "iris.shaders.reloaded.failure": "Failed to reload shaders! Reason: %s",
   "iris.shaders.toggled.failure": "Failed to toggle shaders! Reason: %s",
 
+  "option.iris.back": "Back",
+  "option.iris.profile": "Profile",
+
+  "page.iris.notFound": "Page Not Found",
+  "page.iris.invalid": "Invalid Page: \"%s\"",
+  "page.iris.noConfig": "No shader options.",
+  "page.iris.noShaders": "No shader pack loaded.",
+
+  "property.iris.boolean.true": "True",
+  "property.iris.boolean.false": "False",
+  "property.iris.title.configScreen": "Configure Iris",
+  "property.iris.uiTheme": "UI Theme",
+  "property.iris.condenseShaderConfig": "Condense Shader Pack Config",
+
+  "tooltip.iris.config": "Configure Iris",
+
   "options.iris.apply": "Apply",
   "options.iris.refresh": "Refresh",
   "options.iris.openShaderPackFolder": "Open Shader Pack Folder...",
@@ -24,5 +40,7 @@
   "options.iris.shaders.enabled": "Shaders: Enabled",
 
   "pack.iris.select.title": "Select",
+  "pack.iris.configure.title": "Configure",
+  "pack.iris.internal": "Internal Shaders",
   "pack.iris.list.label": "+ Drag and Drop Shader Packs to add"
 }

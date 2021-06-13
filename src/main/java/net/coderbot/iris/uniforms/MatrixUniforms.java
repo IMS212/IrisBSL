@@ -11,6 +11,7 @@ import net.coderbot.iris.pipeline.ShadowRenderer;
 import net.coderbot.iris.shaderpack.PackDirectives;
 import net.coderbot.iris.shadow.ShadowMatrices;
 import net.minecraft.util.math.Matrix4f;
+import org.lwjgl.BufferUtils;
 
 public final class MatrixUniforms {
 	private MatrixUniforms() {

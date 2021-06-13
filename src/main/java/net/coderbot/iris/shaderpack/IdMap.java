@@ -45,7 +45,7 @@ public class IdMap {
 	private final Object2IntMap<Identifier> entityIdMap;
 
 	/**
-	 * A map that contains the identifier of an item to the integer value parsed in block.properties
+	 * Maps block states to block ids defined in block.properties
 	 */
 	private Object2IntMap<BlockState> blockPropertiesMap;
 
@@ -56,10 +56,10 @@ public class IdMap {
 
 	IdMap(Path shaderPath) {
 		itemIdMap = loadProperties(shaderPath, "item.properties")
-			.map(IdMap::parseItemIdMap).orElse(Object2IntMaps.emptyMap());
+				.map(IdMap::parseItemIdMap).orElse(Object2IntMaps.emptyMap());
 
 		entityIdMap = loadProperties(shaderPath, "entity.properties")
-			.map(IdMap::parseEntityIdMap).orElse(Object2IntMaps.emptyMap());
+				.map(IdMap::parseEntityIdMap).orElse(Object2IntMaps.emptyMap());
 
 		loadProperties(shaderPath, "block.properties").ifPresent(blockProperties -> {
 			// TODO: This won't parse block states in block.properties properly

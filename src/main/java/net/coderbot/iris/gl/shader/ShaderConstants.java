@@ -38,7 +38,7 @@ public class ShaderConstants {
 
         public Builder define(String name) {
 
-			this.define(Objects.requireNonNull(name), EMPTY_VALUE);
+            this.define(Objects.requireNonNull(name), EMPTY_VALUE);
             return this;
         }
 
@@ -49,7 +49,7 @@ public class ShaderConstants {
                 throw new IllegalArgumentException("Constant " + name + " is already defined with value " + prev);
             }
 
-			this.constants.put(Objects.requireNonNull(name), Objects.requireNonNull(value));
+			      this.constants.put(Objects.requireNonNull(name), Objects.requireNonNull(value));
 
             return this;
         }
