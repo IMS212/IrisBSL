@@ -57,6 +57,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 	private final Shader skyBasic;
 	private final Shader skyBasicColor;
 	private final Shader skyTextured;
+	private final Shader skyTexturedColor;
 	private final Shader shadowTerrainCutout;
 
 	private final Shader terrainSolid;
@@ -195,6 +196,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 			this.skyBasic = createShader("gbuffers_sky_basic", skyBasicSource, AlphaTest.ALWAYS, VertexFormats.POSITION, false);
 			this.skyBasicColor = createShader("gbuffers_sky_basic_color", skyBasicSource, AlphaTest.ALWAYS, VertexFormats.POSITION_COLOR, true);
 			this.skyTextured = createShader("gbuffers_sky_textured", skyTexturedSource, AlphaTest.ALWAYS, VertexFormats.POSITION_TEXTURE, false);
+			this.skyTexturedColor = createShader("gbuffers_sky_textured_tex_color", skyTexturedSource, AlphaTest.ALWAYS, VertexFormats.POSITION_TEXTURE_COLOR, true);
 			this.terrainSolid = createShader("gbuffers_terrain_solid", terrainSource, AlphaTest.ALWAYS, IrisVertexFormats.TERRAIN, true);
 			this.terrainCutout = createShader("gbuffers_terrain_cutout", terrainSource, terrainCutoutAlpha, IrisVertexFormats.TERRAIN, true);
 			this.terrainCutoutMipped = createShader("gbuffers_terrain_cutout_mipped", terrainSource, terrainCutoutAlpha, IrisVertexFormats.TERRAIN, true);
@@ -490,6 +492,11 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 	@Override
 	public Shader getSkyTextured() {
 		return skyTextured;
+	}
+
+	@Override
+	public Shader getSkyTexturedColor() {
+		return skyTexturedColor;
 	}
 
 	@Override

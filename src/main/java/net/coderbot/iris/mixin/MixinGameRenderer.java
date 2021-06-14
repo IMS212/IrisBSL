@@ -88,6 +88,13 @@ public class MixinGameRenderer {
 		}
 	}
 
+	@Inject(method = "getPositionTexColorShader()Lnet/minecraft/client/render/Shader;", at = @At("HEAD"), cancellable = true)
+	private static void iris$overridePositionTexColorShader(CallbackInfoReturnable<Shader> cir) {
+		if (isPhase(WorldRenderingPhase.SKY)) {
+			override(CoreWorldRenderingPipeline::getSkyTexturedColor, cir);
+		}
+	}
+
 	@Inject(method = "getRenderTypeSolidShader()Lnet/minecraft/client/render/Shader;", at = @At("HEAD"), cancellable = true)
 	private static void iris$overrideSolidShader(CallbackInfoReturnable<Shader> cir) {
 		if (ShadowRenderer.ACTIVE) {
