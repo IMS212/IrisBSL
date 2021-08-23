@@ -1,6 +1,7 @@
 package net.coderbot.iris.shaderpack;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -82,19 +83,20 @@ public class LegacyIdMap {
 		addBlock(blockIdMap, 111, Blocks.LILY_PAD);
 	}
 
-	public static void addLegacyDimensionValues(Object2IntMap<Identifier> dimensionIdMap) {
-		addDimension(dimensionIdMap, 0, World.OVERWORLD);
-		addDimension(dimensionIdMap, 1, World.NETHER);
-		addDimension(dimensionIdMap, -1, World.END);
+	public static void addVanillaDimensions(Object2IntMap<Identifier> dimensionIdMap) {
+		addDimension(dimensionIdMap, 0, new Identifier("overworld"));
+		addDimension(dimensionIdMap, -1, new Identifier("the_nether"));
+		addDimension(dimensionIdMap, 1, new Identifier("the_end"));
 	}
 
-		private static void addBlock(Object2IntMap<BlockState> blockIdMap, int id, Block... leaves) {
+	private static void addBlock(Object2IntMap<BlockState> blockIdMap, int id, Block... leaves) {
 		for (Block leaf : leaves) {
 			leaf.getStateManager().getStates().forEach(state -> blockIdMap.put(state, id));
 		}
 	}
 
-	private static void addDimension(Object2IntMap<Identifier> dimensionIdMap, int id, RegistryKey<World> dimension) {
-		dimensionIdMap.put(dimension.getValue(), id);
+	private static void addDimension(Object2IntMap<Identifier> dimensionIdMap, int id, Identifier dimension) {
+		dimensionIdMap.defaultReturnValue(0);
+		dimensionIdMap.putIfAbsent(dimension, id);
 	}
 }

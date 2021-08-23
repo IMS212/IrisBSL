@@ -46,7 +46,7 @@ public class IdMap {
 	/**
 	 * Maps a given dimension ID to an integer ID
 	 */
-	private final Object2IntMap<Identifier> dimensionIdMap;
+	private Object2IntMap<Identifier> dimensionIdMap;
 
 	/**
 	 * A map that contains the identifier of an item to the integer value parsed in block.properties
@@ -76,13 +76,16 @@ public class IdMap {
 
 		// TODO: Properly override block render layers
 
-		if (blockPropertiesMap == null) {
-			// Fill in with default values...
+		// Fill in with default values...
+		if (blockPropertiesMap == null || blockPropertiesMap.isEmpty()) {
 			blockPropertiesMap = new Object2IntOpenHashMap<>();
 			LegacyIdMap.addLegacyBlockValues(blockPropertiesMap);
 		}
 
-		LegacyIdMap.addLegacyDimensionValues(dimensionIdMap);
+		if (dimensionIdMap == null || dimensionIdMap.isEmpty()) {
+			dimensionIdMap = new Object2IntOpenHashMap<>();
+			LegacyIdMap.addVanillaDimensions(dimensionIdMap);
+		}
 
 		if (blockRenderLayerMap == null) {
 			blockRenderLayerMap = Collections.emptyMap();
@@ -435,6 +438,6 @@ public class IdMap {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(itemIdMap, entityIdMap, blockPropertiesMap, blockRenderLayerMap);
+		return Objects.hash(itemIdMap, entityIdMap, dimensionIdMap, blockPropertiesMap, blockRenderLayerMap);
 	}
 }
