@@ -2,6 +2,7 @@ package net.coderbot.iris;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.Map;
 import java.util.Optional;
 import java.util.zip.ZipException;
 
@@ -13,9 +14,14 @@ import net.coderbot.iris.pipeline.newshader.EnhancedWorldRenderingPipeline;
 import net.coderbot.iris.shaderpack.DimensionId;
 import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ShaderPack;
+import net.coderbot.iris.uniforms.CapturedRenderingState;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.entity.Entity;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
+import net.minecraft.world.dimension.DimensionType;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -372,21 +378,15 @@ public class Iris implements ClientModInitializer {
 		}
 	}
 
-	public static DimensionId lastDimension = DimensionId.OVERWORLD;
+	public static int lastDimension = 0;
 
-	public static DimensionId getCurrentDimension() {
+	public static int getCurrentDimension() {
 		ClientWorld world = MinecraftClient.getInstance().world;
 
 		if (world != null) {
 			RegistryKey<World> worldRegistryKey = world.getRegistryKey();
 
-			if (worldRegistryKey.equals(World.END)) {
-				return DimensionId.END;
-			} else if (worldRegistryKey.equals(World.NETHER)) {
-				return DimensionId.NETHER;
-			} else {
-				return DimensionId.OVERWORLD;
-			}
+				return getDimensionId(getCurrentPack().get().getIdMap().getDimensionIdMap(), world);
 		} else {
 			// This prevents us from reloading the shaderpack unless we need to. Otherwise, if the player is in the
 			// nether and quits the game, we might end up reloading the shaders on exit and on entry to the world
@@ -395,7 +395,18 @@ public class Iris implements ClientModInitializer {
 		}
 	}
 
-	private static WorldRenderingPipeline createPipeline(DimensionId dimensionId) {
+	private static int getDimensionId(Map<Identifier, Integer> dimensionIdMap, World worldRegistryKey) {
+		if (worldRegistryKey == null) {
+			// Not valid if player is in no dimension
+			return -1;
+		}
+
+		Identifier dimensionId = worldRegistryKey.getRegistryKey().getValue();
+
+		return dimensionIdMap.getOrDefault(dimensionId, 0);
+	}
+
+	private static WorldRenderingPipeline createPipeline(int dimensionId) {
 		if (currentPack == null) {
 			// completely disable shader-based rendering
 			return new FixedFunctionWorldRenderingPipeline();

@@ -13,14 +13,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 
-import com.google.common.collect.ImmutableList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMaps;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.coderbot.iris.Iris;
 import net.minecraft.block.Blocks;
 import net.minecraft.state.StateManager;
-import net.minecraft.tag.BlockTags;
 import org.apache.logging.log4j.Level;
 
 import net.minecraft.block.Block;
@@ -46,6 +44,11 @@ public class IdMap {
 	private final Object2IntMap<Identifier> entityIdMap;
 
 	/**
+	 * Maps a given dimension ID to an integer ID
+	 */
+	private final Object2IntMap<Identifier> dimensionIdMap;
+
+	/**
 	 * A map that contains the identifier of an item to the integer value parsed in block.properties
 	 */
 	private Object2IntMap<BlockState> blockPropertiesMap;
@@ -62,6 +65,9 @@ public class IdMap {
 		entityIdMap = loadProperties(shaderPath, "entity.properties")
 			.map(IdMap::parseEntityIdMap).orElse(Object2IntMaps.emptyMap());
 
+		dimensionIdMap = loadProperties(shaderPath, "dimension.properties")
+			.map(IdMap::parseDimensionIdMap).orElse(Object2IntMaps.emptyMap());
+
 		loadProperties(shaderPath, "block.properties").ifPresent(blockProperties -> {
 			// TODO: This won't parse block states in block.properties properly
 			blockPropertiesMap = parseBlockMap(blockProperties, "block.", "block.properties");
@@ -73,8 +79,10 @@ public class IdMap {
 		if (blockPropertiesMap == null) {
 			// Fill in with default values...
 			blockPropertiesMap = new Object2IntOpenHashMap<>();
-			LegacyIdMap.addLegacyValues(blockPropertiesMap);
+			LegacyIdMap.addLegacyBlockValues(blockPropertiesMap);
 		}
+
+		LegacyIdMap.addLegacyDimensionValues(dimensionIdMap);
 
 		if (blockRenderLayerMap == null) {
 			blockRenderLayerMap = Collections.emptyMap();
@@ -127,6 +135,10 @@ public class IdMap {
 
 	private static Object2IntMap<Identifier> parseEntityIdMap(Properties properties) {
 		return parseIdMap(properties, "entity.", "entity.properties");
+	}
+
+	private static Object2IntMap<Identifier> parseDimensionIdMap(Properties properties) {
+		return parseIdMap(properties, "dimension.", "dimension.properties");
 	}
 
 	/**
@@ -398,6 +410,10 @@ public class IdMap {
 		return entityIdMap;
 	}
 
+	public Map<Identifier, Integer> getDimensionIdMap() {
+		return dimensionIdMap;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) {
@@ -412,6 +428,7 @@ public class IdMap {
 
 		return Objects.equals(itemIdMap, idMap.itemIdMap)
 				&& Objects.equals(entityIdMap, idMap.entityIdMap)
+				&& Objects.equals(dimensionIdMap, idMap.dimensionIdMap)
 				&& Objects.equals(blockPropertiesMap, idMap.blockPropertiesMap)
 				&& Objects.equals(blockRenderLayerMap, idMap.blockRenderLayerMap);
 	}
