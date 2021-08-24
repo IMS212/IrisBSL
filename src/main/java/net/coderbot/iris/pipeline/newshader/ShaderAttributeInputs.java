@@ -11,8 +11,8 @@ public class ShaderAttributeInputs {
 	private boolean normal;
 	private boolean newLines;
 
-	public ShaderAttributeInputs(VertexFormat format) {
-		if (format == VertexFormats.LINES) {
+	public ShaderAttributeInputs(VertexFormat format, boolean patchLines) {
+		if (format == VertexFormats.LINES && patchLines) {
 			newLines = true;
 		}
 

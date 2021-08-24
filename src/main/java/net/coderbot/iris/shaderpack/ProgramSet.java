@@ -22,6 +22,7 @@ public class ProgramSet {
 	private final ProgramSource[] prepare;
 
 	private final ProgramSource gbuffersBasic;
+	private final ProgramSource gbuffersLines;
 	private final ProgramSource gbuffersBeaconBeam;
 	private final ProgramSource gbuffersTextured;
 	private final ProgramSource gbuffersTexturedLit;
@@ -59,6 +60,7 @@ public class ProgramSet {
 		this.prepare = readProgramArray(root, inclusionRoot, "prepare", shaderProperties);
 
 		this.gbuffersBasic = readProgramSource(root, inclusionRoot, "gbuffers_basic", this, shaderProperties);
+		this.gbuffersLines = readProgramSource(root, inclusionRoot, "gbuffers_lines", this, shaderProperties);
 		this.gbuffersBeaconBeam = readProgramSource(root, inclusionRoot, "gbuffers_beaconbeam", this, shaderProperties);
 		this.gbuffersTextured = readProgramSource(root, inclusionRoot, "gbuffers_textured", this, shaderProperties);
 		this.gbuffersTexturedLit = readProgramSource(root, inclusionRoot, "gbuffers_textured_lit", this, shaderProperties);
@@ -114,6 +116,7 @@ public class ProgramSet {
 		this.prepare = merge(base.prepare, overrides.prepare);
 
 		this.gbuffersBasic = merge(base.gbuffersBasic, overrides.gbuffersBasic);
+		this.gbuffersLines = merge(base.gbuffersLines, overrides.gbuffersLines);
 		this.gbuffersBeaconBeam = merge(base.gbuffersBeaconBeam, overrides.gbuffersBeaconBeam);
 		this.gbuffersTextured = merge(base.gbuffersTextured, overrides.gbuffersTextured);
 		this.gbuffersTexturedLit = merge(base.gbuffersTexturedLit, overrides.gbuffersTexturedLit);
@@ -226,6 +229,10 @@ public class ProgramSet {
 
 	public Optional<ProgramSource> getGbuffersBasic() {
 		return gbuffersBasic.requireValid();
+	}
+
+	public Optional<ProgramSource> getGbuffersLines() {
+		return gbuffersLines.requireValid();
 	}
 
 	public Optional<ProgramSource> getGbuffersBeaconBeam() {

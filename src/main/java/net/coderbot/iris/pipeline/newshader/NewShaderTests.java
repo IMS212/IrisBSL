@@ -31,10 +31,10 @@ public class NewShaderTests {
 	public static ExtendedShader create(String name, ProgramSource source, GlFramebuffer writingToBeforeTranslucent,
 										GlFramebuffer writingToAfterTranslucent, GlFramebuffer baseline, AlphaTest fallbackAlpha,
 										VertexFormat vertexFormat, FrameUpdateNotifier updateNotifier,
-										NewWorldRenderingPipeline parent, FogMode fogMode) throws IOException {
+										NewWorldRenderingPipeline parent, FogMode fogMode, boolean patchLines) throws IOException {
 		AlphaTest alpha = source.getDirectives().getAlphaTestOverride().orElse(fallbackAlpha);
 
-		ShaderAttributeInputs inputs = new ShaderAttributeInputs(vertexFormat);
+		ShaderAttributeInputs inputs = new ShaderAttributeInputs(vertexFormat, patchLines);
 		String vertex = TriforcePatcher.patch(source.getVertexSource().orElseThrow(RuntimeException::new), ShaderType.VERTEX, alpha, true, inputs);
 		String fragment = TriforcePatcher.patch(source.getFragmentSource().orElseThrow(RuntimeException::new), ShaderType.FRAGMENT, alpha, true, inputs);
 

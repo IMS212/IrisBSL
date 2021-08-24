@@ -234,6 +234,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		};
 
 		Optional<ProgramSource> basicSource = programSet.getGbuffersBasic();
+		Optional<ProgramSource> linesSource = first(programSet.getGbuffersLines(), basicSource);
 		Optional<ProgramSource> texturedSource = first(programSet.getGbuffersTextured(), basicSource);
 
 		Optional<ProgramSource> skyTexturedSource = first(programSet.getGbuffersSkyTextured(), programSet.getGbuffersTextured(), programSet.getGbuffersBasic());
@@ -288,12 +289,16 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 			this.block = createShader("gbuffers_block", blockSource, terrainCutoutAlpha, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL, FogMode.LINEAR);
 			this.beacon = createShader("gbuffers_beaconbeam", beaconSource, AlphaTest.ALWAYS, VertexFormats.POSITION_COLOR_TEXTURE_LIGHT_NORMAL, FogMode.LINEAR);
 			this.glint = createShader("gbuffers_glint", glintSource, nonZeroAlpha, VertexFormats.POSITION_TEXTURE, FogMode.LINEAR);
-			this.lines = createShader("gbuffers_lines", programSet.getGbuffersBasic(), AlphaTest.ALWAYS, VertexFormats.LINES, FogMode.LINEAR);
 
 			if (translucentSource != terrainSource) {
 				this.terrainTranslucent = createShader("gbuffers_translucent", translucentSource, AlphaTest.ALWAYS, IrisVertexFormats.TERRAIN, FogMode.LINEAR);
 			} else {
 				this.terrainTranslucent = this.terrainSolid;
+			}
+			if (linesSource != basicSource) {
+				this.lines = createShader("gbuffers_lines", programSet.getGbuffersLines(), AlphaTest.ALWAYS, VertexFormats.LINES, FogMode.LINEAR, false);
+			} else {
+				this.lines = createShader("gbuffers_lines", programSet.getGbuffersBasic(), AlphaTest.ALWAYS, VertexFormats.LINES, FogMode.LINEAR, true);
 			}
 		} catch (RuntimeException e) {
 			destroyShaders();
@@ -342,14 +347,23 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 			return null;
 		}
 
-		return createShader(name, source.get(), fallbackAlpha, vertexFormat, fogMode);
+		return createShader(name, source.get(), fallbackAlpha, vertexFormat, fogMode, true);
 	}
 
-	private Shader createShader(String name, ProgramSource source, AlphaTest fallbackAlpha, VertexFormat vertexFormat, FogMode fogMode) throws IOException {
+	@Nullable
+	private Shader createShader(String name, Optional<ProgramSource> source, AlphaTest fallbackAlpha, VertexFormat vertexFormat, FogMode fogMode, boolean legacyLines) throws IOException {
+		if (!source.isPresent()) {
+			return null;
+		}
+
+		return createShader(name, source.get(), fallbackAlpha, vertexFormat, fogMode, legacyLines);
+	}
+
+	private Shader createShader(String name, ProgramSource source, AlphaTest fallbackAlpha, VertexFormat vertexFormat, FogMode fogMode, boolean legacyLines) throws IOException {
 		GlFramebuffer beforeTranslucent = renderTargets.createGbufferFramebuffer(flippedBeforeTranslucent, source.getDirectives().getDrawBuffers());
 		GlFramebuffer afterTranslucent = renderTargets.createGbufferFramebuffer(flippedAfterTranslucent, source.getDirectives().getDrawBuffers());
 
-		ExtendedShader extendedShader = NewShaderTests.create(name, source, beforeTranslucent, afterTranslucent, baseline, fallbackAlpha, vertexFormat, updateNotifier, this, fogMode);
+		ExtendedShader extendedShader = NewShaderTests.create(name, source, beforeTranslucent, afterTranslucent, baseline, fallbackAlpha, vertexFormat, updateNotifier, this, fogMode, legacyLines);
 
 		loadedShaders.add(extendedShader);
 
@@ -385,13 +399,21 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 			return null;
 		}
 
-		return createShadowShader(name, source.get(), fallbackAlpha, vertexFormat);
+		return createShadowShader(name, source.get(), fallbackAlpha, vertexFormat, true);
 	}
 
-	private Shader createShadowShader(String name, ProgramSource source, AlphaTest fallbackAlpha, VertexFormat vertexFormat) throws IOException {
+	private Shader createShadowShader(String name, Optional<ProgramSource> source, AlphaTest fallbackAlpha, VertexFormat vertexFormat, boolean legacyLines) throws IOException {
+		if (!source.isPresent()) {
+			return null;
+		}
+
+		return createShadowShader(name, source.get(), fallbackAlpha, vertexFormat, legacyLines);
+	}
+
+	private Shader createShadowShader(String name, ProgramSource source, AlphaTest fallbackAlpha, VertexFormat vertexFormat, boolean legacyLines) throws IOException {
 		GlFramebuffer framebuffer = ((ShadowRenderer) this.shadowMapRenderer).getFramebuffer();
 
-		ExtendedShader extendedShader = NewShaderTests.create(name, source, framebuffer, framebuffer, baseline, fallbackAlpha, vertexFormat, updateNotifier, this, FogMode.LINEAR);
+		ExtendedShader extendedShader = NewShaderTests.create(name, source, framebuffer, framebuffer, baseline, fallbackAlpha, vertexFormat, updateNotifier, this, FogMode.LINEAR, legacyLines);
 
 		loadedShaders.add(extendedShader);
 
