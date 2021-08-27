@@ -46,7 +46,7 @@ public class MixinSprite {
 
 		for (int y = 0; y < image.getHeight(); y++) {
 			for (int x = 0; x < image.getWidth(); x++) {
-				int color = image.getPixelColor(x, y);
+				int color = image.getPixelRgba(x, y);
 				int alpha = (color >> 24) & 255;
 
 				if (alpha == 0) {
@@ -78,7 +78,7 @@ public class MixinSprite {
 
 		for (int y = 0; y < image.getHeight(); y++) {
 			for (int x = 0; x < image.getWidth(); x++) {
-				int color = image.getPixelColor(x, y);
+				int color = image.getPixelRgba(x, y);
 				int alpha = (color >> 24) & 255;
 
 				// If this pixel has nonzero alpha, don't touch it.
@@ -87,7 +87,7 @@ public class MixinSprite {
 				}
 
 				// Replace the color values of this pixel with the average coolors.
-				image.setPixelColor(x, y, resultColor);
+				image.setPixelRgba(x, y, resultColor);
 			}
 		}
 	}

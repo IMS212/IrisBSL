@@ -159,7 +159,7 @@ public class MixinWorldRenderer {
 		pipeline.pushProgram(GbufferProgram.CLOUDS);
 	}
 
-	@Inject(method = "renderClouds", at = @At("HEAD"), cancellable = true)
+	@Inject(method = "renderClouds(Lnet/minecraft/client/util/math/MatrixStack;FDDD)V", at = @At("HEAD"), cancellable = true)
 	private void iris$maybeRemoveClouds(MatrixStack matrices, float tickDelta, double cameraX, double cameraY, double cameraZ, CallbackInfo ci) {
 		if (!pipeline.shouldRenderClouds()) {
 			ci.cancel();
@@ -175,7 +175,7 @@ public class MixinWorldRenderer {
 	private void iris$beginTerrainLayer(RenderLayer renderLayer, MatrixStack matrixStack, double cameraX, double cameraY, double cameraZ, CallbackInfo callback) {
 		if (renderLayer == RenderLayer.getSolid() || renderLayer == RenderLayer.getCutout() || renderLayer == RenderLayer.getCutoutMipped()) {
 			pipeline.pushProgram(GbufferProgram.TERRAIN);
-		} else if (renderLayer == RenderLayer.getTranslucent() || renderLayer == RenderLayer.getTripwire()) {
+		} else if (renderLayer == RenderLayer.getTranslucent()) {
 			pipeline.pushProgram(GbufferProgram.TRANSLUCENT_TERRAIN);
 		} else {
 			throw new IllegalStateException("[Iris] Unexpected terrain layer: " + renderLayer);
@@ -186,7 +186,7 @@ public class MixinWorldRenderer {
 	private void iris$endTerrainLayer(RenderLayer renderLayer, MatrixStack matrixStack, double cameraX, double cameraY, double cameraZ, CallbackInfo callback) {
 		if (renderLayer == RenderLayer.getSolid() || renderLayer == RenderLayer.getCutout() || renderLayer == RenderLayer.getCutoutMipped()) {
 			pipeline.popProgram(GbufferProgram.TERRAIN);
-		} else if (renderLayer == RenderLayer.getTranslucent() || renderLayer == RenderLayer.getTripwire()) {
+		} else if (renderLayer == RenderLayer.getTranslucent()) {
 			pipeline.popProgram(GbufferProgram.TRANSLUCENT_TERRAIN);
 		} else {
 			throw new IllegalStateException("[Iris] Unexpected terrain layer: " + renderLayer);

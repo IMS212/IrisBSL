@@ -25,10 +25,10 @@ dependencies {
 	includeFabricApiModule "fabric-resource-loader-v0"
 
 	// Needed for adding the reload keybinding
-	includeFabricApiModule "fabric-key-binding-api-v1"
+	includeFabricApiModule "fabric-keybindings-v0"
 
 	// Needed for the END_CLIENT_TICK event
-	includeFabricApiModule "fabric-lifecycle-events-v1"
+	includeFabricApiModule "fabric-events-lifecycle-v0"
 
 	// Required by fabric-lifecycle-events-v1
 	includeFabricApiModule "fabric-api-base"

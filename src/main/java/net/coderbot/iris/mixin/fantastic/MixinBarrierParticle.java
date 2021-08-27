@@ -8,6 +8,7 @@ import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemConvertible;
+import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -20,8 +21,8 @@ public class MixinBarrierParticle {
 	@Unique
 	private boolean isOpaque;
 
-	@Inject(method = "<init>(Lnet/minecraft/client/world/ClientWorld;DDDLnet/minecraft/item/ItemConvertible;)V", at = @At("RETURN"))
-	private void iris$resolveTranslucency(ClientWorld world, double x, double y, double z, ItemConvertible itemConvertible, CallbackInfo ci) {
+	@Inject(method = "<init>", at = @At("RETURN"))
+	private void iris$resolveTranslucency(World world, double x, double y, double z, ItemConvertible itemConvertible, CallbackInfo ci) {
 		if (itemConvertible instanceof BlockItem) {
 			BlockItem blockItem = (BlockItem) itemConvertible;
 

@@ -14,7 +14,7 @@ public class IrisParticleTextureSheets {
 			RenderSystem.disableBlend();
 			RenderSystem.depthMask(true);
 			RenderSystem.defaultAlphaFunc();
-			textureManager.bindTexture(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE);
+			textureManager.bindTexture(SpriteAtlasTexture.BLOCK_ATLAS_TEX);
 			bufferBuilder.begin(7, VertexFormats.POSITION_TEXTURE_COLOR_LIGHT);
 		}
 

@@ -29,8 +29,7 @@ public class HardcodedCustomUniforms {
 	private static int getWorldDayTime() {
 		World world     = MinecraftClient.getInstance().world;
 		long  timeOfDay = world.getTimeOfDay();
-		long dayTime = ((DimensionTypeAccessor) world.getDimension()).getFixedTime()
-																	 .orElse(timeOfDay % 24000L);
+		long dayTime = timeOfDay % 24000L;
 
 		return (int) dayTime;
 	}

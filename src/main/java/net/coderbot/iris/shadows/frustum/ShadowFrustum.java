@@ -2,6 +2,7 @@ package net.coderbot.iris.shadows.frustum;
 
 import net.minecraft.client.render.Frustum;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Matrix4f;
 
 public class ShadowFrustum extends Frustum {
@@ -50,15 +51,15 @@ public class ShadowFrustum extends Frustum {
 	}
 
 	public boolean isVisible(Box box) {
-		if (box.maxX < this.minAllowedX || box.minX > this.maxAllowedX) {
+		if (box.getMax(Direction.Axis.X) < this.minAllowedX || box.getMin(Direction.Axis.X) > this.maxAllowedX) {
 			return false;
 		}
 
-		if (box.maxY < this.minAllowedY || box.minY > this.maxAllowedY) {
+		if (box.getMax(Direction.Axis.Y) < this.minAllowedY || box.getMin(Direction.Axis.Y) > this.maxAllowedY) {
 			return false;
 		}
 
-		if (box.maxZ < this.minAllowedZ || box.minZ > this.maxAllowedZ) {
+		if (box.getMax(Direction.Axis.Z) < this.minAllowedZ || box.getMin(Direction.Axis.Z) > this.maxAllowedZ) {
 			return false;
 		}
 

@@ -581,7 +581,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 		// Destroy the static samplers (specular, normals, and noise)
 		specular.close();
 		normals.close();
-		noise.close();
+		noise.clearGlId();
 	}
 
 	private static void destroyPasses(List<Pass> passes) {

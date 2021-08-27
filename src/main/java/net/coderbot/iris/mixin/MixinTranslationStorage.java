@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import net.minecraft.client.resource.language.LanguageDefinition;
@@ -24,7 +25,7 @@ public class MixinTranslationStorage {
 	// This is needed to keep track of which language code we need to grab our lang files from
 	private static List<String> languageCodes = new ArrayList<>();
 
-	private static final String LOAD = "load(Lnet/minecraft/resource/ResourceManager;Ljava/util/List;)Lnet/minecraft/client/resource/language/TranslationStorage;";
+	private final String LOAD = "load(Lnet/minecraft/resource/ResourceManager;Ljava/util/List;)Lnet/minecraft/client/resource/language/TranslationStorage;";
 
 	@Shadow
 	@Final
@@ -63,14 +64,14 @@ public class MixinTranslationStorage {
 		}
 	}
 
-	@Inject(method = LOAD, at = @At("HEAD"))
-	private static void check(ResourceManager resourceManager, List<LanguageDefinition> definitions, CallbackInfoReturnable<TranslationStorage> cir) {
+	@Inject(method = "load(Lnet/minecraft/resource/ResourceManager;Ljava/util/List;)V", at = @At("HEAD"))
+	private void check(ResourceManager container, List<String> list, CallbackInfo ci) {
 		// make sure the language codes dont carry over!
 		languageCodes.clear();
 
 		// Reverse order due to how minecraft has English and then the primary language in the language definitions list
-		new LinkedList<>(definitions).descendingIterator().forEachRemaining(languageDefinition -> {
-			languageCodes.add(languageDefinition.getCode());
+		new LinkedList<>(list).descendingIterator().forEachRemaining(languageDefinition -> {
+			languageCodes.addAll(list);
 		});
 	}
 }

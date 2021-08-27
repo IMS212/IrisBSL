@@ -12,10 +12,14 @@ import net.coderbot.iris.pipeline.*;
 import net.coderbot.iris.shaderpack.DimensionId;
 import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ShaderPack;
+import net.fabricmc.fabric.api.client.keybinding.FabricKeyBinding;
+import net.fabricmc.fabric.api.client.keybinding.KeyBindingRegistry;
+import net.fabricmc.fabric.api.event.client.ClientTickCallback;
 import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
+import net.minecraft.world.dimension.DimensionType;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,8 +34,6 @@ import net.minecraft.util.Formatting;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.loader.api.FabricLoader;
 
 @Environment(EnvType.CLIENT)
@@ -48,9 +50,9 @@ public class Iris implements ClientModInitializer {
 	private static PipelineManager pipelineManager;
 	private static IrisConfig irisConfig;
 	private static FileSystem zipFileSystem;
-	private static KeyBinding reloadKeybind;
-	private static KeyBinding toggleShadersKeybind;
-	private static KeyBinding shaderpackScreenKeybind;
+	private static FabricKeyBinding reloadKeybind;
+	private static FabricKeyBinding toggleShadersKeybind;
+	private static FabricKeyBinding shaderpackScreenKeybind;
 
 	private static String IRIS_VERSION;
 
@@ -92,24 +94,27 @@ public class Iris implements ClientModInitializer {
 
 		loadShaderpack();
 
-		reloadKeybind = KeyBindingHelper.registerKeyBinding(new KeyBinding("iris.keybind.reload", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_R, "iris.keybinds"));
-		toggleShadersKeybind = KeyBindingHelper.registerKeyBinding(new KeyBinding("iris.keybind.toggleShaders", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_K, "iris.keybinds"));
-		shaderpackScreenKeybind = KeyBindingHelper.registerKeyBinding(new KeyBinding("iris.keybind.shaderPackSelection", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_O, "iris.keybinds"));
+		reloadKeybind = FabricKeyBinding.Builder.create(new Identifier("iris", "keybind.reload"), InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_R, "iris.keybinds").build();
+		toggleShadersKeybind = FabricKeyBinding.Builder.create(new Identifier("iris", "keybind.toggleshaders"), InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_K, "iris.keybinds").build();
+		shaderpackScreenKeybind = FabricKeyBinding.Builder.create(new Identifier("iris", "keybind.shaderpackselection"), InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_O, "iris.keybinds").build();
 
-		ClientTickEvents.END_CLIENT_TICK.register(minecraftClient -> {
+		KeyBindingRegistry.INSTANCE.register(reloadKeybind);
+		KeyBindingRegistry.INSTANCE.register(toggleShadersKeybind);
+		KeyBindingRegistry.INSTANCE.register(shaderpackScreenKeybind);
+		ClientTickCallback.EVENT.register(minecraftClient -> {
 			if (reloadKeybind.wasPressed()) {
 				try {
 					reload();
 
 					if (minecraftClient.player != null) {
-						minecraftClient.player.sendMessage(new TranslatableText("iris.shaders.reloaded"), false);
+						minecraftClient.player.sendMessage(new TranslatableText("iris.shaders.reloaded"));
 					}
 
 				} catch (Exception e) {
 					Iris.logger.error("Error while reloading Shaders for Iris!", e);
 
 					if (minecraftClient.player != null) {
-						minecraftClient.player.sendMessage(new TranslatableText("iris.shaders.reloaded.failure", Throwables.getRootCause(e).getMessage()).formatted(Formatting.RED), false);
+						minecraftClient.player.sendMessage(new TranslatableText("iris.shaders.reloaded.failure", Throwables.getRootCause(e).getMessage()).formatted(Formatting.RED));
 					}
 				}
 			} else if (toggleShadersKeybind.wasPressed()) {
@@ -120,13 +125,13 @@ public class Iris implements ClientModInitializer {
 
 					reload();
 					if (minecraftClient.player != null) {
-						minecraftClient.player.sendMessage(new TranslatableText("iris.shaders.toggled", config.areShadersEnabled() ? currentPackName : "off"), false);
+						minecraftClient.player.sendMessage(new TranslatableText("iris.shaders.toggled", config.areShadersEnabled() ? currentPackName : "off"));
 					}
 				} catch (Exception e) {
 					Iris.logger.error("Error while toggling shaders!", e);
 
 					if (minecraftClient.player != null) {
-						minecraftClient.player.sendMessage(new TranslatableText("iris.shaders.toggled.failure", Throwables.getRootCause(e).getMessage()).formatted(Formatting.RED), false);
+						minecraftClient.player.sendMessage(new TranslatableText("iris.shaders.toggled.failure", Throwables.getRootCause(e).getMessage()).formatted(Formatting.RED));
 					}
 
 					setShadersDisabled();
@@ -376,11 +381,11 @@ public class Iris implements ClientModInitializer {
 		ClientWorld world = MinecraftClient.getInstance().world;
 
 		if (world != null) {
-			RegistryKey<World> worldRegistryKey = world.getRegistryKey();
+			DimensionType worldRegistryKey = world.getDimension().getType();
 
-			if (worldRegistryKey.equals(World.END)) {
+			if (worldRegistryKey == DimensionType.THE_END) {
 				return DimensionId.END;
-			} else if (worldRegistryKey.equals(World.NETHER)) {
+			} else if (worldRegistryKey == DimensionType.THE_NETHER) {
 				return DimensionId.NETHER;
 			} else {
 				return DimensionId.OVERWORLD;

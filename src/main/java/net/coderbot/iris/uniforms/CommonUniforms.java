@@ -93,7 +93,7 @@ public final class CommonUniforms {
 
 	private static Vec2f getAtlasSize() {
 		//TODO: is the block atlas used for this uniform all the time???
-		return ((SpriteAtlasTextureInterface) MinecraftClient.getInstance().getBakedModelManager().method_24153(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE)).getAtlasSize();
+		return ((SpriteAtlasTextureInterface) MinecraftClient.getInstance().getBakedModelManager().method_24153(SpriteAtlasTexture.BLOCK_ATLAS_TEX)).getAtlasSize();
 	}
 
 	private static Vec3d getSkyColor() {
@@ -186,9 +186,9 @@ public final class CommonUniforms {
 		// underwater on most shaderpacks. For now, I will leave this as-is, but it is something to keep in mind.
 		FluidState submergedFluid = client.gameRenderer.getCamera().getSubmergedFluidState();
 
-		if (submergedFluid.isIn(FluidTags.WATER)) {
+		if (submergedFluid.matches(FluidTags.WATER)) {
 			return 1;
-		} else if (submergedFluid.isIn(FluidTags.LAVA)) {
+		} else if (submergedFluid.matches(FluidTags.LAVA)) {
 			return 2;
 		} else {
 			return 0;

@@ -8,7 +8,6 @@ import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.widget.AlwaysSelectedEntryListWidget;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.LiteralText;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
@@ -94,7 +93,7 @@ public class ShaderPackListWidget extends IrisScreenEntryListWidget<ShaderPackLi
 	}
 
 	public void select(String name) {
-		for (int i = 0; i < getEntryCount(); i++) {
+		for (int i = 0; i < children().size(); i++) {
 			BaseEntry entry = getEntry(i);
 
 			if (entry instanceof ShaderPackEntry && ((ShaderPackEntry)entry).packName.equals(name)) {
@@ -133,21 +132,32 @@ public class ShaderPackListWidget extends IrisScreenEntryListWidget<ShaderPackLi
 		}
 
 		@Override
-		public void render(MatrixStack matrices, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+		public boolean mouseClicked(double mouseX, double mouseY, int button) {
+			if (list.getEnableShadersButton().enabled && !this.isSelected() && button == 0) {
+				this.list.select(this.index);
+
+				return true;
+			}
+
+			return false;
+		}
+
+		@Override
+		public void render(int index, int y, int x, int width, int height, int mouseX, int mouseY, boolean hovering, float delta) {
 			TextRenderer textRenderer = MinecraftClient.getInstance().textRenderer;
 			int color = 0xFFFFFF;
 			String name = packName;
 
 			boolean shadersEnabled = list.getEnableShadersButton().enabled;
 
-			if (textRenderer.getWidth(new LiteralText(name).formatted(Formatting.BOLD)) > this.list.getRowWidth() - 3) {
+			if (textRenderer.getStringWidth(new LiteralText(name).formatted(Formatting.BOLD).asFormattedString()) > this.list.getRowWidth() - 3) {
 				name = textRenderer.trimToWidth(name, this.list.getRowWidth() - 8) + "...";
 			}
 
-			MutableText text = new LiteralText(name);
+			LiteralText text = new LiteralText(name);
 
 			if (shadersEnabled && this.isMouseOver(mouseX, mouseY)) {
-				text = text.formatted(Formatting.BOLD);
+				text = (LiteralText) text.formatted(Formatting.BOLD);
 			}
 
 			if (this.isSelected()) {
@@ -158,18 +168,8 @@ public class ShaderPackListWidget extends IrisScreenEntryListWidget<ShaderPackLi
 				color = 0xA2A2A2;
 			}
 
-			drawCenteredText(matrices, textRenderer, text, (x + entryWidth / 2) - 2, y + (entryHeight - 11) / 2, color);
-		}
+			textRenderer.draw(text.asString(), (x + width / 2) - 2, y + (height - 11) / 2, color);
 
-		@Override
-		public boolean mouseClicked(double mouseX, double mouseY, int button) {
-			if (list.getEnableShadersButton().enabled && !this.isSelected() && button == 0) {
-				this.list.select(this.index);
-
-				return true;
-			}
-
-			return false;
 		}
 	}
 
@@ -181,8 +181,8 @@ public class ShaderPackListWidget extends IrisScreenEntryListWidget<ShaderPackLi
 		}
 
 		@Override
-		public void render(MatrixStack matrices, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-			drawCenteredText(matrices, MinecraftClient.getInstance().textRenderer, label, (x + entryWidth / 2) - 2, y + (entryHeight - 11) / 2, 0xC2C2C2);
+		public void render(int index, int y, int x, int width, int height, int mouseX, int mouseY, boolean hovering, float delta) {
+			MinecraftClient.getInstance().textRenderer.draw(label.asFormattedString(), (x + width / 2) - 2, y + (height - 11) / 2, 0xC2C2C2);
 		}
 	}
 
@@ -193,16 +193,6 @@ public class ShaderPackListWidget extends IrisScreenEntryListWidget<ShaderPackLi
 			this.enabled = enabled;
 		}
 
-		@Override
-		public void render(MatrixStack matrices, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-			GuiUtil.bindIrisWidgetsTexture();
-
-			GuiUtil.drawButton(matrices, x - 2, y - 3, entryWidth, 18, hovered, false);
-
-			Text label = this.enabled ? SHADERS_ENABLED_LABEL : SHADERS_DISABLED_LABEL;
-
-			drawCenteredText(matrices, MinecraftClient.getInstance().textRenderer, label, (x + entryWidth / 2) - 2, y + (entryHeight - 11) / 2, 0xFFFFFF);
-		}
 
 		@Override
 		public boolean mouseClicked(double mouseX, double mouseY, int button) {
@@ -214,6 +204,17 @@ public class ShaderPackListWidget extends IrisScreenEntryListWidget<ShaderPackLi
 			}
 
 			return super.mouseClicked(mouseX, mouseY, button);
+		}
+
+		@Override
+		public void render(int index, int y, int x, int width, int height, int mouseX, int mouseY, boolean hovering, float delta) {
+			GuiUtil.bindIrisWidgetsTexture();
+
+			GuiUtil.drawButton(x - 2, y - 3, width, 18, hovering, false);
+
+			Text label = this.enabled ? SHADERS_ENABLED_LABEL : SHADERS_DISABLED_LABEL;
+
+			MinecraftClient.getInstance().textRenderer.draw(label.asFormattedString(), (x + width / 2) - 2, y + (height - 11) / 2, 0xFFFFFF);
 		}
 	}
 }

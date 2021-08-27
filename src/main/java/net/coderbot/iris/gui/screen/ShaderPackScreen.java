@@ -3,7 +3,6 @@ package net.coderbot.iris.gui.screen;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.gui.element.ShaderPackListWidget;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ScreenTexts;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
@@ -39,24 +38,24 @@ public class ShaderPackScreen extends Screen implements HudHideable {
 	}
 
 	@Override
-	public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
+	public void render(int mouseX, int mouseY, float delta) {
 		if (this.client.world == null) {
-			this.renderBackground(matrices);
+			this.renderBackground(0);
 		} else {
-			this.fillGradient(matrices, 0, 0, width, height, 0x4F232323, 0x4F232323);
+			this.fillGradient(0, 0, width, height, 0x4F232323, 0x4F232323);
 		}
 
-		this.shaderPackList.render(matrices, mouseX, mouseY, delta);
+		this.shaderPackList.render(mouseX, mouseY, delta);
 
-		drawCenteredText(matrices, this.textRenderer, this.title, (int)(this.width * 0.5), 8, 0xFFFFFF);
+		this.textRenderer.draw(this.title.asFormattedString(), (int)(this.width * 0.5), 8, 0xFFFFFF);
 
 		if (addedPackDialog != null && addedPackDialogTimer > 0) {
-			drawCenteredText(matrices, this.textRenderer, addedPackDialog, (int)(this.width * 0.5), 21, 0xFFFFFF);
+			this.textRenderer.draw(addedPackDialog.asString(), (int)(this.width * 0.5), 21, 0xFFFFFF);
 		} else {
-			drawCenteredText(matrices, this.textRenderer, SELECT_TITLE, (int)(this.width * 0.5), 21, 0xFFFFFF);
+			this.textRenderer.draw(SELECT_TITLE.asFormattedString(), (int)(this.width * 0.5), 21, 0xFFFFFF);
 		}
 
-		super.render(matrices, mouseX, mouseY, delta);
+		super.render(mouseX, mouseY, delta);
 	}
 
 	@Override
@@ -69,25 +68,25 @@ public class ShaderPackScreen extends Screen implements HudHideable {
 		this.shaderPackList = new ShaderPackListWidget(this.client, this.width, this.height, 32, this.height - 58, 0, this.width);
 
 		if (inWorld) {
-			this.shaderPackList.method_31322(false);
+			this.shaderPackList.setDragging(false);
 		}
 
 		this.children.add(shaderPackList);
 
 		this.addButton(new ButtonWidget(bottomCenter + 104, this.height - 27, 100, 20,
-			ScreenTexts.DONE, button -> onClose()));
+			"Done", button -> onClose()));
 
 		this.addButton(new ButtonWidget(bottomCenter, this.height - 27, 100, 20,
-			new TranslatableText("options.iris.apply"), button -> this.applyChanges()));
+			new TranslatableText("options.iris.apply").asString(), button -> this.applyChanges()));
 
 		this.addButton(new ButtonWidget(bottomCenter - 104, this.height - 27, 100, 20,
-			ScreenTexts.CANCEL, button -> this.dropChangesAndClose()));
+			"Cancel", button -> this.dropChangesAndClose()));
 
 		this.addButton(new ButtonWidget(topCenter - 78, this.height - 51, 152, 20,
-			new TranslatableText("options.iris.openShaderPackFolder"), button -> openShaderPackFolder()));
+			new TranslatableText("options.iris.openShaderPackFolder").asString(), button -> openShaderPackFolder()));
 
 		this.addButton(new ButtonWidget(topCenter + 78, this.height - 51, 152, 20,
-			new TranslatableText("options.iris.refreshShaderPacks"), button -> this.shaderPackList.refresh()));
+			new TranslatableText("options.iris.refreshShaderPacks").asString(), button -> this.shaderPackList.refresh()));
 	}
 
 	@Override
@@ -99,7 +98,8 @@ public class ShaderPackScreen extends Screen implements HudHideable {
 		}
 	}
 
-	@Override
+	//TODO: this doesn't work in 21w14infinite
+	// @Override
 	public void filesDragged(List<Path> paths) {
 		List<Path> packs = paths.stream().filter(Iris::isValidShaderpack).collect(Collectors.toList());
 

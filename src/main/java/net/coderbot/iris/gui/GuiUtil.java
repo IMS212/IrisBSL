@@ -45,7 +45,7 @@ public final class GuiUtil {
 	 * @param hovered Whether the button is being hovered over with the mouse
 	 * @param disabled Whether the button should use the "disabled" texture
 	 */
-	public static void drawButton(MatrixStack matrices, int x, int y, int width, int height, boolean hovered, boolean disabled) {
+	public static void drawButton(int x, int y, int width, int height, boolean hovered, boolean disabled) {
 		// Create variables for half of the width and height.
 		// Will not be exact when width and height are odd, but
 		// that case is handled within the draw calls.
@@ -63,13 +63,13 @@ public final class GuiUtil {
 		RenderSystem.enableTexture();
 
 		// Top left section
-		DrawableHelper.drawTexture(matrices, x, y, 0, vOffset, halfWidth, halfHeight, 256, 256);
+		DrawableHelper.drawTexture(x, y, 0, vOffset, halfWidth, halfHeight, 256, 256);
 		// Top right section
-		DrawableHelper.drawTexture(matrices, x + halfWidth, y, 200 - (width - halfWidth), vOffset, width - halfWidth, halfHeight, 256, 256);
+		DrawableHelper.drawTexture(x + halfWidth, y, 200 - (width - halfWidth), vOffset, width - halfWidth, halfHeight, 256, 256);
 		// Bottom left section
-		DrawableHelper.drawTexture(matrices, x, y + halfHeight, 0, vOffset + (20 - (height - halfHeight)), halfWidth, height - halfHeight, 256, 256);
+		DrawableHelper.drawTexture(x, y + halfHeight, 0, vOffset + (20 - (height - halfHeight)), halfWidth, height - halfHeight, 256, 256);
 		// Bottom right section
-		DrawableHelper.drawTexture(matrices, x + halfWidth, y + halfHeight, 200 - (width - halfWidth), vOffset + (20 - (height - halfHeight)), width - halfWidth, height - halfHeight, 256, 256);
+		DrawableHelper.drawTexture(x + halfWidth, y + halfHeight, 200 - (width - halfWidth), vOffset + (20 - (height - halfHeight)), width - halfWidth, height - halfHeight, 256, 256);
 	}
 
 	/**

@@ -24,7 +24,7 @@ public class MixinInGameHud {
 	@Shadow @Final private MinecraftClient client;
 
 	@Inject(method = "render", at = @At("HEAD"), cancellable = true)
-	public void iris$handleHudHidingScreens(MatrixStack matrices, float tickDelta, CallbackInfo ci) {
+	public void iris$handleHudHidingScreens(float tickDelta, CallbackInfo ci) {
 		Screen screen = this.client.currentScreen;
 
 		if (screen instanceof HudHideable) {
@@ -34,7 +34,7 @@ public class MixinInGameHud {
 
 	// TODO: Move this to a more appropriate mixin
 	@Inject(method = "render", at = @At("RETURN"))
-	public void iris$displayBigSodiumWarning(MatrixStack matrices, float tickDelta, CallbackInfo ci) {
+	public void iris$displayBigSodiumWarning(float tickDelta, CallbackInfo ci) {
 		if (FabricLoader.getInstance().isModLoaded("sodium")
 				|| MinecraftClient.getInstance().options.debugEnabled
 				|| !Iris.getCurrentPack().isPresent()) {
@@ -51,11 +51,11 @@ public class MixinInGameHud {
 			String string = warningLines.get(i);
 
 			final int lineHeight = 9;
-			final int lineWidth = textRenderer.getWidth(string);
+			final int lineWidth = textRenderer.getStringWidth(string);
 			final int y = 2 + lineHeight * i;
 
-			DrawableHelper.fill(matrices, 1, y - 1, 2 + lineWidth + 1, y + lineHeight - 1, 0x9050504E);
-			textRenderer.draw(matrices, string, 2.0F, y, 0xFFFF55);
+			DrawableHelper.fill(1, y - 1, 2 + lineWidth + 1, y + lineHeight - 1, 0x9050504E);
+			textRenderer.draw(string, 2.0F, y, 0xFFFF55);
 		}
 	}
 }
