@@ -3,6 +3,7 @@ package net.coderbot.iris;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipException;
 
 import com.google.common.base.Throwables;
@@ -38,6 +39,7 @@ public class Iris implements ClientModInitializer {
 	private static final String SODIUM_VERSION = "0.2.0+IRIS4";
 
 	private static Path shaderpacksDirectory;
+	private static WatchService shaderpackWatcher;
 
 	private static ShaderPack currentPack;
 	private static String currentPackName;
@@ -105,6 +107,18 @@ public class Iris implements ClientModInitializer {
 	}
 
 	public static void handleKeybinds(Minecraft minecraft) {
+		WatchKey watchKey = null;
+		while((watchKey = shaderpackWatcher.poll()) != null) {
+			try {
+				reload();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			if (minecraft.player != null) {
+				minecraft.player.displayClientMessage(new TranslatableComponent("iris.shaders.reloaded"), false);
+			}
+			watchKey.reset();
+		}
 		if (reloadKeybind.consumeClick()) {
 			try {
 				reload();
@@ -186,6 +200,12 @@ public class Iris implements ClientModInitializer {
 	}
 
 	private static boolean loadExternalShaderpack(String name) {
+		try {
+			shaderpackWatcher.close();
+			shaderpackWatcher = shaderpacksDirectory.getFileSystem().newWatchService();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		Path shaderPackRoot;
 
 		try {
@@ -241,6 +261,7 @@ public class Iris implements ClientModInitializer {
 
 		try {
 			currentPack = new ShaderPack(shaderPackPath);
+			shaderPackPath.register(shaderpackWatcher, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
 		} catch (Exception e) {
 			logger.error("Failed to load the shaderpack \"{}\"!", name);
 			logger.catching(e);
@@ -462,7 +483,7 @@ public class Iris implements ClientModInitializer {
 	public static boolean isSodiumInvalid() {
 		return sodiumInvalid;
   }
-  
+
 	public static boolean isSodiumInstalled() {
 		return sodiumInstalled;
 	}
@@ -474,6 +495,11 @@ public class Iris implements ClientModInitializer {
 	public static Path getShaderpacksDirectory() {
 		if (shaderpacksDirectory == null) {
 			shaderpacksDirectory = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
+			try {
+				shaderpackWatcher = shaderpacksDirectory.getFileSystem().newWatchService();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return shaderpacksDirectory;
