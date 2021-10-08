@@ -115,7 +115,7 @@ public class Iris implements ClientModInitializer {
 				e.printStackTrace();
 			}
 			if (minecraft.player != null) {
-				minecraft.player.displayClientMessage(new TranslatableComponent("iris.shaders.reloaded"), false);
+				minecraft.player.displayClientMessage(new TranslatableComponent("iris.shaders.automaticreload"), false);
 			}
 			watchKey.reset();
 		}

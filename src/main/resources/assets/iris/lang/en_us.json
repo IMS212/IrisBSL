@@ -1,5 +1,6 @@
 {
   "iris.shaders.reloaded": "Shaders Reloaded!",
+  "iris.shaders.automaticreload": "Shaders reloaded due to file changes!",
   "iris.shaders.toggled": "Toggled shaders to %s!",
   "iris.keybind.reload": "Reload Shaders",
   "iris.keybind.shaderPackSelection": "Shaderpack Selection Screen",
