@@ -104,7 +104,7 @@ public class ShaderPack {
 		if (path.contains(":") && ResourceLocation.isValidResourceLocation(path)) {
 			ResourceLocation textureIdentifier = new ResourceLocation(path);
 			byte[] content = IOUtils.toByteArray(Minecraft.getInstance().getResourceManager().getResource(textureIdentifier).getInputStream());
-			customTextureData = new CustomTextureData.PngData(new TextureFilteringData(true, false), content);
+			customTextureData = new CustomTextureData.PngData(new TextureFilteringData(false, false), content);
 			//throw new UnsupportedOperationException("Identifier-based custom textures are not yet supported");
 		} else {
 			// TODO: Make sure the resulting path is within the shaderpack?

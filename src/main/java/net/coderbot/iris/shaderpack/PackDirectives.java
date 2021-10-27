@@ -110,7 +110,7 @@ public class PackDirectives {
 		}
 
 		explicitFlipsStr.forEach((buffer, shouldFlip) -> {
-			Integer index = PackRenderTargetDirectives.LEGACY_RENDER_TARGET_MAP.get(buffer);
+			Integer index = PackRenderTargetDirectives.LEGACY_RENDER_TARGETS.indexOf(buffer);
 
 			if (index == null && buffer.startsWith("colortex")) {
 				String id = buffer.substring("colortex".length());
