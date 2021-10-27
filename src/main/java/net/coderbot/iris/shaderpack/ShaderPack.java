@@ -12,7 +12,15 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 
+import net.coderbot.iris.Iris;
+import net.coderbot.iris.shaderpack.texture.CustomTextureData;
+import net.coderbot.iris.shaderpack.texture.TextureFilteringData;
+import net.minecraft.resources.ResourceLocation;
+import org.apache.logging.log4j.Level;
+import org.jetbrains.annotations.Nullable;
+
 public class ShaderPack {
+	private final Path root;
 	private final ProgramSet base;
 	@Nullable
 	private final ProgramSet overworld;
@@ -21,7 +29,7 @@ public class ShaderPack {
 
 	private final IdMap idMap;
 	private final LanguageMap languageMap;
-	private final CustomTexture customNoiseTexture;
+	private final CustomTextureData customNoiseTexture;
 
 	public final CustomUniforms.Builder customUniforms;
 
@@ -34,6 +42,8 @@ public class ShaderPack {
 	public ShaderPack(Path root) throws IOException {
 		// A null path is not allowed.
 		Objects.requireNonNull(root);
+
+		this.root = root;
 
 		ShaderProperties shaderProperties = loadProperties(root, "shaders.properties")
 				.map(ShaderProperties::new)
@@ -49,13 +59,9 @@ public class ShaderPack {
 
 		customNoiseTexture = shaderProperties.getNoiseTexturePath().map(path -> {
 			try {
-				// TODO: Make sure the resulting path is within the shaderpack?
-				byte[] content = Files.readAllBytes(root.resolve(path));
-
-				// TODO: Read the blur / clamp data from the shaderpack...
-				return new CustomTexture(content, true, false);
-			} catch (IOException e) {
-				Iris.logger.error("Unable to read the custom noise texture at " + path);
+				return readTexture(path);
+			} catch (IOException | UnsupportedOperationException e) {
+				Iris.logger.error("Unable to read the custom noise texture at " + path, e);
 
 				return null;
 			}
@@ -91,6 +97,27 @@ public class ShaderPack {
 		return Optional.of(properties);
 	}
 
+	public CustomTextureData readTexture(String path) throws IOException, UnsupportedOperationException {
+		CustomTextureData customTextureData;
+		if (path.contains(":") && ResourceLocation.isValidResourceLocation(path)) {
+//			Identifier textureIdentifier = new Identifier(path);
+//			byte[] content = IOUtils.toByteArray(MinecraftClient.getInstance().getResourceManager().getResource(textureIdentifier).getInputStream());
+//			customTextureData = new CustomTextureData.ResourceData(new TextureFilteringData(true, false), textureIdentifier.getNamespace(), textureIdentifier.getPath());
+			throw new UnsupportedOperationException("Identifier-based custom textures are not yet supported");
+		} else {
+			// TODO: Make sure the resulting path is within the shaderpack?
+			if (path.startsWith("/")) {
+				// NB: This does not guarantee the resulting path is in the shaderpack as a double slash could be used,
+				// this just fixes shaderpacks like Continuum 2.0.4 that use a leading slash in texture paths
+				path = path.substring(1);
+			}
+			byte[] content = Files.readAllBytes(root.resolve(path));
+			// TODO: Read the blur / clamp data from the shaderpack...
+			customTextureData = new CustomTextureData.PngData(new TextureFilteringData(true, false), content);
+		}
+		return customTextureData;
+	}
+
 	public ProgramSet getProgramSet(DimensionId dimension) {
 		ProgramSet overrides;
 
@@ -115,7 +142,11 @@ public class ShaderPack {
 		return idMap;
 	}
 
-	public Optional<CustomTexture> getCustomNoiseTexture() {
+	public Map<String, Map<String, String>> getLangMap() {
+		return langMap;
+	}
+
+	public Optional<CustomTextureData> getCustomNoiseTexture() {
 		return Optional.ofNullable(customNoiseTexture);
 	}
 

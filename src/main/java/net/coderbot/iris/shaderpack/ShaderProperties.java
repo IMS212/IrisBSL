@@ -1,5 +1,14 @@
 package net.coderbot.iris.shaderpack;
 
+import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
+import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
+import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2FloatMap;
+import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
 import it.unimi.dsi.fastutil.objects.*;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.blending.AlphaTestFunction;
@@ -8,6 +17,12 @@ import net.coderbot.iris.uniforms.custom.CustomUniforms;
 
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Consumer;
+import net.coderbot.iris.shaderpack.texture.TextureStage;
+
+import java.util.Optional;
+import java.util.Properties;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class ShaderProperties {
@@ -44,6 +59,8 @@ public class ShaderProperties {
 	private final Object2ObjectMap<String, AlphaTestOverride> alphaTestOverrides = new Object2ObjectOpenHashMap<>();
 	private final Object2FloatMap<String> viewportScaleOverrides = new Object2FloatOpenHashMap<>();
 	private final ObjectSet<String> blendDisabled = new ObjectOpenHashSet<>();
+	private final Object2ObjectMap<TextureStage, Object2ObjectMap<String, String>> customTextureDataMap = new Object2ObjectOpenHashMap<>();
+	private final Object2ObjectMap<String, Object2BooleanMap<String>> explicitFlips = new Object2ObjectOpenHashMap<>();
 	private String noiseTexturePath = null;
 	CustomUniforms.Builder customUniforms = new CustomUniforms.Builder();
 
@@ -51,6 +68,7 @@ public class ShaderProperties {
 		// empty
 	}
 
+	// TODO: Is there a better solution than having ShaderPack pass a root path to ShaderProperties to be able to read textures?
 	public ShaderProperties(Properties properties) {
 		properties.forEach((keyObject, valueObject) -> {
 			String key = (String) keyObject;
@@ -58,6 +76,7 @@ public class ShaderProperties {
 
 			if ("texture.noise".equals(key)) {
 				noiseTexturePath = value;
+				return;
 			}
 
 			if ("clouds".equals(key) && value.equals("off")) {
@@ -151,6 +170,31 @@ public class ShaderProperties {
 				blendDisabled.add(pass);
 			});
 
+			handleTwoArgDirective("texture.", key, value, (stageName, samplerName) -> {
+				// TODO: Remove
+				System.out.println("Processing custom texture property: " + "Stage: " + stageName + " Sampler: " + samplerName + " Path: " + value);
+
+				Optional<TextureStage> optionalTextureStage = TextureStage.parse(stageName);
+
+				if (!optionalTextureStage.isPresent()) {
+					Iris.logger.warn("Unknown texture stage " + "\"" + stageName + "\"," + " ignoring custom texture directive for " + key);
+					return;
+				}
+
+				TextureStage stage = optionalTextureStage.get();
+
+				Object2ObjectMap<String, String> customTexturePropertyMap = customTextureDataMap.getOrDefault(stage, new Object2ObjectOpenHashMap<>());
+				customTexturePropertyMap.put(samplerName, value);
+
+				customTextureDataMap.put(stage, customTexturePropertyMap);
+			});
+
+			handleTwoArgDirective("flip.", key, value, (pass, buffer) -> {
+				handleBooleanValue(key, value, shouldFlip -> {
+					explicitFlips.computeIfAbsent(pass, _pass -> new Object2BooleanOpenHashMap<>())
+							.put(buffer, shouldFlip);
+				});
+			});
 
 			handlePassDirective("variable.", key, value, pass -> {
 				String[] parts = pass.split("\\.");
@@ -172,9 +216,19 @@ public class ShaderProperties {
 				customUniforms.addVariable(parts[0], parts[1], value, true);
 			});
 
-			// TODO: Buffer flip, size directives
+			// TODO: Buffer size directives
 			// TODO: Conditional program enabling directives
 		});
+	}
+
+	private static void handleBooleanValue(String key, String value, BooleanConsumer handler) {
+		if ("true".equals(value)) {
+			handler.accept(true);
+		} else if ("false".equals(value)) {
+			handler.accept(false);
+		} else {
+			Iris.logger.warn("Unexpected value for boolean key " + key + " in shaders.properties: got " + value + ", but expected either true or false");
+		}
 	}
 
 	private static void handleBooleanDirective(String key, String value, String expectedKey, Consumer<OptionalBoolean> handler) {
@@ -196,6 +250,16 @@ public class ShaderProperties {
 			String pass = key.substring(prefix.length());
 
 			handler.accept(pass);
+		}
+	}
+
+	private static void handleTwoArgDirective(String prefix, String key, String value, BiConsumer<String, String> handler) {
+		if (key.startsWith(prefix)) {
+			int endOfPassIndex = key.indexOf(".", prefix.length());
+			String stage = key.substring(prefix.length(), endOfPassIndex);
+			String sampler = key.substring(endOfPassIndex + 1);
+
+			handler.accept(stage, sampler);
 		}
 	}
 
@@ -297,5 +361,13 @@ public class ShaderProperties {
 
 	public Optional<String> getNoiseTexturePath() {
 		return Optional.ofNullable(noiseTexturePath);
+	}
+
+	public Object2ObjectMap<TextureStage, Object2ObjectMap<String, String>> getCustomTextureData() {
+		return customTextureDataMap;
+	}
+
+	public Object2ObjectMap<String, Object2BooleanMap<String>> getExplicitFlips() {
+		return explicitFlips;
 	}
 }
