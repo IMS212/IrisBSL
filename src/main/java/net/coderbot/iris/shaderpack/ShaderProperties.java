@@ -3,6 +3,10 @@ package net.coderbot.iris.shaderpack;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.function.Consumer;
+
 import it.unimi.dsi.fastutil.objects.Object2FloatMap;
 import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
@@ -13,6 +17,7 @@ import it.unimi.dsi.fastutil.objects.*;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.blending.AlphaTestFunction;
 import net.coderbot.iris.gl.blending.AlphaTestOverride;
+import net.coderbot.iris.gl.blending.BlendModeFunction;
 import net.coderbot.iris.uniforms.custom.CustomUniforms;
 
 import java.util.Optional;
@@ -61,6 +66,7 @@ public class ShaderProperties {
 	private final ObjectSet<String> blendDisabled = new ObjectOpenHashSet<>();
 	private final Object2ObjectMap<TextureStage, Object2ObjectMap<String, String>> customTextureDataMap = new Object2ObjectOpenHashMap<>();
 	private final Object2ObjectMap<String, Object2BooleanMap<String>> explicitFlips = new Object2ObjectOpenHashMap<>();
+	private final Object2ObjectMap<String, int[]> blendModeOverrides = new Object2ObjectOpenHashMap<>();
 	private String noiseTexturePath = null;
 	CustomUniforms.Builder customUniforms = new CustomUniforms.Builder();
 
@@ -161,13 +167,20 @@ public class ShaderProperties {
 					return;
 				}
 
-				if (!"off".equals(value)) {
-					// TODO: Support custom blending modes
-					Iris.logger.warn("Custom blending mode directives are not supported, ignoring blend directive for " + key);
+				if ("off".equals(value)) {
+					blendDisabled.add(pass);
 					return;
 				}
 
-				blendDisabled.add(pass);
+				String[] modeArray = value.split(" ");
+				int[] modes = new int[4];
+
+				int i = 0;
+				for (String modeName : modeArray) {
+					modes[i] = BlendModeFunction.fromString(modeName).get().getGlId();
+					i++;
+				}
+				blendModeOverrides.put(pass, modes);
 			});
 
 			handleTwoArgDirective("texture.", key, value, (stageName, samplerName) -> {
@@ -357,6 +370,10 @@ public class ShaderProperties {
 
 	public ObjectSet<String> getBlendDisabled() {
 		return blendDisabled;
+	}
+
+	public Object2ObjectMap<String, int[]> getBlendModeOverrides() {
+		return blendModeOverrides;
 	}
 
 	public Optional<String> getNoiseTexturePath() {

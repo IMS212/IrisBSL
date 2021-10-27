@@ -22,6 +22,7 @@ public class ProgramDirectives {
 	@Nullable
 	private final AlphaTestOverride alphaTestOverride;
 	private final boolean disableBlend;
+	private final int[] blendModeOverride;
 	private final ImmutableSet<Integer> mipmappedBuffers;
 	private final ImmutableMap<Integer, Boolean> explicitFlips;
 
@@ -40,11 +41,13 @@ public class ProgramDirectives {
 			alphaTestOverride = properties.getAlphaTestOverrides().get(source.getName());
 			disableBlend = properties.getBlendDisabled().contains(source.getName());
 			explicitFlips = source.getParent().getPackDirectives().getExplicitFlips(source.getName());
+			blendModeOverride = properties.getBlendModeOverrides().get(source.getName());
 		} else {
 			viewportScale = 1.0f;
 			alphaTestOverride = null;
 			disableBlend = false;
 			explicitFlips = ImmutableMap.of();
+			blendModeOverride = null;
 		}
 
 		HashSet<Integer> mipmappedBuffers = new HashSet<>();
@@ -107,6 +110,10 @@ public class ProgramDirectives {
 
 	public boolean shouldDisableBlend() {
 		return disableBlend;
+	}
+
+	public int[] getBlendModeOverride() {
+		return blendModeOverride;
 	}
 
 	public ImmutableSet<Integer> getMipmappedBuffers() {
