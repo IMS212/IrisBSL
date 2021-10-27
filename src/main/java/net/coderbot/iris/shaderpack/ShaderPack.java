@@ -2,6 +2,8 @@ package net.coderbot.iris.shaderpack;
 
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.uniforms.custom.CustomUniforms;
+import net.minecraft.client.Minecraft;
+import org.apache.commons.compress.utils.IOUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -100,10 +102,10 @@ public class ShaderPack {
 	public CustomTextureData readTexture(String path) throws IOException, UnsupportedOperationException {
 		CustomTextureData customTextureData;
 		if (path.contains(":") && ResourceLocation.isValidResourceLocation(path)) {
-//			Identifier textureIdentifier = new Identifier(path);
-//			byte[] content = IOUtils.toByteArray(MinecraftClient.getInstance().getResourceManager().getResource(textureIdentifier).getInputStream());
-//			customTextureData = new CustomTextureData.ResourceData(new TextureFilteringData(true, false), textureIdentifier.getNamespace(), textureIdentifier.getPath());
-			throw new UnsupportedOperationException("Identifier-based custom textures are not yet supported");
+			ResourceLocation textureIdentifier = new ResourceLocation(path);
+			byte[] content = IOUtils.toByteArray(Minecraft.getInstance().getResourceManager().getResource(textureIdentifier).getInputStream());
+			customTextureData = new CustomTextureData.PngData(new TextureFilteringData(true, false), content);
+			//throw new UnsupportedOperationException("Identifier-based custom textures are not yet supported");
 		} else {
 			// TODO: Make sure the resulting path is within the shaderpack?
 			if (path.startsWith("/")) {
@@ -140,10 +142,6 @@ public class ShaderPack {
 
 	public IdMap getIdMap() {
 		return idMap;
-	}
-
-	public Map<String, Map<String, String>> getLangMap() {
-		return langMap;
 	}
 
 	public Optional<CustomTextureData> getCustomNoiseTexture() {

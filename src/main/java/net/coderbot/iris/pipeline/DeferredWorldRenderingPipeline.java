@@ -255,7 +255,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 				programs.getPackDirectives().getExplicitFlips("composite_pre"));
 		this.finalPassRenderer = new FinalPassRenderer(programs, renderTargets, noise, updateNotifier, flipper.snapshot(),
 				centerDepthSampler, shadowMapRendererSupplier,
-				customTextureIdMap.getOrDefault(TextureStage.COMPOSITE_AND_FINAL, new Object2IntOpenHashMap<>()));
+				customUniforms, customTextureIdMap.getOrDefault(TextureStage.COMPOSITE_AND_FINAL, new Object2IntOpenHashMap<>()));
 
 		Supplier<ImmutableSet<Integer>> flipped =
 				() -> isBeforeTranslucent ? flippedBeforeTranslucent : flippedAfterTranslucent;
@@ -534,6 +534,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 			throw new RuntimeException("Shader compilation failed!", e);
 		}
 
+
 		CommonUniforms.addCommonUniforms(builder, source.getParent().getPack().getIdMap(), source.getParent().getPackDirectives(), updateNotifier);
 		// TODO replace with
 		// SamplerUniforms.addCommonSamplerUniforms(builder);
@@ -614,6 +615,8 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 				framebufferAfterTranslucents.bind();
 			}
 			program.use();
+
+			customUniforms.push(program);
 
 			// push the custom uniforms
 			DeferredWorldRenderingPipeline.this.customUniforms.push(this);
