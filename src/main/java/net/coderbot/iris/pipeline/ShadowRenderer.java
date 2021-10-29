@@ -701,6 +701,8 @@ public class ShadowRenderer implements ShadowMapRenderer {
 		if (this.shadowProgram != null) {
 			this.shadowProgram.destroy();
 		}
+
+		this.shadowComposite.destroy();
 	}
 
 	private static class MipmapPass {
