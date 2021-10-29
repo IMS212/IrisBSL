@@ -18,6 +18,9 @@ import net.coderbot.iris.gl.texture.InternalTextureFormat;
 import net.coderbot.iris.gui.option.IrisVideoSettings;
 import net.coderbot.iris.layer.GbufferProgram;
 import net.coderbot.iris.mixin.LevelRendererAccessor;
+import net.coderbot.iris.postprocess.CompositeRenderer;
+import net.coderbot.iris.postprocess.FinalPassRenderer;
+import net.coderbot.iris.postprocess.ShadowCompositeRenderer;
 import net.coderbot.iris.rendertarget.RenderTargets;
 import net.coderbot.iris.samplers.IrisSamplers;
 import net.coderbot.iris.shaderpack.PackDirectives;
@@ -96,6 +99,7 @@ public class ShadowRenderer implements ShadowMapRenderer {
 	private String debugStringTerrain = "(unavailable)";
 	private int renderedShadowEntities = 0;
 	private int renderedShadowBlockEntities = 0;
+	private final ShadowCompositeRenderer shadowComposite;
 
 	public ShadowRenderer(WorldRenderingPipeline pipeline, ProgramSource shadow, PackDirectives directives,
                           Supplier<ImmutableSet<Integer>> flipped, RenderTargets gbufferRenderTargets,
@@ -168,6 +172,8 @@ public class ShadowRenderer implements ShadowMapRenderer {
 		} else {
 			this.renderBuffersExt = null;
 		}
+
+		this.shadowComposite = new ShadowCompositeRenderer(programSet, targets, gbufferRenderTargets, noise, this);
 
 		configureSamplingSettings(shadowDirectives);
 	}
@@ -578,6 +584,9 @@ public class ShadowRenderer implements ShadowMapRenderer {
 		levelRenderer.getLevel().getProfiler().popPush("generate mipmaps");
 
 		generateMipmaps();
+
+		levelRenderer.getLevel().getProfiler().popPush("shadow composite");
+		shadowComposite.renderFinalPass();
 
 		levelRenderer.getLevel().getProfiler().pop();
 
