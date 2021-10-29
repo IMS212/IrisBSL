@@ -45,10 +45,6 @@ public class ShadowCompositeRenderer {
 	public ShadowCompositeRenderer(ProgramSet pack, ShadowRenderTargets renderTargets, RenderTargets gbufferRenderTargets, AbstractTexture noiseTexture, 
 								   ShadowMapRenderer shadowMapRenderer) {
 
-		final PackRenderTargetDirectives renderTargetDirectives = pack.getPackDirectives().getRenderTargetDirectives();
-		final Map<Integer, PackRenderTargetDirectives.RenderTargetSettings> renderTargetSettings =
-				renderTargetDirectives.getRenderTargetSettings();
-
 		this.noiseTexture = noiseTexture;
 		this.gbufferRenderTargets = gbufferRenderTargets;
 		this.renderTargets = renderTargets;

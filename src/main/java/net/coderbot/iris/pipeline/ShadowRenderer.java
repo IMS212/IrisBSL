@@ -586,7 +586,7 @@ public class ShadowRenderer implements ShadowMapRenderer {
 		generateMipmaps();
 
 		levelRenderer.getLevel().getProfiler().popPush("shadow composite");
-		shadowComposite.renderFinalPass();
+		shadowComposite.renderShadowComposites();
 
 		levelRenderer.getLevel().getProfiler().pop();
 
