@@ -40,7 +40,6 @@ public class ShadowCompositeRenderer {
 
 	@Nullable
 	private final ImmutableList<Pass> passes;
-	private final GlFramebuffer baseline;
 	private final AbstractTexture noiseTexture;
 
 	public ShadowCompositeRenderer(ProgramSet pack, ShadowRenderTargets renderTargets, RenderTargets gbufferRenderTargets, AbstractTexture noiseTexture, 
@@ -65,18 +64,12 @@ public class ShadowCompositeRenderer {
 			ProgramDirectives directives = source.getDirectives();
 
 			pass.program = createProgram(source, shadowMapRenderer);
-			int[] drawBuffers = directives.getDrawBuffers();
-
-			GlFramebuffer framebuffer = renderTargets.getFramebuffer();
-
 			pass.mipmappedBuffers = directives.getMipmappedBuffers();
 
 			passes.add(pass);
 		}
 
 		this.passes = passes.build();
-
-		this.baseline = renderTargets.getFramebuffer();
 
 		GL30C.glBindFramebuffer(GL30C.GL_READ_FRAMEBUFFER, 0);
 	}
@@ -90,12 +83,7 @@ public class ShadowCompositeRenderer {
 		}
 	}
 
-	private static final class SwapPass {
-		GlFramebuffer from;
-		int targetTexture;
-	}
-
-	public void renderFinalPass() {
+	public void renderShadowComposites() {
 		RenderSystem.disableBlend();
 		RenderSystem.disableAlphaTest();
 
