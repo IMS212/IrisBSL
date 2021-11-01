@@ -20,7 +20,7 @@ public class MixinTitleScreen {
 					Minecraft.getInstance()::stop,
 					new TranslatableComponent("iris.sodium.failure.title").withStyle(ChatFormatting.RED),
 					new TranslatableComponent("iris.sodium.failure.reason"),
-					new TranslatableComponent("menu.quit")));
+					new TranslatableComponent("menu.quit").toString()));
 		}
 	}
 }

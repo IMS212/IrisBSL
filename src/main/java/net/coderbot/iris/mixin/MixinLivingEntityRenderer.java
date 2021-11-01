@@ -29,7 +29,7 @@ public abstract class MixinLivingEntityRenderer {
 
 		boolean hurt;
 		if (Iris.isPhysicsModInstalled()) {
-			hurt = entity.hurtTime > 0 && !entity.isDeadOrDying();
+			hurt = entity.hurtTime > 0 && entity.deathTime == 0;
 		} else {
 			hurt = entity.hurtTime > 0 || entity.deathTime > 0;
 		}

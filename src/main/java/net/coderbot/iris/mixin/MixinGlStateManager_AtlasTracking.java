@@ -22,7 +22,7 @@ public class MixinGlStateManager_AtlasTracking {
 	@Inject(method = "_texImage2D(IIIIIIIILjava/nio/IntBuffer;)V", at = @At("HEAD"))
 	private static void iris$onTexImage2D(int target, int level, int internalformat, int width, int height, int border,
 										  int format, int type, @Nullable IntBuffer pixels, CallbackInfo ci) {
-		TextureAtlasTracker.INSTANCE.trackTexImage2D(GlStateManager.getActiveTextureName(), level, width, height);
+		TextureAtlasTracker.INSTANCE.trackTexImage2D(GlStateManager.activeTexture, level, width, height);
 	}
 
 	@Inject(method = "_bindTexture(I)V", at = @At("HEAD"))
@@ -35,13 +35,6 @@ public class MixinGlStateManager_AtlasTracking {
 	@Inject(method = "_deleteTexture(I)V", at = @At("HEAD"))
 	private static void iris$onDeleteTexture(int id, CallbackInfo ci) {
 		TextureAtlasTracker.INSTANCE.trackDeleteTextures(id);
-	}
-
-	@Inject(method = "_deleteTextures([I)V", at = @At("HEAD"))
-	private static void iris$onDeleteTextures(int[] ids, CallbackInfo ci) {
-		for (int id : ids) {
-			TextureAtlasTracker.INSTANCE.trackDeleteTextures(id);
-		}
 	}
 
 	static {

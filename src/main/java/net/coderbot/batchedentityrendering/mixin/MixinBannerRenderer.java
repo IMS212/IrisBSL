@@ -22,7 +22,7 @@ import java.util.List;
 @Mixin(BannerRenderer.class)
 public class MixinBannerRenderer {
     private static final String RENDER_PATTERNS =
-            "Lnet/minecraft/client/renderer/blockentity/BannerRenderer;renderPatterns(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;IILnet/minecraft/client/model/geom/ModelPart;Lnet/minecraft/client/resources/model/Material;ZLjava/util/List;Z)V";
+            "Lnet/minecraft/client/renderer/blockentity/BannerRenderer;renderPatterns(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;IILnet/minecraft/client/model/geom/ModelPart;Lnet/minecraft/client/resources/model/Material;ZLjava/util/List;)V";
 
     /**
      * Holds a Groupable instance, if we successfully started a group.
@@ -51,7 +51,7 @@ public class MixinBannerRenderer {
     }
 
     @Inject(method = RENDER_PATTERNS, at = @At("RETURN"))
-    private static void iris$endRenderingCanvas(PoseStack poseStack, MultiBufferSource multiBufferSource, int i, int j, ModelPart modelPart, Material material, boolean bl, List<Pair<BannerPattern, DyeColor>> list, boolean bl2, CallbackInfo ci) {
+    private static void iris$endRenderingCanvas(PoseStack poseStack, MultiBufferSource multiBufferSource, int i, int j, ModelPart modelPart, Material material, boolean bl, List<Pair<BannerPattern, DyeColor>> list, CallbackInfo ci) {
         if (groupableToEnd != null) {
             groupableToEnd.endGroup();
             groupableToEnd = null;

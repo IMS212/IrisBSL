@@ -113,7 +113,7 @@ public final class CommonUniforms {
 			return Vec3.ZERO;
 		}
 
-		return client.level.getSkyColor(client.cameraEntity.blockPosition(), CapturedRenderingState.INSTANCE.getTickDelta());
+		return client.level.getSkyColor(client.gameRenderer.getMainCamera().getBlockPosition(), CapturedRenderingState.INSTANCE.getTickDelta());
 	}
 
 	static float getBlindness() {
@@ -133,11 +133,7 @@ public final class CommonUniforms {
 	}
 
 	private static float getPlayerMood() {
-		if (!(client.cameraEntity instanceof LocalPlayer)) {
-			return 0.0F;
-		}
-
-		return ((LocalPlayer)client.cameraEntity).getCurrentMood();
+		return 0F;
 	}
 
 	static float getRainStrength() {

@@ -42,24 +42,13 @@ public class MixinRenderType {
 	@Mutable
 	private static RenderType TRANSLUCENT;
 
-	@Shadow
-	@Final
-	@Mutable
-	private static RenderType TRIPWIRE;
-
 	@Unique
 	private static RenderType iris$LINES;
 
 	@Shadow @Final @Mutable private static RenderType LEASH;
-	@Shadow @Final @Mutable private static RenderType ARMOR_GLINT;
-	@Shadow @Final @Mutable private static RenderType ARMOR_ENTITY_GLINT;
-	@Shadow @Final @Mutable private static RenderType GLINT_TRANSLUCENT;
 	@Shadow @Final @Mutable private static RenderType GLINT;
-	@Shadow @Final @Mutable private static RenderType GLINT_DIRECT;
 	@Shadow @Final @Mutable private static RenderType ENTITY_GLINT;
-	@Shadow @Final @Mutable private static RenderType ENTITY_GLINT_DIRECT;
 
-	@Shadow @Final @Mutable private static RenderType TRANSLUCENT_MOVING_BLOCK;
 	@Shadow @Final @Mutable private static RenderType LIGHTNING;
 
 	@Shadow @Final @Mutable private static RenderType WATER_MASK;
@@ -79,7 +68,6 @@ public class MixinRenderType {
 		CUTOUT_MIPPED = wrap("iris:terrain_cutout_mipped", CUTOUT_MIPPED, GbufferProgram.TERRAIN);
 		CUTOUT = wrap("iris:terrain_cutout", CUTOUT, GbufferProgram.TERRAIN);
 		TRANSLUCENT = wrap("iris:translucent", TRANSLUCENT, GbufferProgram.TRANSLUCENT_TERRAIN);
-		TRIPWIRE = wrap("iris:tripwire", TRIPWIRE, GbufferProgram.TRANSLUCENT_TERRAIN);
 		// TODO: figure out how to assign to RenderType.LINES
 		// We cannot use @Shadow easily because the type of the field is a package-private class
 		iris$LINES = wrap("iris:lines", RenderType.LINES, GbufferProgram.BASIC);
@@ -87,20 +75,14 @@ public class MixinRenderType {
 		// TODO: SOLID / CUTOUT_MIPPED / CUTOUT are used for falling blocks and blocks being pushed by pistons
 		// Should they still be rendered in terrain?
 
-		TRANSLUCENT_MOVING_BLOCK = wrap("iris:translucent_moving_block", TRANSLUCENT_MOVING_BLOCK, GbufferProgram.BLOCK_ENTITIES);
 		// This doesn't appear to be used, but it otherwise looks to be the same as TRANSLUCENT
 		TRANSLUCENT_NO_CRUMBLING = wrap("iris:translucent_no_crumbling", TRANSLUCENT_NO_CRUMBLING, GbufferProgram.TRANSLUCENT_TERRAIN);
 
 		LEASH = wrap("iris:leash", LEASH, GbufferProgram.BASIC);
 		// TODO: Is this an appropriate program? Water masks don't have a texture...
 		WATER_MASK = wrap("iris:water_mask", WATER_MASK, GbufferProgram.ENTITIES);
-		ARMOR_GLINT = wrapGlint("armor", ARMOR_GLINT);
-		ARMOR_ENTITY_GLINT = wrapGlint("armor_entity", ARMOR_ENTITY_GLINT);
-		GLINT_TRANSLUCENT = wrapGlint("translucent", GLINT_TRANSLUCENT);
 		GLINT = wrapGlint(null, GLINT);
-		GLINT_DIRECT = wrapGlint("direct", GLINT_DIRECT);
 		ENTITY_GLINT = wrapGlint("entity", ENTITY_GLINT);
-		ENTITY_GLINT_DIRECT = wrapGlint("direct_entity_glint", ENTITY_GLINT_DIRECT);
 
 		LIGHTNING = wrap("iris:lightning", LIGHTNING, GbufferProgram.ENTITIES);
 	}
@@ -135,15 +117,12 @@ public class MixinRenderType {
 	}
 
 	@Inject(at = @At("RETURN"), method = {
-		"armorCutoutNoCull",
 		"entitySolid",
 		"entityCutout",
-		"itemEntityTranslucentCull",
 		"entityTranslucentCull",
 		"entitySmoothCutout",
 		"entityDecal",
 		"entityNoOutline",
-		"entityShadow",
 		"text",
 		"textSeeThrough",
 	}, cancellable = true)
@@ -155,7 +134,6 @@ public class MixinRenderType {
 
 	@Inject(at = @At("RETURN"), method = {
 		"entityCutoutNoCull(Lnet/minecraft/resources/ResourceLocation;Z)Lnet/minecraft/client/renderer/RenderType;",
-		"entityCutoutNoCullZOffset(Lnet/minecraft/resources/ResourceLocation;Z)Lnet/minecraft/client/renderer/RenderType;",
 		"entityTranslucent(Lnet/minecraft/resources/ResourceLocation;Z)Lnet/minecraft/client/renderer/RenderType;",
 	}, cancellable = true)
 	private static void iris$wrapEntityRenderTypesZ(ResourceLocation texture, boolean affectsOutline, CallbackInfoReturnable<RenderType> cir) {
@@ -165,7 +143,7 @@ public class MixinRenderType {
 	}
 
 	@Inject(at = @At("RETURN"), method = {
-		"dragonExplosionAlpha",
+		"entityAlpha",
 	}, cancellable = true)
 	private static void iris$wrapEntityAlpha(ResourceLocation texture, float alpha, CallbackInfoReturnable<RenderType> cir) {
 		RenderType base = cir.getReturnValue();
@@ -202,9 +180,9 @@ public class MixinRenderType {
 	}
 
 	@Inject(at = @At("RETURN"), method = {
-		"outline(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/renderer/RenderStateShard$CullStateShard;)Lnet/minecraft/client/renderer/RenderType;",
+		"outline(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/renderer/RenderType;",
 	}, cancellable = true)
-	private static void iris$wrapGlowingOutline(ResourceLocation texture, RenderStateShard.CullStateShard cull, CallbackInfoReturnable<RenderType> cir) {
+	private static void iris$wrapGlowingOutline(ResourceLocation resourceLocation, CallbackInfoReturnable<RenderType> cir) {
 		RenderType base = cir.getReturnValue();
 
 		// Note that instead of using GbufferProgram.ENTITIES_GLOWING here, we're using GbufferProgram.NONE. This is

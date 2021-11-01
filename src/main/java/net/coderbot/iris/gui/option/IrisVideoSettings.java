@@ -62,14 +62,14 @@ public class IrisVideoSettings {
 			tooltip = ENABLED_TOOLTIP;
 		}
 
-		option.setTooltip(Minecraft.getInstance().font.split(tooltip, 200));
+		option.get(Minecraft.getInstance().options);
 
 		if (d <= 0.0) {
-			return new TranslatableComponent("options.generic_value", new TranslatableComponent("options.iris.shadowDistance"), "0 (disabled)");
+			return new TranslatableComponent("options.generic_value", new TranslatableComponent("options.iris.shadowDistance"), "0 (disabled)").getString();
 		} else {
 			return new TranslatableComponent("options.generic_value",
 					new TranslatableComponent("options.iris.shadowDistance"),
-					new TranslatableComponent("options.chunks", d));
+					new TranslatableComponent("options.chunks", d)).getString();
 		}
 	});
 }

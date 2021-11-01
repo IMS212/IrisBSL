@@ -8,7 +8,6 @@
     "DimensionTypeAccessor",
     "LevelRendererAccessor",
     "MixinBlockStateBehavior",
-    "MixinClientLanguage",
     "MixinDebugScreenOverlay",
     "MixinEntityRenderDispatcher",
     "MixinFogRenderer",

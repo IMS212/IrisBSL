@@ -34,7 +34,7 @@ public class HardcodedCustomUniforms {
 	private static int getWorldDayTime() {
 		Level level = Minecraft.getInstance().level;
 		long  timeOfDay = level.getDayTime();
-		long dayTime = ((DimensionTypeAccessor) level.dimensionType()).getFixedTime().orElse(timeOfDay % 24000L);
+		long dayTime = timeOfDay % 24000L;
 
 		return (int) dayTime;
 	}
@@ -59,7 +59,7 @@ public class HardcodedCustomUniforms {
 		if (Minecraft.getInstance().level == null) {
 			return 0;
 		}
-		Biome.Precipitation precipitation = Minecraft.getInstance().level.getBiome(Minecraft.getInstance().getCameraEntity().blockPosition()).getPrecipitation();
+		Biome.Precipitation precipitation = Minecraft.getInstance().level.getBiome(Minecraft.getInstance().gameRenderer.getMainCamera().getBlockPosition()).getPrecipitation();
 		switch (precipitation) {
 			case RAIN:
 				return 1;

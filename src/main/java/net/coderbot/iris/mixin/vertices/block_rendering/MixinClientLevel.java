@@ -12,12 +12,5 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
  */
 @Mixin(ClientLevel.class)
 public class MixinClientLevel {
-	@ModifyVariable(method = "getShade", at = @At("HEAD"))
-	private boolean iris$maybeDisableDirectionalShading(boolean shaded) {
-		if (BlockRenderingSettings.INSTANCE.shouldDisableDirectionalShading()) {
-			return false;
-		} else {
-			return shaded;
-		}
-	}
+
 }
