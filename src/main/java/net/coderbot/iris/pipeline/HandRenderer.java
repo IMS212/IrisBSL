@@ -136,15 +136,15 @@ public class HandRenderer {
 
 			GlStateManager._disableDepthTest();
 
-			Minecraft.getInstance().getItemInHandRenderer().renderHandsWithItems(tickDelta, poseStack, renderBuffers.bufferSource(), Minecraft.getInstance().player, Minecraft.getInstance().getEntityRenderDispatcher().getPackedLightCoords(camera.getEntity(), tickDelta));
-			poseStack.popPose();
+			//Minecraft.getInstance().getItemInHandRenderer().renderHandsWithItems(tickDelta, poseStack, renderBuffers.bufferSource(), Minecraft.getInstance().player, Minecraft.getInstance().getEntityRenderDispatcher().getPackedLightCoords(camera.getEntity(), tickDelta));
+			//poseStack.popPose();
 
 			GlStateManager._enableBlend();
 			GlStateManager._depthFunc(GL21.GL_LEQUAL);
 			RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 			Minecraft.getInstance().getItemInHandRenderer().renderHandsWithItems(tickDelta, poseStack, renderBuffers.bufferSource(), Minecraft.getInstance().player, Minecraft.getInstance().getEntityRenderDispatcher().getPackedLightCoords(camera.getEntity(), tickDelta));
 			pipeline.popProgram(GbufferProgram.HAND_TRANSLUCENT);
-			//poseStack.popPose();
+			poseStack.popPose();
 			Minecraft.getInstance().getProfiler().pop();
 
 			gameRenderer.resetProjectionMatrix(CapturedRenderingState.INSTANCE.getGbufferProjection());
