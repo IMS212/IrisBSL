@@ -285,6 +285,10 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 		this.sodiumTerrainPipeline = new SodiumTerrainPipeline(programs, createTerrainSamplers, createShadowTerrainSamplers);
 	}
 
+	public Pass getHandTranslucent() {
+        return handTranslucent;
+    }
+
 	private void checkWorld() {
 		// If we're not in a world, then obviously we cannot possibly be rendering a world.
 		if (Minecraft.getInstance().level == null) {
@@ -515,10 +519,10 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 		return pass;
 	}
 
-	private final class Pass {
+	public final class Pass {
 		private final Program program;
-		private final GlFramebuffer framebufferBeforeTranslucents;
-		private final GlFramebuffer framebufferAfterTranslucents;
+		public final GlFramebuffer framebufferBeforeTranslucents;
+		public final GlFramebuffer framebufferAfterTranslucents;
 		private final AlphaTestOverride alphaTestOverride;
 		private final boolean disableBlend;
 

@@ -11,6 +11,7 @@ import java.util.Arrays;
 
 public class GlFramebuffer extends GlResource {
 	private final Int2IntMap attachments;
+	private int[] drawBuffers;
 
 	public GlFramebuffer() {
 		super(GlStateManager.glGenFramebuffers());
@@ -50,6 +51,8 @@ public class GlFramebuffer extends GlResource {
 			glBuffers[index++] = GL30C.GL_COLOR_ATTACHMENT0 + buffer;
 		}
 
+
+		drawBuffers = buffers;
 		GL30C.glDrawBuffers(glBuffers);
 	}
 
@@ -74,6 +77,10 @@ public class GlFramebuffer extends GlResource {
 	public void bindAsDrawBuffer() {
 		GlStateManager._glBindFramebuffer(GL30C.GL_DRAW_FRAMEBUFFER, getGlId());
 	}
+
+	public int[] getDrawBuffers() {
+        return drawBuffers;
+    }
 
 	protected void destroyInternal() {
 		GlStateManager._glDeleteFramebuffers(getGlId());

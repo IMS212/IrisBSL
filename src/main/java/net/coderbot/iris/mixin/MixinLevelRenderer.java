@@ -84,6 +84,7 @@ public class MixinLevelRenderer {
 	@Inject(method = RENDER_LEVEL, at = @At(value = "RETURN", shift = At.Shift.BEFORE))
 	private void iris$endLevelRender(PoseStack poseStack, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f projection, CallbackInfo callback) {
 		Minecraft.getInstance().getProfiler().popPush("iris_final");
+		HandRenderer.INSTANCE.renderTranslucent(renderBuffers, poseStack, tickDelta, camera, gameRenderer, pipeline);
 		pipeline.finalizeLevelRendering();
 		pipeline = null;
 		Program.unbind();
