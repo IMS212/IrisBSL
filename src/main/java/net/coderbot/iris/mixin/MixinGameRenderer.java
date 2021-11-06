@@ -198,11 +198,7 @@ public class MixinGameRenderer {
 			// TODO: Wrong program
 			override(CoreWorldRenderingPipeline::getShadowEntitiesCutout, cir);
 		} else if (HandRenderer.isActive()) {
-			if (HandRenderer.INSTANCE.isAnyHandTranslucent()) {
 				override(CoreWorldRenderingPipeline::getHandTranslucent, cir);
-			} else {
-				override(CoreWorldRenderingPipeline::getHandSolid, cir);
-			}
 		} else if (GbufferPrograms.isRenderingBlockEntities()) {
 			override(CoreWorldRenderingPipeline::getBlock, cir);
 		} else if (isRenderingWorld()) {
