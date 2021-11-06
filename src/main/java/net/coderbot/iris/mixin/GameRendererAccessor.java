@@ -2,6 +2,7 @@ package net.coderbot.iris.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
+import net.minecraft.client.Camera;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
@@ -15,6 +16,9 @@ public interface GameRendererAccessor {
 
 	@Accessor
 	boolean getPanoramicMode();
+
+	@Invoker
+	double invokeGetFov(Camera camera, float f, boolean bl);
 
 	@Invoker
 	void invokeBobView(PoseStack poseStack, float tickDelta);

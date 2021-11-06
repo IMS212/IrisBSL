@@ -22,6 +22,8 @@ public interface CoreWorldRenderingPipeline extends WorldRenderingPipeline {
 	ShaderInstance getTerrain();
 	ShaderInstance getTerrainCutout();
 	ShaderInstance getTerrainCutoutMipped();
+	ShaderInstance getHandSolid();
+	ShaderInstance getHandTranslucent();
 	ShaderInstance getEntitiesSolid();
 	ShaderInstance getEntitiesCutout();
 	ShaderInstance getEntitiesEyes();

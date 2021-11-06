@@ -79,6 +79,8 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 	private final ShaderInstance terrainCutout;
 	private final ShaderInstance terrainCutoutMipped;
 
+	private final ShaderInstance handSolid;
+	private final ShaderInstance handTranslucent;
 	private final ShaderInstance entitiesSolid;
 	private final ShaderInstance entitiesCutout;
 	private final ShaderInstance entitiesEyes;
@@ -272,6 +274,8 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		Optional<ProgramSource> blockSource = first(programSet.getGbuffersBlock(), terrainSource);
 		Optional<ProgramSource> beaconSource = first(programSet.getGbuffersBeaconBeam(), programSet.getGbuffersTextured());
 
+		Optional<ProgramSource> handSource = first(programSet.getGbuffersHand(), particleSource);
+		Optional<ProgramSource> handTranslucentSource = first(programSet.getGbuffersHandWater(), handSource);
 		Optional<ProgramSource> entitiesSource = first(programSet.getGbuffersEntities(), programSet.getGbuffersTexturedLit(), programSet.getGbuffersTextured(), programSet.getGbuffersBasic());
 		Optional<ProgramSource> entityEyesSource = first(programSet.getGbuffersEntityEyes(), programSet.getGbuffersTextured(), programSet.getGbuffersBasic());
 		Optional<ProgramSource> glintSource = first(programSet.getGbuffersGlint(), programSet.getGbuffersTextured());
@@ -300,6 +304,8 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 			this.terrainSolid = createShader("gbuffers_terrain_solid", terrainSource, AlphaTest.ALWAYS, IrisVertexFormats.TERRAIN, FogMode.LINEAR);
 			this.terrainCutout = createShader("gbuffers_terrain_cutout", terrainSource, terrainCutoutAlpha, IrisVertexFormats.TERRAIN, FogMode.LINEAR);
 			this.terrainCutoutMipped = createShader("gbuffers_terrain_cutout_mipped", terrainSource, terrainCutoutAlpha, IrisVertexFormats.TERRAIN, FogMode.LINEAR);
+			this.handSolid = createShader("gbuffers_hand", handSource, AlphaTest.ALWAYS, DefaultVertexFormat.NEW_ENTITY, FogMode.LINEAR);
+			this.handTranslucent = createShader("gbuffers_hand_water", handTranslucentSource, terrainCutoutAlpha, DefaultVertexFormat.NEW_ENTITY, FogMode.LINEAR);
 			this.entitiesSolid = createShader("gbuffers_entities_solid", entitiesSource, AlphaTest.ALWAYS, DefaultVertexFormat.NEW_ENTITY, FogMode.LINEAR);
 			this.entitiesCutout = createShader("gbuffers_entities_cutout", entitiesSource, terrainCutoutAlpha, DefaultVertexFormat.NEW_ENTITY, FogMode.LINEAR);
 			this.entitiesEyes = createShader("gbuffers_spidereyes", entityEyesSource, nonZeroAlpha, DefaultVertexFormat.NEW_ENTITY, FogMode.LINEAR);
@@ -553,6 +559,16 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 	}
 
 	@Override
+	public void beginHand() {
+		// We need to copy the current depth texture so that depthtex2 can contain the depth values for
+		// all non-translucent content without the hand, as required.
+		baseline.bindAsReadBuffer();
+		GlStateManager._bindTexture(renderTargets.getDepthTextureNoHand().getTextureId());
+		GL20C.glCopyTexImage2D(GL20C.GL_TEXTURE_2D, 0, GL20C.GL_DEPTH_COMPONENT, 0, 0, renderTargets.getCurrentWidth(), renderTargets.getCurrentHeight(), 0);
+		GlStateManager._bindTexture(0);
+	}
+
+	@Override
 	public void beginTranslucents() {
 		if (destroyed) {
 			throw new IllegalStateException("Tried to use a destroyed world rendering pipeline");
@@ -667,6 +683,16 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 	@Override
 	public ShaderInstance getTerrainCutoutMipped() {
 		return terrainCutoutMipped;
+	}
+
+	@Override
+	public ShaderInstance getHandSolid() {
+		return handSolid;
+	}
+
+	@Override
+	public ShaderInstance getHandTranslucent() {
+		return handTranslucent;
 	}
 
 	@Override

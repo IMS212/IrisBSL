@@ -29,7 +29,7 @@ public class HandRenderer {
         final PoseStack.Pose pose = poseStack.last();
 
 		// We have a inject in getProjectionMatrix to scale the matrix so the hand doesn't clip through blocks.
-		gameRenderer.resetProjectionMatrix(gameRenderer.getProjectionMatrix(camera, tickDelta, false));
+		gameRenderer.resetProjectionMatrix(gameRenderer.getProjectionMatrix(((GameRendererAccessor)gameRenderer).invokeGetFov(camera, tickDelta, false)));
 
         pose.pose().setIdentity();
         pose.normal().setIdentity();
@@ -53,6 +53,10 @@ public class HandRenderer {
 			return ItemBlockRenderTypes.getChunkRenderType(((BlockItem) Minecraft.getInstance().player.getItemBySlot(hand == InteractionHand.OFF_HAND ? EquipmentSlot.OFFHAND : EquipmentSlot.MAINHAND).getItem()).getBlock().defaultBlockState()) == RenderType.translucent();
 		}
 		return false;
+	}
+
+	public boolean isAnyHandTranslucent() {
+		return isHandTranslucent(InteractionHand.MAIN_HAND) || isHandTranslucent(InteractionHand.OFF_HAND);
 	}
 
 	public void render(RenderBuffers renderBuffers, PoseStack poseStack, float tickDelta, Camera camera, GameRenderer gameRenderer, WorldRenderingPipeline pipeline) {
