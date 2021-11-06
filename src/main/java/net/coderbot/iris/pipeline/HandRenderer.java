@@ -17,9 +17,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.GameType;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL21;
+import org.lwjgl.opengl.*;
 
 public class HandRenderer {
 	public static final HandRenderer INSTANCE = new HandRenderer();
@@ -92,7 +90,16 @@ public class HandRenderer {
 
 			//Minecraft.getInstance().getItemInHandRenderer().renderHandsWithItems(tickDelta, poseStack, renderBuffers.bufferSource(), Minecraft.getInstance().player, Minecraft.getInstance().getEntityRenderDispatcher().getPackedLightCoords(camera.getEntity(), tickDelta));
 
-			GL21.glDrawBuffers(oldDrawBuffers);
+			int[] newDrawBuffers = new int[oldDrawBuffers.length];
+			int index = 0;
+			for (int buffer : oldDrawBuffers) {
+				if (buffer >= 8) {
+					throw new IllegalArgumentException("Only 8 color attachments are supported, but an attempt was made to write to a color attachment with index " + buffer);
+				}
+
+				newDrawBuffers[index++] = GL30C.GL_COLOR_ATTACHMENT0 + buffer;
+			}
+			GL20.glDrawBuffers(newDrawBuffers);
 			poseStack.popPose();
 
 			pipeline.popProgram(GbufferProgram.HAND_TRANSLUCENT);
