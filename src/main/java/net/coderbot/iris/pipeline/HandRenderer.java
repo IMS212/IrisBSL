@@ -26,6 +26,8 @@ public class HandRenderer {
 	public boolean mainHandTranslucent;
 	public boolean offHandTranslucent;
 	public boolean isRenderingComposite;
+	public boolean skipMainHand;
+	public boolean skipOffHand;
 
 	private void setupGlState(GameRenderer gameRenderer, PoseStack poseStack, float tickDelta, Camera camera) {
         final PoseStack.Pose pose = poseStack.last();
@@ -80,6 +82,7 @@ public class HandRenderer {
 
 
 		if (mainHandTranslucent || offHandTranslucent) {
+			isRenderingComposite = true;
 			poseStack.pushPose();
 			int[] oldDrawBuffers = ((DeferredWorldRenderingPipeline) pipeline).getHandTranslucent().framebufferBeforeTranslucents.getDrawBuffers();
 			GL21.glDrawBuffers(new int[]{});
@@ -102,18 +105,13 @@ public class HandRenderer {
 			GL20.glDrawBuffers(newDrawBuffers);
 			poseStack.popPose();
 
-			pipeline.popProgram(GbufferProgram.HAND_TRANSLUCENT);
-
-			Minecraft.getInstance().getProfiler().pop();
-
-			gameRenderer.resetProjectionMatrix(CapturedRenderingState.INSTANCE.getGbufferProjection());
-
-			poseStack.popPose();
-
-			return;
 		}
 
+		skipMainHand = mainHandTranslucent;
+		skipOffHand = offHandTranslucent;
 		Minecraft.getInstance().getItemInHandRenderer().renderHandsWithItems(tickDelta, poseStack, renderBuffers.bufferSource(), Minecraft.getInstance().player, Minecraft.getInstance().getEntityRenderDispatcher().getPackedLightCoords(camera.getEntity(), tickDelta));
+		skipMainHand = false;
+		skipOffHand = false;
 
 		pipeline.popProgram((mainHandTranslucent || offHandTranslucent) ? GbufferProgram.HAND_TRANSLUCENT : GbufferProgram.HAND);
 
