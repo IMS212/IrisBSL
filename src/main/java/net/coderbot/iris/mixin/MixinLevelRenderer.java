@@ -6,6 +6,9 @@ import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
 import net.coderbot.iris.HorizonRenderer;
 import net.coderbot.iris.Iris;
+import net.coderbot.iris.gl.program.Program;
+import net.coderbot.iris.layer.GbufferProgram;
+import net.coderbot.iris.pipeline.HandRenderer;
 import net.coderbot.iris.pipeline.WorldRenderingPipeline;
 import net.coderbot.iris.pipeline.newshader.WorldRenderingPhase;
 import net.coderbot.iris.uniforms.CapturedRenderingState;
@@ -15,7 +18,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.world.phys.Vec3;
+
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -30,6 +35,10 @@ import net.fabricmc.api.Environment;
 @Mixin(LevelRenderer.class)
 @Environment(EnvType.CLIENT)
 public class MixinLevelRenderer {
+	@Shadow
+	@Final
+	private RenderBuffers renderBuffers;
+
 	@Shadow
 	@Final
 	private Minecraft minecraft;
@@ -88,6 +97,7 @@ public class MixinLevelRenderer {
 	// render their waypoint beams.
 	@Inject(method = RENDER, at = @At(value = "RETURN", shift = At.Shift.BEFORE))
 	private void iris$endLevelRender(PoseStack poseStack, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f matrix4f, CallbackInfo callback) {
+		HandRenderer.INSTANCE.renderTranslucent(renderBuffers, poseStack, tickDelta, camera, gameRenderer, pipeline);
 		Minecraft.getInstance().getProfiler().popPush("iris_final");
 		pipeline.finalizeLevelRendering();
 		pipeline.setPhase(WorldRenderingPhase.NOT_RENDERING_WORLD);
@@ -219,6 +229,8 @@ public class MixinLevelRenderer {
 										boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer,
 										LightTexture lightTexture, Matrix4f projection,
 										CallbackInfo ci) {
+		pipeline.beginHand();
+		HandRenderer.INSTANCE.render(renderBuffers, poseStack, tickDelta, camera, gameRenderer, pipeline);
 		Minecraft.getInstance().getProfiler().popPush("iris_pre_translucent");
 		pipeline.beginTranslucents();
 	}

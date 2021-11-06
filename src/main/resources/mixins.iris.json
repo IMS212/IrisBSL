@@ -5,6 +5,7 @@
   "plugin": "net.coderbot.iris.mixin.shadows.IrisShadowsMixinPlugin",
   "compatibilityLevel": "JAVA_8",
   "client": [
+    "GameRendererAccessor",
     "MixinBlockStateBehavior",
     "MixinFogRenderer",
     "MixinDebugScreenOverlay",
@@ -26,6 +27,7 @@
     "MixinTntMinecartRenderer",
     "MixinClientLanguage",
     "MixinTweakFarPlane",
+    "MixinItemInHandRenderer",
     "MixinLevelRenderer",
     "MixinVertexBuffer",
     "LevelRendererAccessor",
@@ -37,6 +39,7 @@
     "entity_render_context.MixinEntityRenderDispatcher",
     "rendertype.MixinFixEyesTranslucency",
     "rendertype.MixinRenderType",
+    "rendertype.MixinItemBlockRenderTypes",
     "rendertype.RenderTypeAccessor",
     "rendertype.RenderStateShardAccessor",
     "shadows.ChunkInfoAccessor",
