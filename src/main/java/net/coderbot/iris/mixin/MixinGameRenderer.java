@@ -49,7 +49,7 @@ public class MixinGameRenderer {
 	}
 
 	@Inject(method = "getProjectionMatrix", at = @At(value = "INVOKE", target = "Lcom/mojang/math/Matrix4f;multiply(Lcom/mojang/math/Matrix4f;)V"), locals = LocalCapture.CAPTURE_FAILHARD)
-    private void scaleHandDepth(Camera camera, float f, boolean bl, CallbackInfoReturnable<Matrix4f> cir, PoseStack poseStack) {
+    private void scaleHandDepth(double d, CallbackInfoReturnable<Matrix4f> cir, PoseStack poseStack) {
         if (HandRenderer.isActive()) {
             // This value is taken directly from Shaders Mod.
             poseStack.scale(1F, 1F, 0.125F);
@@ -197,6 +197,12 @@ public class MixinGameRenderer {
 		if (ShadowRenderer.ACTIVE) {
 			// TODO: Wrong program
 			override(CoreWorldRenderingPipeline::getShadowEntitiesCutout, cir);
+		} else if (HandRenderer.isActive()) {
+			if (HandRenderer.INSTANCE.isAnyHandTranslucent()) {
+				override(CoreWorldRenderingPipeline::getHandTranslucent, cir);
+			} else {
+				override(CoreWorldRenderingPipeline::getHandSolid, cir);
+			}
 		} else if (GbufferPrograms.isRenderingBlockEntities()) {
 			override(CoreWorldRenderingPipeline::getBlock, cir);
 		} else if (isRenderingWorld()) {
@@ -229,6 +235,8 @@ public class MixinGameRenderer {
 		if (ShadowRenderer.ACTIVE) {
 			// TODO: Wrong program
 			override(CoreWorldRenderingPipeline::getShadowEntitiesCutout, cir);
+		} else if (HandRenderer.isActive()) {
+			override(CoreWorldRenderingPipeline::getHandSolid, cir);
 		} else if (GbufferPrograms.isRenderingBlockEntities()) {
 			override(CoreWorldRenderingPipeline::getBlock, cir);
 		} else if (isRenderingWorld()) {

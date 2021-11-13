@@ -29,7 +29,7 @@ public class HandRenderer {
         final PoseStack.Pose pose = poseStack.last();
 
 		// We have a inject in getProjectionMatrix to scale the matrix so the hand doesn't clip through blocks.
-		gameRenderer.resetProjectionMatrix(gameRenderer.getProjectionMatrix(camera, tickDelta, false));
+		gameRenderer.resetProjectionMatrix(gameRenderer.getProjectionMatrix(((GameRendererAccessor) gameRenderer).invokeGetFov(camera, tickDelta, false)));
 
         pose.pose().setIdentity();
         pose.normal().setIdentity();

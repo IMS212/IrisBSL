@@ -65,6 +65,7 @@ public class NewShaderTests {
 				"        { \"name\": \"shadowtex1\" },\n" +
 				"        { \"name\": \"depthtex0\" },\n" +
 				"        { \"name\": \"depthtex1\" },\n" +
+				"        { \"name\": \"depthtex2\" },\n" +
 				"        { \"name\": \"noisetex\" },\n");
 
 		// TODO: SamplerHolder should really be responsible for this...
