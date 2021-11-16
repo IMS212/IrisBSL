@@ -3,8 +3,12 @@ package net.coderbot.iris.compat.sodium.impl.shader_overrides;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Matrix4f;
 import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
-import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkProgram;
+import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformMatrix4f;
+import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
 import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkShaderFogComponent;
+import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkShaderInterface;
+import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkShaderOptions;
+import me.jellysquid.mods.sodium.client.render.chunk.shader.ShaderBindingContext;
 import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.program.ProgramUniforms;
 import net.minecraft.resources.ResourceLocation;
@@ -14,10 +18,10 @@ import org.lwjgl.system.MemoryStack;
 
 import java.nio.FloatBuffer;
 
-public class IrisChunkProgram extends ChunkProgram {
+public class IrisChunkProgram extends ChunkShaderInterface {
     // Uniform variable binding indexes
-    private final int uModelViewMatrix;
-    private final int uNormalMatrix;
+    private final GlUniformMatrix4f uniformNormalMatrix;
+	private final GlUniformMatrix4f uniformModelViewProjectionMatrix;
 
     @Nullable
     private final ProgramUniforms irisProgramUniforms;
@@ -25,17 +29,17 @@ public class IrisChunkProgram extends ChunkProgram {
     @Nullable
     private final ProgramSamplers irisProgramSamplers;
 
-    public IrisChunkProgram(RenderDevice owner, ResourceLocation name, int handle,
+    public IrisChunkProgram(RenderDevice owner, ShaderBindingContext context, ChunkShaderOptions options,
 							@Nullable ProgramUniforms irisProgramUniforms, @Nullable ProgramSamplers irisProgramSamplers) {
-        super(owner, name, handle, ChunkShaderFogComponent.None::new);
-        this.uModelViewMatrix = this.getUniformLocation("u_ModelViewMatrix");
-        this.uNormalMatrix = this.getUniformLocation("u_NormalMatrix");
-        this.irisProgramUniforms = irisProgramUniforms;
+        super(context, options);
+		this.uniformModelViewProjectionMatrix = context.bindUniform("u_ModelViewProjectionMatrix", GlUniformMatrix4f::new);
+		this.uniformNormalMatrix = context.bindUniform("u_NormalMatrix", GlUniformMatrix4f::new);
+		this.irisProgramUniforms = irisProgramUniforms;
         this.irisProgramSamplers = irisProgramSamplers;
     }
 
-    public void setup(PoseStack poseStack, float modelScale, float textureScale) {
-        super.setup(poseStack, modelScale, textureScale);
+    public void setup(PoseStack poseStack, ChunkVertexType vertexType) {
+        super.setup(vertexType);
 
         if (irisProgramUniforms != null) {
             irisProgramUniforms.update();
@@ -45,44 +49,16 @@ public class IrisChunkProgram extends ChunkProgram {
             irisProgramSamplers.update();
         }
 
-        Matrix4f modelViewMatrix = poseStack.last().pose();
-        Matrix4f normalMatrix = poseStack.last().pose().copy();
+		Matrix4f normalMatrix = poseStack.last().pose().copy();
         normalMatrix.invert();
         normalMatrix.transpose();
-
-        uniformMatrix(uModelViewMatrix, modelViewMatrix);
-        uniformMatrix(uNormalMatrix, normalMatrix);
     }
 
-    @Override
-    public int getUniformLocation(String name) {
-        // NB: We pass through calls involving u_ModelViewProjectionMatrix, u_ModelScale, and u_TextureScale, since
-        //     currently patched Iris shader programs use those.
+	public void setModelViewProjectionMatrix(Matrix4f matrix) {
+		this.uniformModelViewProjectionMatrix.set(matrix);
+	}
 
-        if ("u_BlockTex".equals(name) || "u_LightTex".equals(name)) {
-            // Not relevant for Iris shader programs
-            return -1;
-        }
-
-        try {
-            return super.getUniformLocation(name);
-        } catch (NullPointerException e) {
-            // Suppress getUniformLocation
-            return -1;
-        }
-    }
-
-    private void uniformMatrix(int location, Matrix4f matrix) {
-        if (location == -1) {
-            return;
-        }
-
-        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            FloatBuffer buffer = memoryStack.mallocFloat(16);
-
-            matrix.store(buffer);
-
-            GL20C.glUniformMatrix4fv(location, false, buffer);
-        }
-    }
+	public void setNormalMatrix(Matrix4f matrix) {
+		this.uniformNormalMatrix.set(matrix);
+	}
 }

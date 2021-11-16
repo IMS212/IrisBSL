@@ -53,7 +53,7 @@ public class MixinSodiumGameOptionPages {
                             ")Lme/jellysquid/mods/sodium/client/gui/options/OptionGroup$Builder;"),
             allow = 1)
     private static Option<?> iris$replaceGraphicsQualityButton(Option<?> candidate) {
-        if (!Iris.getIrisConfig().areShadersEnabled() && GlStateManager.supportsFramebufferBlit()) {
+        if (!Iris.getIrisConfig().areShadersEnabled()) {
             return candidate;
         } else {
             return IrisSodiumOptions.createLimitedVideoSettingsButton(vanillaOpts);

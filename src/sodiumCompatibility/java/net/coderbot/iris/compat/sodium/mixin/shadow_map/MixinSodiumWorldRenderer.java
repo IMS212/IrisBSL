@@ -2,7 +2,7 @@ package net.coderbot.iris.compat.sodium.mixin.shadow_map;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
-import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderManager;
+import me.jellysquid.mods.sodium.client.render.chunk.RenderSectionManager;
 import net.coderbot.iris.shadows.ShadowRenderingState;
 import net.coderbot.iris.compat.sodium.impl.shadow_map.SwappableChunkRenderManager;
 import net.minecraft.client.Camera;
@@ -25,20 +25,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(SodiumWorldRenderer.class)
 public class MixinSodiumWorldRenderer {
-    @Shadow(remap = false)
-    private ChunkRenderManager<?> chunkRenderManager;
 
     @Shadow(remap = false)
     private double lastCameraX;
 
-    @Unique
+	@Shadow
+	private RenderSectionManager renderSectionManager;
+	@Unique
     private boolean wasRenderingShadows = false;
 
     @Unique
     public void iris$restoreStateIfShadowsWereBeingRendered() {
         if (wasRenderingShadows && !ShadowRenderingState.areShadowsCurrentlyBeingRendered()) {
-            if (this.chunkRenderManager instanceof SwappableChunkRenderManager) {
-                ((SwappableChunkRenderManager) this.chunkRenderManager).iris$swapVisibilityState();
+            if (this.renderSectionManager instanceof SwappableChunkRenderManager) {
+                ((SwappableChunkRenderManager) this.renderSectionManager).iris$swapVisibilityState();
             }
 
             wasRenderingShadows = false;
@@ -48,8 +48,8 @@ public class MixinSodiumWorldRenderer {
     @Unique
     private void iris$ensureStateSwapped() {
         if (!wasRenderingShadows && ShadowRenderingState.areShadowsCurrentlyBeingRendered()) {
-            if (this.chunkRenderManager instanceof SwappableChunkRenderManager) {
-                ((SwappableChunkRenderManager) this.chunkRenderManager).iris$swapVisibilityState();
+            if (this.renderSectionManager instanceof SwappableChunkRenderManager) {
+                ((SwappableChunkRenderManager) this.renderSectionManager).iris$swapVisibilityState();
             }
 
             wasRenderingShadows = true;
@@ -58,7 +58,7 @@ public class MixinSodiumWorldRenderer {
 
     @Inject(method = "scheduleTerrainUpdate()V", remap = false,
             at = @At(value = "INVOKE",
-                    target = "me/jellysquid/mods/sodium/client/render/chunk/ChunkRenderManager.markDirty ()V",
+                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/RenderSectionManager;markGraphDirty()V",
                     remap = false))
     private void iris$ensureStateSwappedBeforeMarkDirty(CallbackInfo ci) {
         iris$ensureStateSwapped();

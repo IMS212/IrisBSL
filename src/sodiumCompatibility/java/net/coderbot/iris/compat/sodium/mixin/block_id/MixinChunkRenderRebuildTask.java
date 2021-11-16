@@ -49,9 +49,8 @@ public class MixinChunkRenderRebuildTask {
     }
 
     @Inject(method = "performBuild",
-            at = @At(value = "INVOKE", target = "net/minecraft/world/level/block/Block.isEntityBlock()Z"))
-    private void iris$resetId(ChunkRenderCacheLocal cache, ChunkBuildBuffers buffers,
-                              CancellationSource cancellationSource, CallbackInfoReturnable<ChunkBuildResult<?>> cir) {
+            at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/data/ChunkRenderBounds$Builder;addBlock(III)V"), remap = false)
+    private void iris$resetId(ChunkRenderCacheLocal model, ChunkBuildBuffers buffers, CancellationSource layer, CallbackInfoReturnable<ChunkBuildResult> cir) {
         if (buffers instanceof ChunkBuildBuffersExt) {
             ((ChunkBuildBuffersExt) buffers).iris$resetMaterialId();
         }

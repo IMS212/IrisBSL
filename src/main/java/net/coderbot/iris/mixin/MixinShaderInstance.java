@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.Objects;
 
-@Mixin(ShaderInstance.class)
+@Mixin(value = ShaderInstance.class, priority = 999)
 public class MixinShaderInstance {
 	@Redirect(method = {"apply", "updateLocations"}, at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/shaders/Uniform;glGetUniformLocation(ILjava/lang/CharSequence;)I"))
 	private int iris$redirectGetUniformLocation(int programId, CharSequence name) {

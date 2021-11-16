@@ -6,8 +6,10 @@ import me.jellysquid.mods.sodium.client.gl.shader.GlShader;
 import me.jellysquid.mods.sodium.client.gl.shader.ShaderConstants;
 import me.jellysquid.mods.sodium.client.gl.shader.ShaderType;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
-import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkProgram;
+import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkFogMode;
 import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkShaderBindingPoints;
+import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkShaderInterface;
+import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkShaderOptions;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.program.ProgramUniforms;
@@ -16,7 +18,6 @@ import net.coderbot.iris.pipeline.WorldRenderingPipeline;
 import net.coderbot.iris.shadows.ShadowRenderingState;
 import net.coderbot.iris.compat.sodium.impl.IrisChunkShaderBindingPoints;
 import net.minecraft.resources.ResourceLocation;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumMap;
 import java.util.Optional;
@@ -24,7 +25,7 @@ import java.util.Optional;
 public class IrisChunkProgramOverrides {
     private static final ShaderConstants EMPTY_CONSTANTS = ShaderConstants.builder().build();
 
-    private final EnumMap<IrisTerrainPass, ChunkProgram> programs = new EnumMap<>(IrisTerrainPass.class);
+    private final EnumMap<IrisTerrainPass, GlProgram<ChunkShaderInterface>> programs = new EnumMap<>(IrisTerrainPass.class);
 
     private GlShader createVertexShader(RenderDevice device, IrisTerrainPass pass, SodiumTerrainPipeline pipeline) {
         Optional<String> irisVertexShader;
@@ -45,8 +46,8 @@ public class IrisChunkProgramOverrides {
             return null;
         }
 
-        return new GlShader(device, ShaderType.VERTEX, new ResourceLocation("iris", "sodium-terrain.vsh"),
-                source, EMPTY_CONSTANTS);
+        return new GlShader(ShaderType.VERTEX, new ResourceLocation("iris", "sodium-terrain.vsh"),
+                source);
     }
 
     private GlShader createGeometryShader(RenderDevice device, IrisTerrainPass pass, SodiumTerrainPipeline pipeline) {
@@ -68,8 +69,8 @@ public class IrisChunkProgramOverrides {
             return null;
         }
 
-        return new GlShader(device, IrisShaderTypes.GEOMETRY, new ResourceLocation("iris", "sodium-terrain.gsh"),
-                source, EMPTY_CONSTANTS);
+        return new GlShader(IrisShaderTypes.GEOMETRY, new ResourceLocation("iris", "sodium-terrain.gsh"),
+                source);
     }
 
     private GlShader createFragmentShader(RenderDevice device, IrisTerrainPass pass, SodiumTerrainPipeline pipeline) {
@@ -91,12 +92,11 @@ public class IrisChunkProgramOverrides {
             return null;
         }
 
-        return new GlShader(device, ShaderType.FRAGMENT, new ResourceLocation("iris", "sodium-terrain.fsh"),
-                source, EMPTY_CONSTANTS);
+        return new GlShader(ShaderType.FRAGMENT, new ResourceLocation("iris", "sodium-terrain.fsh"),
+                source);
     }
 
-    @Nullable
-    private ChunkProgram createShader(RenderDevice device, IrisTerrainPass pass, SodiumTerrainPipeline pipeline) {
+    private GlProgram<ChunkShaderInterface> createShader(RenderDevice device, IrisTerrainPass pass, SodiumTerrainPipeline pipeline, ChunkShaderOptions options) {
         GlShader vertShader = createVertexShader(device, pass, pipeline);
         GlShader geomShader = createGeometryShader(device, pass, pipeline);
         GlShader fragShader = createFragmentShader(device, pass, pipeline);
@@ -128,26 +128,27 @@ public class IrisChunkProgramOverrides {
 
             return builder.attachShader(vertShader)
                     .attachShader(fragShader)
-                    .bindAttribute("a_Pos", ChunkShaderBindingPoints.POSITION)
-                    .bindAttribute("a_Color", ChunkShaderBindingPoints.COLOR)
-                    .bindAttribute("a_TexCoord", ChunkShaderBindingPoints.TEX_COORD)
-                    .bindAttribute("a_LightCoord", ChunkShaderBindingPoints.LIGHT_COORD)
+                    .bindAttribute("a_Pos", ChunkShaderBindingPoints.ATTRIBUTE_POSITION_ID)
+                    .bindAttribute("a_Color", ChunkShaderBindingPoints.ATTRIBUTE_COLOR)
+                    .bindAttribute("a_TexCoord", ChunkShaderBindingPoints.ATTRIBUTE_BLOCK_TEXTURE)
+                    .bindAttribute("a_LightCoord", ChunkShaderBindingPoints.ATTRIBUTE_LIGHT_TEXTURE)
                     .bindAttribute("mc_Entity", IrisChunkShaderBindingPoints.BLOCK_ID)
                     .bindAttribute("mc_midTexCoord", IrisChunkShaderBindingPoints.MID_TEX_COORD)
                     .bindAttribute("at_tangent", IrisChunkShaderBindingPoints.TANGENT)
                     .bindAttribute("a_Normal", IrisChunkShaderBindingPoints.NORMAL)
-                    .bindAttribute("d_ModelOffset", ChunkShaderBindingPoints.MODEL_OFFSET)
-                    .build((program, name) -> {
-                        ProgramUniforms uniforms = pipeline.initUniforms(name);
+					.bindFragmentData("fragColor", ChunkShaderBindingPoints.FRAG_COLOR)
+					.bindFragmentData("iris_FragData", ChunkShaderBindingPoints.FRAG_COLOR)
+					.link((shader) -> {
+                        ProgramUniforms uniforms = pipeline.initUniforms(((GlProgram) shader).handle());
                         ProgramSamplers samplers;
 
                         if (pass == IrisTerrainPass.SHADOW) {
-                            samplers = pipeline.initShadowSamplers(name);
+                            samplers = pipeline.initShadowSamplers(((GlProgram) shader).handle());
                         } else {
-                            samplers = pipeline.initTerrainSamplers(name);
+                            samplers = pipeline.initTerrainSamplers(((GlProgram) shader).handle());
                         }
 
-                        return new IrisChunkProgram(device, program, name, uniforms, samplers);
+                        return new IrisChunkProgram(device, shader, options, uniforms, samplers);
                     });
         } finally {
             vertShader.delete();
@@ -158,7 +159,7 @@ public class IrisChunkProgramOverrides {
         }
     }
 
-    public void createShaders(RenderDevice device) {
+    public void createShaders(RenderDevice device, String path, ChunkShaderOptions options) {
         WorldRenderingPipeline worldRenderingPipeline = Iris.getPipelineManager().getPipeline();
         SodiumTerrainPipeline sodiumTerrainPipeline = null;
 
@@ -168,31 +169,31 @@ public class IrisChunkProgramOverrides {
 
         Iris.getPipelineManager().clearSodiumShaderReloadNeeded();
 
-        if (sodiumTerrainPipeline != null) {
-            for (IrisTerrainPass pass : IrisTerrainPass.values()) {
-                this.programs.put(pass, createShader(device, pass, sodiumTerrainPipeline));
-            }
-        } else {
-            this.programs.clear();
-        }
+		GlProgram<ChunkShaderInterface> program = programs.get(options);
+
+		if (program == null) {
+			programs.put(getPass(options.pass()), program = this.createShader(device, getPass(options.pass()), sodiumTerrainPipeline, options));
+		}
     }
 
-    @Nullable
-    public ChunkProgram getProgramOverride(RenderDevice device, BlockRenderPass pass) {
+    public GlProgram<ChunkShaderInterface> getProgramOverride(RenderDevice device, BlockRenderPass pass) {
         if (Iris.getPipelineManager().isSodiumShaderReloadNeeded()) {
             deleteShaders();
-            createShaders(device);
         }
 
-        if (ShadowRenderingState.areShadowsCurrentlyBeingRendered()) {
-            return this.programs.get(IrisTerrainPass.SHADOW);
-        } else {
-            return this.programs.get(pass.isTranslucent() ? IrisTerrainPass.GBUFFER_TRANSLUCENT : IrisTerrainPass.GBUFFER_SOLID);
-        }
+		return this.programs.get(getPass(pass));
     }
 
+	public IrisTerrainPass getPass(BlockRenderPass pass) {
+		if (ShadowRenderingState.areShadowsCurrentlyBeingRendered()) {
+			return IrisTerrainPass.SHADOW;
+		} else {
+			return pass.isTranslucent() ? IrisTerrainPass.GBUFFER_TRANSLUCENT : IrisTerrainPass.GBUFFER_SOLID;
+		}
+	}
+
     public void deleteShaders() {
-        for (ChunkProgram program : this.programs.values()) {
+        for (GlProgram<ChunkShaderInterface> program : this.programs.values()) {
             if (program != null) {
                 program.delete();
             }

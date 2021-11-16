@@ -4,8 +4,8 @@ plugins {
 	id 'org.ajoberstar.grgit' version '4.1.0'
 }
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_16
+targetCompatibility = JavaVersion.VERSION_16
 
 archivesBaseName = project.archives_base_name
 version = "${project.mod_version}+${getVersionMetadata()}"
@@ -25,6 +25,8 @@ dependencies {
 
 	// Needed for adding some key binds (reload, toggle, open shaders GUI)
 	includeFabricApiModule "fabric-key-binding-api-v1"
+	includeFabricApiModule "fabric-rendering-data-attachment-v1"
+	includeFabricApiModule "fabric-rendering-fluids-v1"
 
 	// JUnit 5 Jupiter test engine
 	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.2'
@@ -84,7 +86,7 @@ tasks.withType(JavaCompile).configureEach {
 	// The Minecraft launcher currently installs Java 8 for users, so your mod probably wants to target Java 8 too
 	// JDK 9 introduced a new way of specifying this that will make sure no newer classes or methods are used.
 	// We'll use that if it's available, but otherwise we'll use the older option.
-	def targetVersion = 8
+	def targetVersion = 16
 	if (JavaVersion.current().isJava9Compatible()) {
 		it.options.release = targetVersion
 	}
@@ -177,6 +179,8 @@ jar {
 
 	if (project.sodium_compatibility == "true") {
 		from (sourceSets.sodiumCompatibility.output) {
+			sourceCompatibility = JavaVersion.VERSION_16
+			targetCompatibility = JavaVersion.VERSION_16
 			it.filesMatching("*refmap.json") {
 				FileCopyDetails details -> {
 					details.name("iris-sodium-compat-refmap.json")
