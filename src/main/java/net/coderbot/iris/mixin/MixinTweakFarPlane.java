@@ -40,14 +40,19 @@ public class MixinTweakFarPlane {
 	@Shadow
 	private float renderDistance;
 
-	@Redirect(method = "getProjectionMatrix", at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/GameRenderer;renderDistance:F"))
+	@Shadow
+	public float getDepthFar() {
+		throw new AssertionError();
+	}
+
+	@Redirect(method = "getProjectionMatrix", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;getDepthFar()F"))
 	private float iris$tweakViewDistanceToMatchOptiFine(GameRenderer renderer) {
 		if (!Iris.getCurrentPack().isPresent()) {
 			// Don't mess with the far plane if no shaderpack is loaded
 			return this.renderDistance * 4.0F;
 		}
 
-		float tweakedViewDistance = this.renderDistance;
+		float tweakedViewDistance = this.getDepthFar();
 
 		// Halve the distance of the far plane in the projection matrix from vanilla. Normally, the far plane is 4 times
 		// the view distance, but this makes it so that it is only two times the view distance.
@@ -64,7 +69,7 @@ public class MixinTweakFarPlane {
 	}
 
 	@Inject(method = "renderLevel", at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/GameRenderer;renderDistance:F", shift = At.Shift.AFTER))
-	private void iris$tweakViewDistanceBasedOnFog(float tickDelta, long limitTime, PoseStack matrix, CallbackInfo ci) {
+	private void iris$tweakViewDistanceBasedOnFog(float f, long l, PoseStack poseStack, CallbackInfo ci) {
 		if (!Iris.getCurrentPack().isPresent()) {
 			// Don't mess with the far plane if no shaderpack is loaded
 			return;
@@ -76,6 +81,6 @@ public class MixinTweakFarPlane {
 		//
 		// On 1.16, we select the value based on if GL_NV_fog_distance is supported, and on 1.17+ only fancy fog is supported.
 
-		renderDistance *= GL.getCapabilities().GL_NV_fog_distance ? 0.95 : 0.83F;
+		renderDistance *= 0.95F;
 	}
 }

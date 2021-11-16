@@ -1,6 +1,6 @@
 package net.coderbot.iris.vertices;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
@@ -17,17 +17,18 @@ public class IrisVertexFormats {
 		MID_TEXTURE_ELEMENT = new VertexFormatElement(11, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 2);
 		TANGENT_ELEMENT = new VertexFormatElement(12, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4);
 
-		ImmutableList.Builder<VertexFormatElement> elements = ImmutableList.builder();
+		ImmutableMap.Builder<String, VertexFormatElement> elements = ImmutableMap.builder();
 
-		elements.add(DefaultVertexFormat.ELEMENT_POSITION);
-		elements.add(DefaultVertexFormat.ELEMENT_COLOR);
-		elements.add(DefaultVertexFormat.ELEMENT_UV0);
-		elements.add(DefaultVertexFormat.ELEMENT_UV2);
-		elements.add(DefaultVertexFormat.ELEMENT_NORMAL);
-		elements.add(DefaultVertexFormat.ELEMENT_PADDING);
-		elements.add(ENTITY_ELEMENT);
-		elements.add(MID_TEXTURE_ELEMENT);
-		elements.add(TANGENT_ELEMENT);
+		// TODO(21w10a): Audit this
+		elements.put("Position", DefaultVertexFormat.ELEMENT_POSITION);
+		elements.put("Color", DefaultVertexFormat.ELEMENT_COLOR);
+		elements.put("UV0", DefaultVertexFormat.ELEMENT_UV);
+		elements.put("UV2", DefaultVertexFormat.ELEMENT_UV2);
+		elements.put("Normal", DefaultVertexFormat.ELEMENT_NORMAL);
+		elements.put("Padding", DefaultVertexFormat.ELEMENT_PADDING);
+		elements.put("mc_Entity", ENTITY_ELEMENT);
+		elements.put("mc_midTexCoord", MID_TEXTURE_ELEMENT);
+		elements.put("at_tangent", TANGENT_ELEMENT);
 
 		TERRAIN = new VertexFormat(elements.build());
 	}

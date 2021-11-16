@@ -131,6 +131,12 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 			return packName;
 		}
 
+		// Appears to be some accessibility thing
+		@Override
+		public Component getNarration() {
+			return new TranslatableComponent("narrator.select", packName);
+		}
+
 		@Override
 		public void render(PoseStack poseStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
 			Font font = Minecraft.getInstance().font;
@@ -179,6 +185,12 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 			this.label = label;
 		}
 
+		// Appears to be some accessibility thing
+		@Override
+		public Component getNarration() {
+			return label;
+		}
+
 		@Override
 		public void render(PoseStack poseStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
 			drawCenteredString(poseStack, Minecraft.getInstance().font, label, (x + entryWidth / 2) - 2, y + (entryHeight - 11) / 2, 0xC2C2C2);
@@ -201,6 +213,12 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 			Component label = this.enabled ? SHADERS_ENABLED_LABEL : SHADERS_DISABLED_LABEL;
 
 			drawCenteredString(poseStack, Minecraft.getInstance().font, label, (x + entryWidth / 2) - 2, y + (entryHeight - 11) / 2, 0xFFFFFF);
+		}
+
+		// Appears to be some accessibility thing
+		@Override
+		public Component getNarration() {
+			return new TranslatableComponent("narration.button", this.enabled ? SHADERS_ENABLED_LABEL : SHADERS_DISABLED_LABEL);
 		}
 
 		@Override

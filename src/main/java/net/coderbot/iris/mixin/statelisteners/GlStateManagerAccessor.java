@@ -6,13 +6,8 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(GlStateManager.class)
 public interface GlStateManagerAccessor {
-	@Accessor("FOG")
+	/*@Accessor("FOG")
 	static GlStateManager.FogState getFOG() {
 		throw new AssertionError();
-	}
-
-	@Accessor("TEXTURES")
-	static GlStateManager.TextureState[] getTEXTURES() {
-		throw new AssertionError();
-	}
+	}*/
 }

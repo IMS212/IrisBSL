@@ -1,10 +1,12 @@
 package net.coderbot.iris.shadows.frustum.fallback;
 
 import com.mojang.math.Matrix4f;
+import me.jellysquid.mods.sodium.client.render.chunk.region.RenderRegionVisibility;
+import net.coderbot.iris.shadows.frustum.SodiumFrustumExt;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.phys.AABB;
 
-public class NonCullingFrustum extends Frustum {
+public class NonCullingFrustum extends Frustum implements SodiumFrustumExt {
 	public NonCullingFrustum() {
 		super(new Matrix4f(), new Matrix4f());
 	}
@@ -22,8 +24,12 @@ public class NonCullingFrustum extends Frustum {
 		return false;
 	}
 
-	@Override
-	public boolean isVisible(AABB aabb) {
+	public boolean isVisible(AABB box) {
 		return true;
+	}
+
+	@Override
+	public RenderRegionVisibility aabbTest(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
+		return RenderRegionVisibility.FULLY_VISIBLE;
 	}
 }

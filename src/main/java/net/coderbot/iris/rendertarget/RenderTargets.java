@@ -19,16 +19,18 @@ public class RenderTargets {
 	private int cachedHeight;
 	private boolean fullClearRequired;
 
+	private boolean destroyed = false;
+
 	public RenderTargets(com.mojang.blaze3d.pipeline.RenderTarget reference, PackRenderTargetDirectives directives) {
 		this(reference.width, reference.height, directives.getRenderTargetSettings());
 	}
 
 	public RenderTargets(int width, int height, Map<Integer, PackRenderTargetDirectives.RenderTargetSettings> renderTargets) {
-		targets = new net.coderbot.iris.rendertarget.RenderTarget[renderTargets.size()];
+		targets = new RenderTarget[renderTargets.size()];
 
 		renderTargets.forEach((index, settings) -> {
 			// TODO: Handle mipmapping?
-			targets[index] = net.coderbot.iris.rendertarget.RenderTarget.builder().setDimensions(width, height).setInternalFormat(settings.getRequestedFormat()).build();
+			targets[index] = RenderTarget.builder().setDimensions(width, height).setInternalFormat(settings.getRequestedFormat()).build();
 		});
 
 		this.depthTexture = new DepthTexture(width, height);
@@ -45,6 +47,8 @@ public class RenderTargets {
 	}
 
 	public void destroy() {
+		destroyed = true;
+
 		for (GlFramebuffer owned : ownedFramebuffers) {
 			owned.destroy();
 		}
@@ -62,14 +66,26 @@ public class RenderTargets {
 	}
 
 	public net.coderbot.iris.rendertarget.RenderTarget get(int index) {
+		if (destroyed) {
+			throw new IllegalStateException("Tried to use destroyed RenderTargets");
+		}
+
 		return targets[index];
 	}
 
 	public DepthTexture getDepthTexture() {
+		if (destroyed) {
+			throw new IllegalStateException("Tried to use destroyed RenderTargets");
+		}
+
 		return depthTexture;
 	}
 
 	public DepthTexture getDepthTextureNoTranslucents() {
+		if (destroyed) {
+			throw new IllegalStateException("Tried to use destroyed RenderTargets");
+		}
+
 		return noTranslucents;
 	}
 

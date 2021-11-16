@@ -9,10 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL11C;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL20C;
+import org.lwjgl.opengl.*;
 
 import net.minecraft.SharedConstants;
 import net.minecraft.Util;
@@ -30,9 +27,9 @@ public class StandardMacros {
 	 */
 	public static String getMcVersion() {
 		String version = SharedConstants.getCurrentVersion().getReleaseTarget();
-			// release target so snapshots are set to the higher version
-			//
-			// For example if we were running iris on 21w07a, getReleaseTarget() would return 1.17
+		// release target so snapshots are set to the higher version
+		//
+		// For example if we were running iris on 21w07a, getReleaseTarget() would return 1.17
 
 		if (version == null) {
 			throw new IllegalStateException("Could not get the current minecraft version!");
@@ -143,7 +140,17 @@ public class StandardMacros {
 	 * @return list of activated extensions prefixed with "MC_"
 	 */
 	public static List<String> getGlExtensions() {
-		String[] extensions = Objects.requireNonNull(GL11.glGetString(GL11.GL_EXTENSIONS)).split("\\s+");
+		// In OpenGL Core, we must use a new way of retrieving extensions.
+		int numExtensions = GL30C.glGetInteger(GL30C.GL_NUM_EXTENSIONS);
+
+		String[] extensions = new String[numExtensions];
+
+		for (int i = 0; i < numExtensions; i++) {
+			extensions[i] = GL30C.glGetStringi(GL30C.GL_EXTENSIONS, i);
+		}
+
+		// TODO(21w10a): unified way of getting extensions on the core and compatibility profile?
+		// String[] extensions = Objects.requireNonNull(GL11.glGetString(GL11.GL_EXTENSIONS)).split("\\s+");
 
 		// TODO note that we do not add extensions based on if the shader uses them and if they are supported
 		// see https://github.com/sp614x/optifine/blob/master/OptiFineDoc/doc/shaders.txt#L738

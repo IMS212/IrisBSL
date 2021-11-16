@@ -7,7 +7,7 @@ import java.util.Set;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
-import net.coderbot.iris.gl.blending.AlphaTestOverride;
+import net.coderbot.iris.gl.blending.AlphaTest;
 import org.jetbrains.annotations.Nullable;
 
 public class ProgramDirectives {
@@ -16,7 +16,7 @@ public class ProgramDirectives {
 	private final int[] drawBuffers;
 	private final float viewportScale;
 	@Nullable
-	private final AlphaTestOverride alphaTestOverride;
+	private final AlphaTest alphaTestOverride;
 	private final boolean disableBlend;
 	private final ImmutableSet<Integer> mipmappedBuffers;
 
@@ -94,7 +94,7 @@ public class ProgramDirectives {
 		return viewportScale;
 	}
 
-	public Optional<AlphaTestOverride> getAlphaTestOverride() {
+	public Optional<AlphaTest> getAlphaTestOverride() {
 		return Optional.ofNullable(alphaTestOverride);
 	}
 

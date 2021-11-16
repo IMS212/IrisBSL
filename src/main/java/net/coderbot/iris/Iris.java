@@ -10,6 +10,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.coderbot.iris.config.IrisConfig;
 import net.coderbot.iris.gui.screen.ShaderPackScreen;
 import net.coderbot.iris.pipeline.*;
+import net.coderbot.iris.pipeline.newshader.NewWorldRenderingPipeline;
 import net.coderbot.iris.shaderpack.DimensionId;
 import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ShaderPack;
@@ -35,7 +36,7 @@ public class Iris implements ClientModInitializer {
 	public static final String MODID = "iris";
 	public static final Logger logger = LogManager.getLogger(MODID);
 	// The recommended version of Sodium for use with Iris
-	private static final String SODIUM_VERSION = "0.2.0+build.4";
+	private static final String SODIUM_VERSION = "0.3.2+build.9";
 
 	private static Path shaderpacksDirectory;
 
@@ -379,11 +380,11 @@ public class Iris implements ClientModInitializer {
 		ClientLevel level = Minecraft.getInstance().level;
 
 		if (level != null) {
-			ResourceKey<net.minecraft.world.level.Level> levelRegistryKey = level.dimension();
+			ResourceKey<net.minecraft.world.level.Level> worldRegistryKey = level.dimension();
 
-			if (levelRegistryKey.equals(net.minecraft.world.level.Level.END)) {
+			if (worldRegistryKey.equals(net.minecraft.world.level.Level.END)) {
 				return DimensionId.END;
-			} else if (levelRegistryKey.equals(net.minecraft.world.level.Level.NETHER)) {
+			} else if (worldRegistryKey.equals(net.minecraft.world.level.Level.NETHER)) {
 				return DimensionId.NETHER;
 			} else {
 				return DimensionId.OVERWORLD;
@@ -404,7 +405,8 @@ public class Iris implements ClientModInitializer {
 
 		ProgramSet programs = currentPack.getProgramSet(dimensionId);
 
-		try {
+		// TODO(21w10a): Bring back the old world rendering pipelines
+		/*try {
 			if (internal) {
 				return new InternalWorldRenderingPipeline(programs);
 			} else {
@@ -415,6 +417,13 @@ public class Iris implements ClientModInitializer {
 			// TODO: This should be reverted if a dimension change causes shaders to compile again
 			currentPackName = "(off) [fallback, check your logs for details]";
 
+			return new FixedFunctionWorldRenderingPipeline();
+		}*/
+
+		try {
+			return new NewWorldRenderingPipeline(programs);
+		} catch (Throwable e) {
+			Iris.logger.error("Couldn't load NewWorldRenderingPipeline, falling back to vanilla shaders.", e);
 			return new FixedFunctionWorldRenderingPipeline();
 		}
 	}
@@ -461,7 +470,7 @@ public class Iris implements ClientModInitializer {
 	public static boolean isSodiumInvalid() {
 		return sodiumInvalid;
   }
-  
+
 	public static boolean isSodiumInstalled() {
 		return sodiumInstalled;
 	}

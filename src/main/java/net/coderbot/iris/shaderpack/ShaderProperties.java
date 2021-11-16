@@ -16,7 +16,7 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.blending.AlphaTestFunction;
-import net.coderbot.iris.gl.blending.AlphaTestOverride;
+import net.coderbot.iris.gl.blending.AlphaTest;
 
 public class ShaderProperties {
 	private boolean enableClouds = true;
@@ -49,7 +49,7 @@ public class ShaderProperties {
 	// TODO: private Integer mainScreenColumnCount;
 	// TODO: private final Map<String, Integer> subScreenColumnCount = new HashMap<>();
 	// TODO: Parse custom uniforms / variables
-	private final Object2ObjectMap<String, AlphaTestOverride> alphaTestOverrides = new Object2ObjectOpenHashMap<>();
+	private final Object2ObjectMap<String, AlphaTest> alphaTestOverrides = new Object2ObjectOpenHashMap<>();
 	private final Object2FloatMap<String> viewportScaleOverrides = new Object2FloatOpenHashMap<>();
 	private final ObjectSet<String> blendDisabled = new ObjectOpenHashSet<>();
 	private String noiseTexturePath = null;
@@ -110,7 +110,7 @@ public class ShaderProperties {
 
 			handlePassDirective("alphaTest.", key, value, pass -> {
 				if ("off".equals(value)) {
-					alphaTestOverrides.put(pass, new AlphaTestOverride.Off());
+					alphaTestOverrides.put(pass, AlphaTest.ALWAYS);
 					return;
 				}
 
@@ -139,7 +139,7 @@ public class ShaderProperties {
 					return;
 				}
 
-				alphaTestOverrides.put(pass, new AlphaTestOverride(function.get(), reference));
+				alphaTestOverrides.put(pass, new AlphaTest(function.get(), reference));
 			});
 
 			handlePassDirective("blend.", key, value, pass -> {
@@ -269,7 +269,7 @@ public class ShaderProperties {
 		return frustumCulling;
 	}
 
-	public Object2ObjectMap<String, AlphaTestOverride> getAlphaTestOverrides() {
+	public Object2ObjectMap<String, AlphaTest> getAlphaTestOverrides() {
 		return alphaTestOverrides;
 	}
 

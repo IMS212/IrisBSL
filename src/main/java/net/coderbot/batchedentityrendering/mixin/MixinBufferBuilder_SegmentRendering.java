@@ -1,8 +1,7 @@
 package net.coderbot.batchedentityrendering.mixin;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.coderbot.batchedentityrendering.impl.BufferBuilderExt;
+import net.minecraft.util.Mth;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -10,7 +9,8 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -21,10 +21,10 @@ public class MixinBufferBuilder_SegmentRendering implements BufferBuilderExt {
 
     @Shadow
     @Final
-    private List<BufferBuilder.DrawState> vertexCounts;
+    private List<BufferBuilder.DrawState> drawStates;
 
     @Shadow
-    private int lastRenderedCountIndex;
+    private int lastPoppedStateIndex;
 
     @Shadow
     private int totalRenderedBytes;
@@ -36,20 +36,20 @@ public class MixinBufferBuilder_SegmentRendering implements BufferBuilderExt {
     private int totalUploadedBytes;
 
     @Override
-    public void setupBufferSlice(ByteBuffer buffer, BufferBuilder.DrawState drawState) {
+    public void setupBufferSlice(ByteBuffer buffer, BufferBuilder.DrawState parameters) {
         // add the buffer slice
         this.buffer = buffer;
 
         // add our singular parameter
-        this.vertexCounts.clear();
-        this.vertexCounts.add(drawState);
+        this.drawStates.clear();
+        this.drawStates.add(parameters);
 
         // should be zero, just making sure
-        this.lastRenderedCountIndex = 0;
+        this.lastPoppedStateIndex = 0;
 
         // configure the build start (to avoid a warning message) and element offset (probably not important)
-        this.totalRenderedBytes = drawState.vertexCount() * drawState.format().getVertexSize();
-        this.nextElementByte = this.totalRenderedBytes;
+		this.totalRenderedBytes = Mth.roundToward(parameters.bufferSize(), 4);
+		this.nextElementByte = this.totalRenderedBytes;
 
         // should be zero, just making sure
         this.totalUploadedBytes = 0;
@@ -123,7 +123,7 @@ public class MixinBufferBuilder_SegmentRendering implements BufferBuilderExt {
         dupeNextVertex = false;
     }
 
-    @Inject(method = "nextElement", at = @At("RETURN"))
+    @Inject(method = "endVertex", at = @At("RETURN"))
     private void batchedentityrendering$onNext(CallbackInfo ci) {
         if (dupeNextVertex) {
             dupeNextVertex = false;

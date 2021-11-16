@@ -9,11 +9,13 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
+import org.apache.commons.io.FileUtils;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -69,21 +71,21 @@ public class ShaderPackScreen extends Screen implements HudHideable {
 			this.shaderPackList.setRenderBackground(false);
 		}
 
-		this.children.add(shaderPackList);
+		this.addRenderableWidget(shaderPackList);
 
-		this.addButton(new Button(bottomCenter + 104, this.height - 27, 100, 20,
+		this.addRenderableWidget(new Button(bottomCenter + 104, this.height - 27, 100, 20,
 			CommonComponents.GUI_DONE, button -> onClose()));
 
-		this.addButton(new Button(bottomCenter, this.height - 27, 100, 20,
+		this.addRenderableWidget(new Button(bottomCenter, this.height - 27, 100, 20,
 			new TranslatableComponent("options.iris.apply"), button -> this.applyChanges()));
 
-		this.addButton(new Button(bottomCenter - 104, this.height - 27, 100, 20,
+		this.addRenderableWidget(new Button(bottomCenter - 104, this.height - 27, 100, 20,
 			CommonComponents.GUI_CANCEL, button -> this.dropChangesAndClose()));
 
-		this.addButton(new Button(topCenter - 78, this.height - 51, 152, 20,
+		this.addRenderableWidget(new Button(topCenter - 78, this.height - 51, 152, 20,
 			new TranslatableComponent("options.iris.openShaderPackFolder"), button -> openShaderPackFolder()));
 
-		this.addButton(new Button(topCenter + 78, this.height - 51, 152, 20,
+		this.addRenderableWidget(new Button(topCenter + 78, this.height - 51, 152, 20,
 			new TranslatableComponent("options.iris.refreshShaderPacks"), button -> this.shaderPackList.refresh()));
 	}
 

@@ -16,13 +16,14 @@ import net.minecraft.client.renderer.LightTexture;
 @Mixin(LightTexture.class)
 @Environment(EnvType.CLIENT)
 public class MixinLightTexture {
-	@ModifyConstant(method = "turnOffLightLayer", constant = @Constant(intValue = GL15.GL_TEXTURE2), require = 1)
+	/*TODO(21w10a): Replace texunit hooks
+	@ModifyConstant(method = "disable()V", constant = @Constant(intValue = GL15.GL_TEXTURE2), require = 1)
 	private int iris$fixLightmapTextureUnit$disable(int texUnit) {
 		return TextureUnit.LIGHTMAP.getUnitId();
 	}
 
-	@ModifyConstant(method = "turnOnLightLayer", constant = @Constant(intValue = GL15.GL_TEXTURE2), require = 1)
+	@ModifyConstant(method = "enable()V", constant = @Constant(intValue = GL15.GL_TEXTURE2), require = 1)
 	private int iris$fixLightmapTextureUnit$enable(int texUnit) {
 		return TextureUnit.LIGHTMAP.getUnitId();
-	}
+	}*/
 }

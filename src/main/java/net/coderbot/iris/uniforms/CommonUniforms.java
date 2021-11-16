@@ -3,11 +3,13 @@ package net.coderbot.iris.uniforms;
 import java.util.Objects;
 import java.util.function.IntSupplier;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.math.Vector4f;
 import net.coderbot.iris.gl.state.StateUpdateNotifiers;
 import net.coderbot.iris.gl.uniform.DynamicUniformHolder;
 import net.coderbot.iris.gl.uniform.UniformHolder;
 import net.coderbot.iris.layer.EntityColorRenderStateShard;
-import net.coderbot.iris.mixin.statelisteners.GlStateManagerAccessor;
+import net.coderbot.iris.pipeline.newshader.FogMode;
 import net.coderbot.iris.samplers.TextureAtlasTracker;
 import net.coderbot.iris.shaderpack.IdMap;
 import net.coderbot.iris.shaderpack.PackDirectives;
@@ -18,7 +20,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.tags.FluidTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -27,15 +28,12 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.LightLayer;
-import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.FogType;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
 import static net.coderbot.iris.gl.uniform.UniformUpdateFrequency.PER_FRAME;
 import static net.coderbot.iris.gl.uniform.UniformUpdateFrequency.PER_TICK;
-
-import com.mojang.math.Vector4f;
-
 import static net.coderbot.iris.gl.uniform.UniformUpdateFrequency.ONCE;
 
 public final class CommonUniforms {
@@ -46,7 +44,7 @@ public final class CommonUniforms {
 	}
 
 	// Needs to use a LocationalUniformHolder as we need it for the common uniforms
-	public static void addCommonUniforms(DynamicUniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier) {
+	public static void addCommonUniforms(DynamicUniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier, FogMode fogMode) {
 		CameraUniforms.addCameraUniforms(uniforms, updateNotifier);
 		ViewportUniforms.addViewportUniforms(uniforms);
 		WorldTimeUniforms.addWorldTimeUniforms(uniforms);
@@ -56,7 +54,7 @@ public final class CommonUniforms {
 		IrisExclusiveUniforms.addIrisExclusiveUniforms(uniforms);
 		MatrixUniforms.addMatrixUniforms(uniforms, directives);
 		HardcodedCustomUniforms.addHardcodedCustomUniforms(uniforms, updateNotifier);
-		FogUniforms.addFogUniforms(uniforms);
+		FogUniforms.addFogUniforms(uniforms, fogMode);
 
 		uniforms.uniform4f("entityColor", () -> {
 			if (EntityColorRenderStateShard.currentHurt) {
@@ -75,7 +73,7 @@ public final class CommonUniforms {
 		// TODO: OptiFine doesn't think that atlasSize is a "dynamic" uniform,
 		//       but we do. How will custom uniforms depending on atlasSize work?
 		uniforms.uniform2i("atlasSize", () -> {
-			int glId = GlStateManagerAccessor.getTEXTURES()[0].binding;
+			int glId = RenderSystem.getShaderTexture(0);
 
 			Vec2 atlasSize = TextureAtlasTracker.INSTANCE.getAtlasSize(glId);
 
@@ -86,7 +84,7 @@ public final class CommonUniforms {
 	}
 
 	public static void generalCommonUniforms(UniformHolder uniforms, FrameUpdateNotifier updateNotifier){
-		ExternallyManagedUniforms.addExternallyManagedUniforms116(uniforms);
+		ExternallyManagedUniforms.addExternallyManagedUniforms117(uniforms);
 
 		uniforms
 			.uniform1b(PER_FRAME, "hideGUI", () -> client.options.hideGui)
@@ -113,7 +111,7 @@ public final class CommonUniforms {
 			return Vec3.ZERO;
 		}
 
-		return client.level.getSkyColor(client.cameraEntity.blockPosition(), CapturedRenderingState.INSTANCE.getTickDelta());
+		return client.level.getSkyColor(client.cameraEntity.position(), CapturedRenderingState.INSTANCE.getTickDelta());
 	}
 
 	static float getBlindness() {
@@ -123,7 +121,7 @@ public final class CommonUniforms {
 			MobEffectInstance blindness = ((LivingEntity) cameraEntity).getEffect(MobEffects.BLINDNESS);
 
 			if (blindness != null) {
-				// Guessing that this is what OF uses, based on how vanilla calculates the fog value in BackgroundRenderer
+				// Guessing that this is what OF uses, based on how vanilla calculates the fog value in FogRenderer
 				// TODO: Add this to ShaderDoc
 				return Math.min(1.0F, blindness.getDuration() / 20.0F);
 			}
@@ -177,7 +175,7 @@ public final class CommonUniforms {
 		// Conduit power gives the player a sort-of night vision effect when underwater.
 		// This lets existing shaderpacks be compatible with conduit power automatically.
 		//
-		// Yes, this should be the player entity, to match LightmapTextureManager.
+		// Yes, this should be the player entity, to match LightTexture.
 		if (client.player != null && client.player.hasEffect(MobEffects.CONDUIT_POWER)) {
 			float underwaterVisibility = client.player.getWaterVision();
 
@@ -196,12 +194,14 @@ public final class CommonUniforms {
 		// I'm not sure what the best way to deal with this is, but the current approach seems to be an acceptable one -
 		// after all, disabling the overlay results in the intended effect of it not really looking like you're
 		// underwater on most shaderpacks. For now, I will leave this as-is, but it is something to keep in mind.
-		FluidState submergedFluid = client.gameRenderer.getMainCamera().getFluidInCamera();
+		FogType submersionType = client.gameRenderer.getMainCamera().getFluidInCamera();
 
-		if (submergedFluid.is(FluidTags.WATER)) {
+		if (submersionType == FogType.WATER) {
 			return 1;
-		} else if (submergedFluid.is(FluidTags.LAVA)) {
+		} else if (submersionType == FogType.LAVA) {
 			return 2;
+		} else if (submersionType == FogType.POWDER_SNOW) {
+			return 3;
 		} else {
 			return 0;
 		}

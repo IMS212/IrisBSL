@@ -13,19 +13,20 @@ import net.fabricmc.api.Environment;
 @Mixin(DefaultVertexFormat.class)
 @Environment(EnvType.CLIENT)
 public class MixinDefaultVertexFormat {
+	/*TODO(21w10a): Replace texunit hooks
 	@ModifyConstant(method = "<clinit>", constant = @Constant(intValue = 1), require = 1, slice = @Slice(
-		from = @At(value = "FIELD", target = "Lcom/mojang/blaze3d/vertex/DefaultVertexFormat;ELEMENT_UV0:Lcom/mojang/blaze3d/vertex/VertexFormatElement;"),
-		to = @At(value = "FIELD", target = "Lcom/mojang/blaze3d/vertex/DefaultVertexFormat;ELEMENT_UV1:Lcom/mojang/blaze3d/vertex/VertexFormatElement;")
+		from = @At(value = "FIELD", target = "Lnet/minecraft/client/render/VertexFormats;TEXTURE_ELEMENT:Lnet/minecraft/client/render/VertexFormatElement;"),
+		to = @At(value = "FIELD", target = "Lnet/minecraft/client/render/VertexFormats;OVERLAY_ELEMENT:Lnet/minecraft/client/render/VertexFormatElement;")
 	))
 	private static int iris$fixOverlayTextureUnit(int samplerId) {
 		return TextureUnit.OVERLAY.getSamplerId();
 	}
 
 	@ModifyConstant(method = "<clinit>", constant = @Constant(intValue = 2, ordinal = 0), require = 1, allow = 1, slice = @Slice(
-		from = @At(value = "FIELD", target = "Lcom/mojang/blaze3d/vertex/DefaultVertexFormat;ELEMENT_UV1:Lcom/mojang/blaze3d/vertex/VertexFormatElement;"),
-		to = @At(value = "FIELD", target = "Lcom/mojang/blaze3d/vertex/DefaultVertexFormat;ELEMENT_UV2:Lcom/mojang/blaze3d/vertex/VertexFormatElement;")
+		from = @At(value = "FIELD", target = "Lnet/minecraft/client/render/VertexFormats;OVERLAY_ELEMENT:Lnet/minecraft/client/render/VertexFormatElement;"),
+		to = @At(value = "FIELD", target = "Lnet/minecraft/client/render/VertexFormats;LIGHT_ELEMENT:Lnet/minecraft/client/render/VertexFormatElement;")
 	))
 	private static int iris$fixLightmapTextureUnit(int samplerId) {
 		return TextureUnit.LIGHTMAP.getSamplerId();
-	}
+	}*/
 }
