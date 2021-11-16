@@ -16,6 +16,20 @@ minecraft {
 	accessWidener = file("src/main/resources/iris.accesswidener")
 }
 
+repositories {
+	maven {
+		name = "Modrinth"
+		url = "https://api.modrinth.com/maven"
+		content {
+			includeGroup "maven.modrinth"
+		}
+	}
+}
+
+dependencies {
+	modImplementation "maven.modrinth:sodium:mc1.16.5-0.2.0"
+}
+
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	mappings loom.officialMojangMappings()
