@@ -14,12 +14,12 @@ public class MixinChunkRenderManager {
     @Redirect(method = "renderLayer",
             at = @At(value = "INVOKE",
                     target = "Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderBackend;begin(Lcom/mojang/blaze3d/vertex/PoseStack;)V"))
-    private void iris$backendBeginExt(ChunkRenderBackend<?> backend, PoseStack matrixStack,
-									  PoseStack matrixStackArg, BlockRenderPass pass, double x, double y, double z) {
+    private void iris$backendBeginExt(ChunkRenderBackend<?> backend, PoseStack poseStack,
+									  PoseStack poseStackArg, BlockRenderPass pass, double x, double y, double z) {
         if (backend instanceof ChunkRenderBackendExt) {
-            ((ChunkRenderBackendExt) backend).iris$begin(matrixStack, pass);
+            ((ChunkRenderBackendExt) backend).iris$begin(poseStack, pass);
         } else {
-            backend.begin(matrixStack);
+            backend.begin(poseStack);
         }
     }
 }

@@ -25,17 +25,17 @@ public class IrisChunkProgram extends ChunkProgram {
     @Nullable
     private final ProgramSamplers irisProgramSamplers;
 
-    public IrisChunkProgram(RenderDevice owner, ResourceLocation name, int handle,
+    public IrisChunkProgram(RenderDevice owner, ResourceLocation location, int handle,
 							@Nullable ProgramUniforms irisProgramUniforms, @Nullable ProgramSamplers irisProgramSamplers) {
-        super(owner, name, handle, ChunkShaderFogComponent.None::new);
+        super(owner, location, handle, ChunkShaderFogComponent.None::new);
         this.uModelViewMatrix = this.getUniformLocation("u_ModelViewMatrix");
         this.uNormalMatrix = this.getUniformLocation("u_NormalMatrix");
         this.irisProgramUniforms = irisProgramUniforms;
         this.irisProgramSamplers = irisProgramSamplers;
     }
 
-    public void setup(PoseStack matrixStack, float modelScale, float textureScale) {
-        super.setup(matrixStack, modelScale, textureScale);
+    public void setup(PoseStack poseStack, float modelScale, float textureScale) {
+        super.setup(poseStack, modelScale, textureScale);
 
         if (irisProgramUniforms != null) {
             irisProgramUniforms.update();
@@ -45,8 +45,8 @@ public class IrisChunkProgram extends ChunkProgram {
             irisProgramSamplers.update();
         }
 
-        Matrix4f modelViewMatrix = matrixStack.last().pose();
-        Matrix4f normalMatrix = matrixStack.last().pose().copy();
+        Matrix4f modelViewMatrix = poseStack.last().pose();
+        Matrix4f normalMatrix = poseStack.last().pose().copy();
         normalMatrix.invert();
         normalMatrix.transpose();
 

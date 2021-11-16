@@ -36,7 +36,7 @@ public class MixinChunkRenderShaderBackend implements ChunkRenderBackendExt {
     private ChunkProgram activeProgram;
 
     @Shadow
-    private void begin(PoseStack matrixStack) {
+    private void begin(PoseStack poseStack) {
         throw new AssertionError();
     }
 
@@ -52,7 +52,7 @@ public class MixinChunkRenderShaderBackend implements ChunkRenderBackendExt {
     }
 
     @Override
-    public void iris$begin(PoseStack matrixStack, BlockRenderPass pass) {
+    public void iris$begin(PoseStack poseStack, BlockRenderPass pass) {
         if (ShadowRenderingState.areShadowsCurrentlyBeingRendered()) {
             // No back face culling during the shadow pass
             // TODO: Hopefully this won't be necessary in the future...
@@ -61,7 +61,7 @@ public class MixinChunkRenderShaderBackend implements ChunkRenderBackendExt {
 
         this.override = irisChunkProgramOverrides.getProgramOverride(device, pass);
 
-        begin(matrixStack);
+        begin(poseStack);
     }
 
     @Inject(method = "begin",
@@ -71,14 +71,14 @@ public class MixinChunkRenderShaderBackend implements ChunkRenderBackendExt {
                     args = "opcode=PUTFIELD",
                     remap = false,
                     shift = At.Shift.AFTER))
-    private void iris$applyOverride(PoseStack matrixStack, CallbackInfo ci) {
+    private void iris$applyOverride(PoseStack poseStack, CallbackInfo ci) {
         if (override != null) {
             this.activeProgram = override;
         }
     }
 
     @Inject(method = "end", at = @At("RETURN"))
-    private void iris$onEnd(PoseStack matrixStack, CallbackInfo ci) {
+    private void iris$onEnd(PoseStack poseStack, CallbackInfo ci) {
         ProgramUniforms.clearActiveUniforms();
     }
 
