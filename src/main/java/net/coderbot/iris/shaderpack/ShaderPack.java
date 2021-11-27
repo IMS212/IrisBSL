@@ -1,5 +1,14 @@
 package net.coderbot.iris.shaderpack;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import net.coderbot.iris.Iris;
+import net.coderbot.iris.shaderpack.texture.CustomTextureData;
+import net.coderbot.iris.shaderpack.texture.TextureFilteringData;
+import net.coderbot.iris.shaderpack.texture.TextureStage;
+import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -7,10 +16,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 
-import net.coderbot.iris.Iris;
-import org.jetbrains.annotations.Nullable;
-
 public class ShaderPack {
+	private final Path root;
 	private final ProgramSet base;
 	@Nullable
 	private final ProgramSet overworld;
@@ -19,7 +26,8 @@ public class ShaderPack {
 
 	private final IdMap idMap;
 	private final LanguageMap languageMap;
-	private final CustomTexture customNoiseTexture;
+	private final Object2ObjectMap<TextureStage, Object2ObjectMap<String, CustomTextureData>> customTextureDataMap = new Object2ObjectOpenHashMap<>();
+	private final CustomTextureData customNoiseTexture;
 
 	/**
 	 * Reads a shader pack from the disk.
@@ -30,6 +38,8 @@ public class ShaderPack {
 	public ShaderPack(Path root) throws IOException {
 		// A null path is not allowed.
 		Objects.requireNonNull(root);
+
+		this.root = root;
 
 		ShaderProperties shaderProperties = loadProperties(root, "shaders.properties")
 			.map(ShaderProperties::new)
@@ -45,17 +55,26 @@ public class ShaderPack {
 
 		customNoiseTexture = shaderProperties.getNoiseTexturePath().map(path -> {
 			try {
-				// TODO: Make sure the resulting path is within the shaderpack?
-				byte[] content = Files.readAllBytes(root.resolve(path));
-
-				// TODO: Read the blur / clamp data from the shaderpack...
-				return new CustomTexture(content, true, false);
-			} catch (IOException e) {
-				Iris.logger.error("Unable to read the custom noise texture at " + path);
+				return readTexture(path);
+			} catch (IOException | UnsupportedOperationException e) {
+				Iris.logger.error("Unable to read the custom noise texture at " + path, e);
 
 				return null;
 			}
 		}).orElse(null);
+
+		shaderProperties.getCustomTextures().forEach((textureStage, customTexturePropertiesMap) -> {
+			Object2ObjectMap<String, CustomTextureData> innerCustomTextureDataMap = new Object2ObjectOpenHashMap<>();
+			customTexturePropertiesMap.forEach((samplerName, path) -> {
+				try {
+					innerCustomTextureDataMap.put(samplerName, readTexture(path));
+				} catch (IOException e) {
+					Iris.logger.error("Unable to read the custom texture at " + path, e);
+				}
+			});
+
+			customTextureDataMap.put(textureStage, innerCustomTextureDataMap);
+		});
 	}
 
 	@Nullable
@@ -86,6 +105,25 @@ public class ShaderPack {
 		return Optional.of(properties);
 	}
 
+	// TODO: Implement raw texture data types
+	public CustomTextureData readTexture(String path) throws IOException {
+		CustomTextureData customTextureData;
+		if (path.contains(":") && ResourceLocation.isValidResourceLocation(path)) {
+			customTextureData = new CustomTextureData.ResourceData(new ResourceLocation(path));
+		} else {
+			// TODO: Make sure the resulting path is within the shaderpack?
+			if (path.startsWith("/")) {
+				// NB: This does not guarantee the resulting path is in the shaderpack as a double slash could be used,
+				// this just fixes shaderpacks like Continuum 2.0.4 that use a leading slash in texture paths
+				path = path.substring(1);
+			}
+			byte[] content = Files.readAllBytes(root.resolve(path));
+			// TODO: Read the blur / clamp data from the shaderpack...
+			customTextureData = new CustomTextureData.PngData(new TextureFilteringData(true, false), content);
+		}
+		return customTextureData;
+	}
+
 	public ProgramSet getProgramSet(DimensionId dimension) {
 		ProgramSet overrides;
 
@@ -110,7 +148,11 @@ public class ShaderPack {
 		return idMap;
 	}
 
-	public Optional<CustomTexture> getCustomNoiseTexture() {
+	public Object2ObjectMap<TextureStage, Object2ObjectMap<String, CustomTextureData>> getCustomTextureDataMap() {
+		return customTextureDataMap;
+	}
+
+	public Optional<CustomTextureData> getCustomNoiseTexture() {
 		return Optional.ofNullable(customNoiseTexture);
 	}
 
