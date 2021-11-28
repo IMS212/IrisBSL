@@ -109,7 +109,7 @@ public class NewShaderTests {
 		Files.write(debugOutDir.resolve(name + ".fsh"), fragment.getBytes(StandardCharsets.UTF_8));
 		Files.write(debugOutDir.resolve(name + ".json"), shaderJsonString.getBytes(StandardCharsets.UTF_8));
 
-		return new ExtendedShader(shaderResourceFactory, name, vertexFormat, writingToBeforeTranslucent, writingToAfterTranslucent, baseline, uniforms -> {
+		return new ExtendedShader(shaderResourceFactory, name, vertexFormat, writingToBeforeTranslucent, writingToAfterTranslucent, baseline, source.getDirectives().getBlendModeOverride(), source.getDirectives().shouldDisableBlend(), uniforms -> {
 			CommonUniforms.addCommonUniforms(uniforms, source.getParent().getPack().getIdMap(), source.getParent().getPackDirectives(), updateNotifier, fogMode);
 			//SamplerUniforms.addWorldSamplerUniforms(uniforms);
 			//SamplerUniforms.addDepthSamplerUniforms(uniforms);

@@ -1,21 +1,23 @@
 package net.coderbot.iris.mixin;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
 import net.coderbot.iris.HorizonRenderer;
 import net.coderbot.iris.Iris;
+import net.coderbot.iris.block_rendering.BlockRenderingSettings;
 import net.coderbot.iris.pipeline.HandRenderer;
 import net.coderbot.iris.pipeline.WorldRenderingPipeline;
+import net.coderbot.iris.pipeline.newshader.CoreWorldRenderingPipeline;
+import net.coderbot.iris.pipeline.newshader.ExtendedShader;
 import net.coderbot.iris.pipeline.newshader.WorldRenderingPhase;
 import net.coderbot.iris.uniforms.CapturedRenderingState;
 import net.coderbot.iris.uniforms.SystemTimeUniforms;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.*;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -27,6 +29,8 @@ import org.spongepowered.asm.mixin.injection.Slice;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+
+import java.util.function.Function;
 
 @Mixin(LevelRenderer.class)
 @Environment(EnvType.CLIENT)
@@ -172,28 +176,32 @@ public class MixinLevelRenderer {
 
 
 	// TODO(21w10a): Restore render layer hooks
-	/*
-	@Inject(method = RENDER_LAYER, at = @At("HEAD"))
-	private void iris$beginTerrainLayer(RenderType renderType, PoseStack poseStack, double cameraX, double cameraY, double cameraZ, CallbackInfo callback) {
+	@Inject(method = "renderChunkLayer", at = @At("HEAD"))
+	private void iris$beginTerrainLayer(RenderType renderType, PoseStack poseStack, double d, double e, double f, Matrix4f matrix4f, CallbackInfo ci) {
 		if (renderType == RenderType.solid() || renderType == RenderType.cutout() || renderType == RenderType.cutoutMipped()) {
-			pipeline.pushProgram(GbufferProgram.TERRAIN);
+			setBlendModeOverride(CoreWorldRenderingPipeline::getTerrain);
 		} else if (renderType == RenderType.translucent() || renderType == RenderType.tripwire()) {
-			pipeline.pushProgram(GbufferProgram.TRANSLUCENT_TERRAIN);
+			setBlendModeOverride(CoreWorldRenderingPipeline::getTranslucent);
 		} else {
 			throw new IllegalStateException("[Iris] Unexpected terrain layer: " + renderType);
 		}
 	}
 
-	@Inject(method = RENDER_LAYER, at = @At("RETURN"))
-	private void iris$endTerrainLayer(RenderType renderType, PoseStack poseStack, double cameraX, double cameraY, double cameraZ, CallbackInfo callback) {
-		if (renderType == RenderType.solid() || renderType == RenderType.cutout() || renderType == RenderType.cutoutMipped()) {
-			pipeline.popProgram(GbufferProgram.TERRAIN);
-		} else if (renderType == RenderType.translucent() || renderType == RenderType.tripwire()) {
-			pipeline.popProgram(GbufferProgram.TRANSLUCENT_TERRAIN);
-		} else {
-			throw new IllegalStateException("[Iris] Unexpected terrain layer: " + renderType);
+	@Inject(method = "renderChunkLayer", at = @At("RETURN"))
+	private void iris$endTerrainLayer(RenderType renderType, PoseStack poseStack, double d, double e, double f, Matrix4f matrix4f, CallbackInfo ci) {
+		BlockRenderingSettings.INSTANCE.setCurrentBlendFunc(null);
+	}
+
+	private void setBlendModeOverride(Function<CoreWorldRenderingPipeline, ShaderInstance> program) {
+		if (Iris.getPipelineManager().getPipeline() instanceof CoreWorldRenderingPipeline) {
+			CoreWorldRenderingPipeline pipeline = (CoreWorldRenderingPipeline) Iris.getPipelineManager().getPipeline();
+			int[] output = ((ExtendedShader) program.apply(pipeline)).getBlendModeOverride();
+			if (output != null) {
+				BlockRenderingSettings.INSTANCE.setCurrentBlendFunc(output);
+				GlStateManager._blendFuncSeparate(output[0], output[1], output[2], output[3]);
+			}
 		}
-	}*/
+	}
 
 	@Inject(method = RENDER, at = @At(value = "INVOKE", target = RENDER_WEATHER))
 	private void iris$beginWeather(PoseStack poseStack, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f matrix4f, CallbackInfo callback) {
@@ -208,7 +216,7 @@ public class MixinLevelRenderer {
 	// TODO(21w10a): Deal with render hooks
 	/*@Inject(method = "renderLevel", at = @At(value = "INVOKE", target = RENDER_WORLD_BOUNDS))
 	private void iris$beginWorldBorder(PoseStack poseStack, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f projection, CallbackInfo callback) {
-		pipeline.pushProgram(GbufferProgram.TEXTURED_LIT);
+		getBlendModeOverride(GbufferProgram.TEXTURED_LIT);
 	}
 
 	@Inject(method = "renderLevel", at = @At(value = "INVOKE", target = RENDER_WORLD_BOUNDS, shift = At.Shift.AFTER))

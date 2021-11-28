@@ -1,6 +1,10 @@
 package net.coderbot.iris.pipeline.newshader;
 
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.coderbot.iris.Iris;
+import net.coderbot.iris.IrisLogging;
+import net.coderbot.iris.block_rendering.BlockRenderingSettings;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
 import net.coderbot.iris.gl.program.ProgramUniforms;
 import net.coderbot.iris.gl.sampler.SamplerHolder;
@@ -25,8 +29,10 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder {
 	GlFramebuffer baseline;
 	HashMap<String, IntSupplier> dynamicSamplers;
 	private final boolean intensitySwizzle;
+	private final int[] blendModeOverride;
+	private final boolean disableBlend;
 
-	public ExtendedShader(ResourceProvider resourceFactory, String string, VertexFormat vertexFormat, GlFramebuffer writingToBeforeTranslucent, GlFramebuffer writingToAfterTranslucent, GlFramebuffer baseline, Consumer<DynamicUniformHolder> uniformCreator, NewWorldRenderingPipeline parent) throws IOException {
+	public ExtendedShader(ResourceProvider resourceFactory, String string, VertexFormat vertexFormat, GlFramebuffer writingToBeforeTranslucent, GlFramebuffer writingToAfterTranslucent, GlFramebuffer baseline, int[] blendModeOverride, boolean disableBlend, Consumer<DynamicUniformHolder> uniformCreator, NewWorldRenderingPipeline parent) throws IOException {
 		super(resourceFactory, string, vertexFormat);
 
 		int programId = this.getId();
@@ -40,6 +46,8 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder {
 		this.baseline = baseline;
 		this.dynamicSamplers = new HashMap<>();
 		this.parent = parent;
+		this.blendModeOverride = blendModeOverride;
+		this.disableBlend = disableBlend;
 
 		// TODO(coderbot): consider a way of doing this that doesn't rely on checking the shader name.
 		this.intensitySwizzle = getName().contains("intensity");
@@ -55,13 +63,25 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder {
 		super.clear();
 
 		Minecraft.getInstance().getMainRenderTarget().bindWrite(false);
+		BlockRenderingSettings.INSTANCE.setCurrentBlendFunc(null);
 	}
 
 	@Override
 	public void apply() {
 		dynamicSamplers.forEach((name, supplier) -> this.addIrisSampler(name, supplier.getAsInt()));
 
+		if (disableBlend) {
+			GlStateManager._disableBlend();
+		} else {
+			GlStateManager._enableBlend();
+		}
+
+		BlockRenderingSettings.INSTANCE.setCurrentBlendFunc(blendModeOverride);
+
 		super.apply();
+
+		RenderSystem.defaultBlendFunc();
+
 		uniforms.update();
 
 		if (parent.isBeforeTranslucent) {
@@ -77,6 +97,10 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder {
 
 	public void addIrisSampler(String name, IntSupplier supplier) {
 		dynamicSamplers.put(name, supplier);
+	}
+
+	public int[] getBlendModeOverride() {
+		return blendModeOverride;
 	}
 
 	@Override
@@ -129,7 +153,10 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder {
 
 	@Override
 	public boolean addDynamicSampler(IntSupplier sampler, Runnable postBind, String... names) {
-		throw new UnsupportedOperationException("postBind isn't supported.");
+		if (IrisLogging.ENABLE_SPAM) {
+			Iris.logger.warn("postBind isn't supported on 1.17.");
+		}
+		return addDynamicSampler(sampler, names);
 	}
 
 	@Override

@@ -11,10 +11,12 @@ public class BlockRenderingSettings {
 	private float ambientOcclusionLevel;
 	private boolean disableDirectionalShading;
 	private boolean useSeparateAo;
+	private int[] currentBlendFunc;
 
 	public BlockRenderingSettings() {
 		reloadRequired = false;
 		idMap = null;
+		currentBlendFunc = null;
 		ambientOcclusionLevel = 1.0F;
 		disableDirectionalShading = false;
 		useSeparateAo = false;
@@ -79,5 +81,13 @@ public class BlockRenderingSettings {
 
 		this.reloadRequired = true;
 		this.useSeparateAo = useSeparateAo;
+	}
+
+	public int[] getCurrentBlendFunc() {
+		return currentBlendFunc;
+	}
+
+	public void setCurrentBlendFunc(int[] currentBlendFunc) {
+		this.currentBlendFunc = currentBlendFunc;
 	}
 }
