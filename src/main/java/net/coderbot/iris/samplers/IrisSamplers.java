@@ -126,7 +126,9 @@ public class IrisSamplers {
 	public static void addCompositeSamplers(SamplerHolder samplers, RenderTargets renderTargets) {
 		samplers.addDynamicSampler(renderTargets.getDepthTexture()::getTextureId,
 				"gdepthtex", "depthtex0");
-		samplers.addDynamicSampler(renderTargets.getDepthTextureNoTranslucents()::getTextureId, "depthtex1");
-		samplers.addDynamicSampler(renderTargets.getDepthTextureNoHand()::getTextureId, "depthtex2");
+		samplers.addDynamicSampler(renderTargets.getDepthTextureNoTranslucents()::getTextureId,
+				"depthtex1");
+		samplers.addDynamicSampler(renderTargets.getDepthTextureNoHand()::getTextureId,
+				"depthtex2");
 	}
 }
