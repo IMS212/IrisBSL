@@ -174,35 +174,6 @@ public class MixinLevelRenderer {
 		}
 	}
 
-
-	// TODO(21w10a): Restore render layer hooks
-	@Inject(method = "renderChunkLayer", at = @At("HEAD"))
-	private void iris$beginTerrainLayer(RenderType renderType, PoseStack poseStack, double d, double e, double f, Matrix4f matrix4f, CallbackInfo ci) {
-		if (renderType == RenderType.solid() || renderType == RenderType.cutout() || renderType == RenderType.cutoutMipped()) {
-			setBlendModeOverride(CoreWorldRenderingPipeline::getTerrain);
-		} else if (renderType == RenderType.translucent() || renderType == RenderType.tripwire()) {
-			setBlendModeOverride(CoreWorldRenderingPipeline::getTranslucent);
-		} else {
-			throw new IllegalStateException("[Iris] Unexpected terrain layer: " + renderType);
-		}
-	}
-
-	@Inject(method = "renderChunkLayer", at = @At("RETURN"))
-	private void iris$endTerrainLayer(RenderType renderType, PoseStack poseStack, double d, double e, double f, Matrix4f matrix4f, CallbackInfo ci) {
-		BlockRenderingSettings.INSTANCE.setCurrentBlendFunc(null);
-	}
-
-	private void setBlendModeOverride(Function<CoreWorldRenderingPipeline, ShaderInstance> program) {
-		if (Iris.getPipelineManager().getPipeline() instanceof CoreWorldRenderingPipeline) {
-			CoreWorldRenderingPipeline pipeline = (CoreWorldRenderingPipeline) Iris.getPipelineManager().getPipeline();
-			int[] output = ((ExtendedShader) program.apply(pipeline)).getBlendModeOverride();
-			if (output != null) {
-				BlockRenderingSettings.INSTANCE.setCurrentBlendFunc(output);
-				GlStateManager._blendFuncSeparate(output[0], output[1], output[2], output[3]);
-			}
-		}
-	}
-
 	@Inject(method = RENDER, at = @At(value = "INVOKE", target = RENDER_WEATHER))
 	private void iris$beginWeather(PoseStack poseStack, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f matrix4f, CallbackInfo callback) {
 		pipeline.setPhase(WorldRenderingPhase.WEATHER);

@@ -12,6 +12,7 @@ import net.coderbot.iris.pipeline.SodiumTerrainPipeline;
 import net.coderbot.iris.texunits.TextureUnit;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL30;
 
 public class IrisChunkShaderInterface {
 	@Nullable
@@ -25,18 +26,20 @@ public class IrisChunkShaderInterface {
 	@Nullable
 	private final GlUniformBlock uniformBlockDrawParameters;
 
+	private final int[] blendModeOverride;
 	private final IrisShaderFogComponent fogShaderComponent;
 	private final ProgramUniforms irisProgramUniforms;
 	private final ProgramSamplers irisProgramSamplers;
 
 	public IrisChunkShaderInterface(int handle, ShaderBindingContextExt contextExt, SodiumTerrainPipeline pipeline,
-									boolean isShadowPass) {
+									boolean isShadowPass, int[] blendModeOverride) {
 		this.uniformModelViewMatrix = contextExt.bindUniformIfPresent("u_ModelViewMatrix", GlUniformMatrix4f::new);
 		this.uniformProjectionMatrix = contextExt.bindUniformIfPresent("u_ProjectionMatrix", GlUniformMatrix4f::new);
 		this.uniformModelViewProjectionMatrix = contextExt.bindUniformIfPresent("u_ModelViewProjectionMatrix", GlUniformMatrix4f::new);
 		this.uniformNormalMatrix = contextExt.bindUniformIfPresent("u_NormalMatrix", GlUniformMatrix4f::new);
 		this.uniformBlockDrawParameters = contextExt.bindUniformBlockIfPresent("ubo_DrawParameters", 0);
 
+		this.blendModeOverride = blendModeOverride;
 		this.fogShaderComponent = new IrisShaderFogComponent(contextExt);
 
 		this.irisProgramUniforms = pipeline.initUniforms(handle);
@@ -44,12 +47,13 @@ public class IrisChunkShaderInterface {
 				= isShadowPass? pipeline.initShadowSamplers(handle) : pipeline.initTerrainSamplers(handle);
 	}
 
-	public void setup(ChunkVertexType vertexType) {
+	public void setup() {
 		// See IrisSamplers#addLevelSamplers
 		RenderSystem.activeTexture(TextureUnit.TERRAIN.getUnitId());
 		RenderSystem.bindTexture(RenderSystem.getShaderTexture(0));
 		RenderSystem.activeTexture(TextureUnit.LIGHTMAP.getUnitId());
 		RenderSystem.bindTexture(RenderSystem.getShaderTexture(2));
+		GL30.glBlendFuncSeparate(this.blendModeOverride[0], this.blendModeOverride[1], this.blendModeOverride[2], this.blendModeOverride[3]);
 
 		fogShaderComponent.setup();
 		irisProgramUniforms.update();

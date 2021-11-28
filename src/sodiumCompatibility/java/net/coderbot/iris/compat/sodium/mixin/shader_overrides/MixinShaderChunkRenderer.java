@@ -66,7 +66,7 @@ public class MixinShaderChunkRenderer implements ShaderChunkRendererExt {
 		}
 
 		override.bind();
-		override.getInterface().setup(this.vertexType);
+		override.getInterface().setup();
 
 		// TODO: Fallback framebuffers
 		irisChunkProgramOverrides.bindFramebuffer(pass);

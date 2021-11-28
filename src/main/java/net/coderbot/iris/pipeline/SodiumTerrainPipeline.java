@@ -27,17 +27,20 @@ public class SodiumTerrainPipeline {
 	String terrainFragment;
 	String terrainCutoutFragment;
 	GlFramebuffer terrainFramebuffer;
+	int[] terrainBlendOverride;
 
 	String translucentVertex;
 	String translucentGeometry;
 	String translucentFragment;
 	GlFramebuffer translucentFramebuffer;
+	int[] translucentBlendOverride;
 
 	String shadowVertex;
 	String shadowGeometry;
 	String shadowFragment;
 	String shadowCutoutFragment;
 	GlFramebuffer shadowFramebuffer;
+	int[] shadowBlendOverride;
 
 	ProgramSet programSet;
 
@@ -76,18 +79,21 @@ public class SodiumTerrainPipeline {
 			terrainVertex = sources.getVertexSource().orElse(null);
 			terrainGeometry = sources.getGeometrySource().orElse(null);
 			terrainFragment = sources.getFragmentSource().orElse(null);
+			terrainBlendOverride = sources.getDirectives().getBlendModeOverride();
 		});
 
 		translucentSource.ifPresent(sources -> {
 			translucentVertex = sources.getVertexSource().orElse(null);
 			translucentGeometry = sources.getGeometrySource().orElse(null);
 			translucentFragment = sources.getFragmentSource().orElse(null);
+			translucentBlendOverride = sources.getDirectives().getBlendModeOverride();
 		});
 
 		programSet.getShadow().ifPresent(sources -> {
 			shadowVertex = sources.getVertexSource().orElse(null);
 			shadowGeometry = sources.getGeometrySource().orElse(null);
 			shadowFragment = sources.getFragmentSource().orElse(null);
+			shadowBlendOverride = sources.getDirectives().getBlendModeOverride();
 		});
 
 		if (terrainVertex != null) {
@@ -153,6 +159,10 @@ public class SodiumTerrainPipeline {
 		return terrainFramebuffer;
 	}
 
+	public int[] getTerrainBlendOverride() {
+		return terrainBlendOverride;
+	}
+
 	public Optional<String> getTranslucentVertexShaderSource() {
 		return Optional.ofNullable(translucentVertex);
 	}
@@ -167,6 +177,10 @@ public class SodiumTerrainPipeline {
 
 	public GlFramebuffer getTranslucentFramebuffer() {
 		return translucentFramebuffer;
+	}
+
+	public int[] getTranslucentBlendOverride() {
+		return translucentBlendOverride;
 	}
 
 	public Optional<String> getShadowVertexShaderSource() {
@@ -187,6 +201,10 @@ public class SodiumTerrainPipeline {
 
 	public GlFramebuffer getShadowFramebuffer() {
 		return shadowFramebuffer;
+	}
+
+	public int[] getShadowBlendOverride() {
+		return shadowBlendOverride;
 	}
 
 	public ProgramUniforms initUniforms(int programId) {

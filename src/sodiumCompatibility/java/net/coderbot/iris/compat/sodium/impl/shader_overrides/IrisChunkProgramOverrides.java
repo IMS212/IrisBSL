@@ -96,11 +96,28 @@ public class IrisChunkProgramOverrides {
         return new GlShader(ShaderType.FRAGMENT, new ResourceLocation("iris", "sodium-terrain.fsh"), source);
     }
 
+	private int[] getBlendModeOverride(IrisTerrainPass pass, SodiumTerrainPipeline pipeline) {
+		int[] blendModeOverride = null;
+
+		if (pass == IrisTerrainPass.SHADOW || pass == IrisTerrainPass.SHADOW_CUTOUT) {
+			blendModeOverride = pipeline.getShadowBlendOverride();
+		} else if (pass == IrisTerrainPass.GBUFFER_SOLID || pass == IrisTerrainPass.GBUFFER_CUTOUT) {
+			blendModeOverride = pipeline.getTerrainBlendOverride();
+		} else if (pass == IrisTerrainPass.GBUFFER_TRANSLUCENT) {
+			blendModeOverride = pipeline.getTranslucentBlendOverride();
+		} else {
+			throw new IllegalArgumentException("Unknown pass type " + pass);
+		}
+
+		return blendModeOverride;
+	}
+
     @Nullable
     private GlProgram<IrisChunkShaderInterface> createShader(IrisTerrainPass pass, SodiumTerrainPipeline pipeline) {
         GlShader vertShader = createVertexShader(pass, pipeline);
         GlShader geomShader = createGeometryShader(pass, pipeline);
         GlShader fragShader = createFragmentShader(pass, pipeline);
+		int[] blendModeOverride = getBlendModeOverride(pass, pipeline);
 
         if (vertShader == null || fragShader == null) {
             if (vertShader != null) {
@@ -144,7 +161,7 @@ public class IrisChunkProgramOverrides {
 						ShaderBindingContextExt contextExt = (ShaderBindingContextExt) shader;
 
 						return new IrisChunkShaderInterface(handle, contextExt, pipeline,
-								pass == IrisTerrainPass.SHADOW || pass == IrisTerrainPass.SHADOW_CUTOUT);
+								pass == IrisTerrainPass.SHADOW || pass == IrisTerrainPass.SHADOW_CUTOUT, blendModeOverride);
 					});
         } finally {
             vertShader.delete();
