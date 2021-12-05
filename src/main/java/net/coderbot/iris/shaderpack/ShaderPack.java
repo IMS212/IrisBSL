@@ -13,6 +13,10 @@ import net.coderbot.iris.shaderpack.texture.TextureStage;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
+import net.coderbot.iris.Iris;
+import net.coderbot.iris.uniforms.custom.CustomUniforms;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
@@ -20,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
@@ -54,6 +59,8 @@ public class ShaderPack {
 	private final Object2ObjectMap<TextureStage, Object2ObjectMap<String, CustomTextureData>> customTextureDataMap = new Object2ObjectOpenHashMap<>();
 	private final CustomTextureData customNoiseTexture;
 
+	public final CustomUniforms.Builder customUniforms;
+
 	/**
 	 * Reads a shader pack from the disk.
 	 *
@@ -67,8 +74,8 @@ public class ShaderPack {
 		Objects.requireNonNull(root);
 
 		ShaderProperties shaderProperties = loadProperties(root, "shaders.properties")
-			.map(ShaderProperties::new)
-			.orElseGet(ShaderProperties::empty);
+				.map(ShaderProperties::new)
+				.orElseGet(ShaderProperties::empty);
 
 		ImmutableList.Builder<AbsolutePackPath> starts = ImmutableList.builder();
 		ImmutableList<String> potentialFileNames = ShaderPackSourceNames.POTENTIAL_STARTS;
@@ -155,6 +162,7 @@ public class ShaderPack {
 
 			customTextureDataMap.put(textureStage, innerCustomTextureDataMap);
 		});
+		this.customUniforms = shaderProperties.customUniforms;
 	}
 
 	@Nullable

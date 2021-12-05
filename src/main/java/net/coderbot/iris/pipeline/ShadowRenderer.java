@@ -40,6 +40,8 @@ import net.coderbot.iris.uniforms.CapturedRenderingState;
 import net.coderbot.iris.uniforms.CelestialUniforms;
 import net.coderbot.iris.uniforms.CommonUniforms;
 import net.coderbot.iris.vendored.joml.Vector3d;
+import net.coderbot.iris.uniforms.*;
+import net.coderbot.iris.uniforms.custom.CustomUniforms;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -106,12 +108,14 @@ public class ShadowRenderer implements ShadowMapRenderer {
 	private String debugStringTerrain = "(unavailable)";
 	private int renderedShadowEntities = 0;
 	private int renderedShadowBlockEntities = 0;
+	private final CustomUniforms customUniforms;
 
 	public ShadowRenderer(WorldRenderingPipeline pipeline, ProgramSource shadow, PackDirectives directives,
                           Supplier<ImmutableSet<Integer>> flipped, RenderTargets gbufferRenderTargets,
                           AbstractTexture normals, AbstractTexture specular, IntSupplier noise, ProgramSet programSet,
-													Object2ObjectMap<String, IntSupplier> customTextureIds) {
+													Object2ObjectMap<String, IntSupplier> customTextureIds, CustomUniforms customUniforms) {
 		this.pipeline = pipeline;
+		this.customUniforms = customUniforms;
 
 		final PackShadowDirectives shadowDirectives = directives.getShadowDirectives();
 
@@ -276,7 +280,7 @@ public class ShadowRenderer implements ShadowMapRenderer {
 	}
 
 	// TODO: Don't just copy this from ShaderPipeline
-	private Program createProgram(ProgramSource source, PackDirectives directives,
+	private Program createProgram(ProgramSource source,
 								  Supplier<ImmutableSet<Integer>> flipped) {
 		// TODO: Properly handle empty shaders
 		Objects.requireNonNull(source.getVertexSource());
@@ -294,12 +298,20 @@ public class ShadowRenderer implements ShadowMapRenderer {
 		ProgramSamplers.CustomTextureSamplerInterceptor customTextureSamplerInterceptor = ProgramSamplers.customTextureSamplerInterceptor(builder, customTextureIds);
 
 		CommonUniforms.addCommonUniforms(builder, source.getParent().getPack().getIdMap(), directives, pipeline.getFrameUpdateNotifier(), FogMode.LINEAR);
+		this.customUniforms.assignTo(builder);
+
 		IrisSamplers.addRenderTargetSamplers(customTextureSamplerInterceptor, flipped, gbufferRenderTargets, false);
 		IrisSamplers.addLevelSamplers(customTextureSamplerInterceptor, normals, specular);
 		IrisSamplers.addNoiseSampler(customTextureSamplerInterceptor, noise);
 		IrisSamplers.addShadowSamplers(customTextureSamplerInterceptor, this);
 
-		return builder.build();
+		Program build = builder.build();
+
+		// tell the customUniforms that those locations belong to this pass
+		// this is just an object to index the internal map
+		this.customUniforms.mapholderToPass(builder, build);
+
+		return build;
 	}
 
 	private static void setupAttributes(Program program) {
@@ -673,6 +685,9 @@ public class ShadowRenderer implements ShadowMapRenderer {
 	private void setupShadowProgram() {
 		/*if (shadowProgram != null) {
 			shadowProgram.use();
+
+			// program is the identifier for shadow :shrug:
+			this.customUniforms.push(shadowProgram);
 			setupAttributes(shadowProgram);
 		} else {
 			GlProgramManager.useProgram(0);
