@@ -4,6 +4,7 @@ import java.util.Objects;
 import java.util.function.IntSupplier;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.math.Vector4f;
 import net.coderbot.iris.JomlConversions;
 import net.coderbot.iris.gl.state.StateUpdateNotifiers;
 import net.coderbot.iris.gl.uniform.DynamicUniformHolder;
@@ -47,7 +48,7 @@ public final class CommonUniforms {
 	}
 
 	// Needs to use a LocationalUniformHolder as we need it for the common uniforms
-	public static void addDynamicUniforms(DynamicUniformHolder uniforms) {
+	public static void addDynamicUniforms(DynamicUniformHolder uniforms, FogMode fogMode) {
 		FogUniforms.addFogUniforms(uniforms, fogMode);
 
 		uniforms.uniform4f("entityColor", () -> {
@@ -82,11 +83,11 @@ public final class CommonUniforms {
 	}
 
 	public static void addCommonUniforms(DynamicUniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier, FogMode fogMode) {
-		CommonUniforms.addNonDynamicUniforms(uniforms, idMap, directives, updateNotifier, fogMode);
-		CommonUniforms.addDynamicUniforms(uniforms);
+		CommonUniforms.addNonDynamicUniforms(uniforms, idMap, directives, updateNotifier);
+		CommonUniforms.addDynamicUniforms(uniforms, fogMode);
 	}
 
-	public static void addNonDynamicUniforms(UniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier, FogMode fogMode) {
+	public static void addNonDynamicUniforms(UniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier) {
 		CameraUniforms.addCameraUniforms(uniforms, updateNotifier);
 		ViewportUniforms.addViewportUniforms(uniforms);
 		WorldTimeUniforms.addWorldTimeUniforms(uniforms);

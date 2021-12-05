@@ -6,10 +6,12 @@ import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformBlock;
 import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformFloat;
 import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformMatrix4f;
 import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
+import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
 import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.program.ProgramUniforms;
 import net.coderbot.iris.pipeline.SodiumTerrainPipeline;
+import net.coderbot.iris.pipeline.WorldRenderingPipeline;
 import net.coderbot.iris.texunits.TextureUnit;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -42,7 +44,7 @@ public class IrisChunkShaderInterface {
 		this.blendModeOverride = blendModeOverride;
 		this.fogShaderComponent = new IrisShaderFogComponent(contextExt);
 
-		this.irisProgramUniforms = pipeline.initUniforms(handle);
+		this.irisProgramUniforms = pipeline.initUniforms(handle, this);
 		this.irisProgramSamplers
 				= isShadowPass? pipeline.initShadowSamplers(handle) : pipeline.initTerrainSamplers(handle);
 	}
@@ -54,6 +56,8 @@ public class IrisChunkShaderInterface {
 		RenderSystem.activeTexture(TextureUnit.LIGHTMAP.getUnitId());
 		RenderSystem.bindTexture(RenderSystem.getShaderTexture(2));
 
+		WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipeline();
+
 		if (blendModeOverride != null) {
 			blendModeOverride.apply();
 		}
@@ -61,6 +65,8 @@ public class IrisChunkShaderInterface {
 		fogShaderComponent.setup();
 		irisProgramUniforms.update();
 		irisProgramSamplers.update();
+
+		pipeline.getCustomUniforms().push(this);
 	}
 
 	public void restore() {

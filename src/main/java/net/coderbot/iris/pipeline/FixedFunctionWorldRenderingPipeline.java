@@ -5,6 +5,7 @@ import net.coderbot.iris.block_rendering.BlockRenderingSettings;
 import net.coderbot.iris.layer.GbufferProgram;
 import net.coderbot.iris.mixin.LevelRendererAccessor;
 import net.coderbot.iris.uniforms.FrameUpdateNotifier;
+import net.coderbot.iris.uniforms.custom.CustomUniforms;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import java.util.List;
@@ -89,6 +90,11 @@ public class FixedFunctionWorldRenderingPipeline implements WorldRenderingPipeli
 	public FrameUpdateNotifier getFrameUpdateNotifier() {
 		// return a dummy notifier
 		return new FrameUpdateNotifier();
+	}
+
+	@Override
+	public CustomUniforms getCustomUniforms() {
+		return null;
 	}
 
 	@Override

@@ -18,6 +18,7 @@ import net.coderbot.iris.gl.program.ProgramBuilder;
 import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.layer.GbufferProgram;
 import net.coderbot.iris.mixin.LevelRendererAccessor;
+import net.coderbot.iris.pipeline.newshader.FogMode;
 import net.coderbot.iris.postprocess.BufferFlipper;
 import net.coderbot.iris.postprocess.CenterDepthSampler;
 import net.coderbot.iris.postprocess.CompositeRenderer;
@@ -33,6 +34,7 @@ import net.coderbot.iris.shadows.ShadowMapRenderer;
 import net.coderbot.iris.uniforms.CapturedRenderingState;
 import net.coderbot.iris.uniforms.*;
 import net.coderbot.iris.uniforms.custom.CustomUniforms;
+import net.coderbot.iris.vendored.joml.Vector3d;
 import net.coderbot.iris.vendored.joml.Vector4f;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -181,7 +183,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 		ImmutableSet<Integer> flippedBeforeTerrain = ImmutableSet.of();
 
 		this.customUniforms = programs.getPack().customUniforms.build(
-				holder -> CommonUniforms.addNonDynamicUniforms(holder, programs.getPack().getIdMap(), programs.getPackDirectives(), this.updateNotifier)
+				holder -> CommonUniforms.addNonDynamicUniforms(holder, programs.getPack().getIdMap(), programs.getPackDirectives(), getFrameUpdateNotifier())
 		);
 
 		createShadowMapRenderer = () -> {
@@ -493,7 +495,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 			throw new RuntimeException("Shader compilation failed!", e);
 		}
 
-		CommonUniforms.addCommonUniforms(builder, source.getParent().getPack().getIdMap(), source.getParent().getPackDirectives(), updateNotifier, null);
+		CommonUniforms.addDynamicUniforms(builder, FogMode.LINEAR);
 		this.customUniforms.assignTo(builder);
 
 		Supplier<ImmutableSet<Integer>> flipped =
@@ -816,6 +818,11 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 	@Override
 	public FrameUpdateNotifier getFrameUpdateNotifier() {
 		return updateNotifier;
+	}
+
+	@Override
+	public CustomUniforms getCustomUniforms() {
+		return customUniforms;
 	}
 
 	private boolean isRenderingShadow = false;

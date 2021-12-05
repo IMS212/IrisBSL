@@ -4,6 +4,7 @@ import net.coderbot.iris.layer.GbufferProgram;
 import net.coderbot.iris.mixin.LevelRendererAccessor;
 import net.coderbot.iris.pipeline.newshader.WorldRenderingPhase;
 import net.coderbot.iris.uniforms.FrameUpdateNotifier;
+import net.coderbot.iris.uniforms.custom.CustomUniforms;
 import net.minecraft.client.Camera;
 import java.util.List;
 import java.util.OptionalInt;
@@ -26,6 +27,7 @@ public interface WorldRenderingPipeline {
 
 	SodiumTerrainPipeline getSodiumTerrainPipeline();
 	FrameUpdateNotifier getFrameUpdateNotifier();
+	CustomUniforms getCustomUniforms();
 
 	default void setPhase(WorldRenderingPhase phase) {
 		// no-op

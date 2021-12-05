@@ -5,7 +5,9 @@ import net.coderbot.iris.gl.blending.BlendModeOverride;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
 import net.coderbot.iris.gl.program.ProgramUniforms;
 import net.coderbot.iris.gl.sampler.SamplerHolder;
+import net.coderbot.iris.gl.uniform.DynamicLocationalUniformHolder;
 import net.coderbot.iris.gl.uniform.DynamicUniformHolder;
+import net.coderbot.iris.uniforms.custom.CustomUniforms;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.server.packs.resources.ResourceProvider;
@@ -27,16 +29,19 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder {
 	BlendModeOverride blendModeOverride;
 	HashMap<String, IntSupplier> dynamicSamplers;
 	private final boolean intensitySwizzle;
+	CustomUniforms customUniforms;
 
-	public ExtendedShader(ResourceProvider resourceFactory, String string, VertexFormat vertexFormat, GlFramebuffer writingToBeforeTranslucent, GlFramebuffer writingToAfterTranslucent, GlFramebuffer baseline, BlendModeOverride blendModeOverride, Consumer<DynamicUniformHolder> uniformCreator, NewWorldRenderingPipeline parent) throws IOException {
+	public ExtendedShader(ResourceProvider resourceFactory, String string, VertexFormat vertexFormat, GlFramebuffer writingToBeforeTranslucent, GlFramebuffer writingToAfterTranslucent, GlFramebuffer baseline, BlendModeOverride blendModeOverride, Consumer<DynamicLocationalUniformHolder> uniformCreator, CustomUniforms customUniforms, NewWorldRenderingPipeline parent) throws IOException {
 		super(resourceFactory, string, vertexFormat);
 
 		int programId = this.getId();
 
 		ProgramUniforms.Builder uniformBuilder = ProgramUniforms.builder(string, programId);
+		customUniforms.mapholderToPass(uniformBuilder, this);
 		uniformCreator.accept(uniformBuilder);
 
 		uniforms = uniformBuilder.buildUniforms();
+		this.customUniforms = customUniforms;
 		this.writingToBeforeTranslucent = writingToBeforeTranslucent;
 		this.writingToAfterTranslucent = writingToAfterTranslucent;
 		this.baseline = baseline;
@@ -71,6 +76,7 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder {
 		super.apply();
 		uniforms.update();
 
+
 		if (this.blendModeOverride != null) {
 			this.blendModeOverride.apply();
 		}
@@ -80,6 +86,9 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder {
 		} else {
 			writingToAfterTranslucent.bind();
 		}
+
+		customUniforms.push(this);
+
 	}
 
 	public void addIrisSampler(String name, int id) {

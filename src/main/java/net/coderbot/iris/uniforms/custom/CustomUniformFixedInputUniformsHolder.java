@@ -132,10 +132,10 @@ public Collection<CachedUniform> getAll() {
 		}
 
 		@Override
-		public UniformHolder uniform3d(UniformUpdateFrequency updateFrequency, String name, Supplier<Vec3> value) {
+		public UniformHolder uniform3d(UniformUpdateFrequency updateFrequency, String name, Supplier<Vector3d> value) {
 			Vector3f held = new Vector3f();
 			return this.put(name, new Float3VectorCachedUniform(name, updateFrequency, () -> {
-				Vec3 vec = value.get();
+				Vector3d vec = value.get();
 				held.set(vec.x(), vec.y(), vec.z());
 				return held;
 			}));

@@ -245,9 +245,11 @@ public class CustomUniforms implements FunctionContext {
 		// Count the times a pass depends on a uniform
 		// ensures they wont ever be removed
 		for (Object2IntMap<CachedUniform> map : this.locationMap.values()) {
-			for (CachedUniform cachedUniform : map.keySet()) {
-				dependedByCount.mergeInt(cachedUniform, 1, Integer::sum);
-			}
+			if (map != null) {
+		for (CachedUniform cachedUniform : map.keySet()) {
+			dependedByCount.mergeInt(cachedUniform, 1, Integer::sum);
+		}
+	}
 		}
 
 

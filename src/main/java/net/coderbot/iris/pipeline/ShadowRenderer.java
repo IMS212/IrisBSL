@@ -297,7 +297,7 @@ public class ShadowRenderer implements ShadowMapRenderer {
 
 		ProgramSamplers.CustomTextureSamplerInterceptor customTextureSamplerInterceptor = ProgramSamplers.customTextureSamplerInterceptor(builder, customTextureIds);
 
-		CommonUniforms.addCommonUniforms(builder, source.getParent().getPack().getIdMap(), directives, pipeline.getFrameUpdateNotifier(), FogMode.LINEAR);
+		CommonUniforms.addDynamicUniforms(builder, FogMode.LINEAR);
 		this.customUniforms.assignTo(builder);
 
 		IrisSamplers.addRenderTargetSamplers(customTextureSamplerInterceptor, flipped, gbufferRenderTargets, false);
