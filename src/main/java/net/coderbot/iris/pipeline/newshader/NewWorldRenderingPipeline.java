@@ -42,7 +42,9 @@ import net.coderbot.iris.shaderpack.texture.TextureStage;
 import net.coderbot.iris.shadows.EmptyShadowMapRenderer;
 import net.coderbot.iris.shadows.ShadowMapRenderer;
 import net.coderbot.iris.uniforms.CapturedRenderingState;
+import net.coderbot.iris.uniforms.CommonUniforms;
 import net.coderbot.iris.uniforms.FrameUpdateNotifier;
+import net.coderbot.iris.uniforms.custom.CustomUniforms;
 import net.coderbot.iris.vendored.joml.Vector3d;
 import net.coderbot.iris.vendored.joml.Vector4f;
 import net.coderbot.iris.vertices.IrisVertexFormats;
@@ -83,6 +85,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 	private final CompositeRenderer compositeRenderer;
 	private final FinalPassRenderer finalPassRenderer;
 
+	private final CustomUniforms customUniforms;
 	private final CustomTextureManager customTextureManager;
 	private final FrameUpdateNotifier updateNotifier;
 	private final CenterDepthSampler centerDepthSampler;
@@ -156,9 +159,13 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		// TODO: Change this once earlier passes are implemented.
 		ImmutableSet<Integer> flippedBeforeTerrain = ImmutableSet.of();
 
+		this.customUniforms = programSet.getPack().customUniforms.build(
+				holder -> CommonUniforms.addNonDynamicUniforms(holder, programSet.getPack().getIdMap(), programSet.getPackDirectives(), this.updateNotifier)
+		);
+
 		createShadowMapRenderer = () -> {
 			shadowMapRenderer = new ShadowRenderer(this, programSet.getShadow().orElse(null),
-					programSet.getPackDirectives(), renderTargets);
+					programSet.getPackDirectives(), renderTargets, customUniforms);
 			createShadowMapRenderer = () -> {
 			};
 		};
@@ -177,18 +184,18 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		this.deferredRenderer = new CompositeRenderer(programSet.getPackDirectives(), programSet.getDeferred(), renderTargets,
 				customTextureManager.getNoiseTexture(), updateNotifier, centerDepthSampler, flipper, shadowMapRendererSupplier,
 				customTextureManager.getCustomTextureIdMap().getOrDefault(TextureStage.DEFERRED, Object2ObjectMaps.emptyMap()),
-				programSet.getPackDirectives().getExplicitFlips("deferred_pre"));
+				programSet.getPackDirectives().getExplicitFlips("deferred_pre"), customUniforms);
 
 		flippedAfterTranslucent = flipper.snapshot();
 
 		this.compositeRenderer = new CompositeRenderer(programSet.getPackDirectives(), programSet.getComposite(), renderTargets,
 				customTextureManager.getNoiseTexture(), updateNotifier, centerDepthSampler, flipper, shadowMapRendererSupplier,
 				customTextureManager.getCustomTextureIdMap().getOrDefault(TextureStage.COMPOSITE_AND_FINAL, Object2ObjectMaps.emptyMap()),
-				programSet.getPackDirectives().getExplicitFlips("composite_pre"));
+				programSet.getPackDirectives().getExplicitFlips("composite_pre"), customUniforms);
 		this.finalPassRenderer = new FinalPassRenderer(programSet, renderTargets, customTextureManager.getNoiseTexture(), updateNotifier, flipper.snapshot(),
 				centerDepthSampler, shadowMapRendererSupplier,
 				customTextureManager.getCustomTextureIdMap().getOrDefault(TextureStage.COMPOSITE_AND_FINAL, Object2ObjectMaps.emptyMap()),
-				this.compositeRenderer.getFlippedAtLeastOnceFinal());
+				this.compositeRenderer.getFlippedAtLeastOnceFinal(), customUniforms);
 
 		Supplier<ImmutableSet<Integer>> flipped =
 				() -> isBeforeTranslucent ? flippedBeforeTranslucent : flippedAfterTranslucent;
@@ -317,6 +324,9 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 				createShadowTerrainSamplers, createTerrainImages, createShadowTerrainImages, renderTargets, flippedBeforeTranslucent, flippedAfterTranslucent,
 				shadowMapRenderer instanceof ShadowRenderer ? ((ShadowRenderer) shadowMapRenderer).getFramebuffer() :
 						null);
+
+		// first optimization pass
+		this.customUniforms.optimise();
 	}
 
 	@SafeVarargs
@@ -486,6 +496,8 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		// If we forget to do this, then weird lines appear at the top of the screen and the right of the screen
 		// on Sildur's Vibrant Shaders.
 		main.bindWrite(true);
+
+		customUniforms.update();
 
 		isBeforeTranslucent = true;
 	}
@@ -659,6 +671,11 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 
 		shadowMapRenderer.destroy();
 		renderTargets.destroy();
+	}
+
+	@Override
+	public CustomUniforms getCustomUniforms() {
+		return customUniforms;
 	}
 
 	@Override

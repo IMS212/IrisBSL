@@ -13,6 +13,8 @@ import net.coderbot.iris.pipeline.newshader.CoreWorldRenderingPipeline;
 import net.coderbot.iris.pipeline.newshader.ShaderKey;
 import net.coderbot.iris.pipeline.newshader.WorldRenderingPhase;
 
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,6 +32,7 @@ import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.MultiBufferSource.BufferSource;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.function.Function;
 
@@ -61,8 +64,7 @@ public class MixinGameRenderer {
 	// This injection gives a chance for mods injecting at HEAD to return a modified night vision value.
 	@Inject(method = "getNightVisionScale", at = @At(value = "INVOKE",
 			target = "Lnet/minecraft/world/effect/MobEffectInstance;getDuration()I"), cancellable = true)
-	private static void iris$safecheckNightvisionStrength(LivingEntity livingEntity, float partialTicks,
-														  CallbackInfoReturnable<Float> cir){
+	private static void iris$safecheckNightvisionStrength(LivingEntity livingEntity, float f, CallbackInfoReturnable<Float> cir){
 		if (livingEntity.getEffect(MobEffects.NIGHT_VISION) == null) {
 			cir.setReturnValue(0.0f);
 		}

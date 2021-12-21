@@ -231,11 +231,14 @@ public class SodiumTerrainPipeline {
 		return shadowBlendOverride;
 	}
 
-	public ProgramUniforms initUniforms(int programId) {
+	public ProgramUniforms initUniforms(int programId, Object irisChunkShaderInterface) {
 		ProgramUniforms.Builder uniforms = ProgramUniforms.builder("<sodium shaders>", programId);
 
-		CommonUniforms.addCommonUniforms(uniforms, programSet.getPack().getIdMap(), programSet.getPackDirectives(), parent.getFrameUpdateNotifier(), FogMode.ENABLED);
+		CommonUniforms.addDynamicUniforms(uniforms, FogMode.ENABLED);
 		BuiltinReplacementUniforms.addBuiltinReplacementUniforms(uniforms);
+		parent.getCustomUniforms().assignTo(uniforms);
+
+		parent.getCustomUniforms().mapholderToPass(uniforms, irisChunkShaderInterface);
 
 		return uniforms.buildUniforms();
 	}

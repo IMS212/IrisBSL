@@ -667,6 +667,11 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 		customTextureManager.destroy();
 	}
 
+	@Override
+	public CustomUniforms getCustomUniforms() {
+		return customUniforms;
+	}
+
 	private static void destroyPasses(List<Pass> passes) {
 		Set<Pass> destroyed = new HashSet<>();
 
