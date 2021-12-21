@@ -35,6 +35,9 @@ import net.minecraft.world.level.material.FogType;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.Objects;
+import java.util.function.IntSupplier;
+
 import static net.coderbot.iris.gl.uniform.UniformUpdateFrequency.PER_FRAME;
 import static net.coderbot.iris.gl.uniform.UniformUpdateFrequency.PER_TICK;
 import static net.coderbot.iris.gl.uniform.UniformUpdateFrequency.ONCE;
@@ -47,16 +50,7 @@ public final class CommonUniforms {
 	}
 
 	// Needs to use a LocationalUniformHolder as we need it for the common uniforms
-	public static void addCommonUniforms(DynamicUniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier, FogMode fogMode) {
-		CameraUniforms.addCameraUniforms(uniforms, updateNotifier);
-		ViewportUniforms.addViewportUniforms(uniforms);
-		WorldTimeUniforms.addWorldTimeUniforms(uniforms);
-		SystemTimeUniforms.addSystemTimeUniforms(uniforms);
-		new CelestialUniforms(directives.getSunPathRotation()).addCelestialUniforms(uniforms);
-		IdMapUniforms.addIdMapUniforms(uniforms, idMap);
-		IrisExclusiveUniforms.addIrisExclusiveUniforms(uniforms);
-		MatrixUniforms.addMatrixUniforms(uniforms, directives);
-		HardcodedCustomUniforms.addHardcodedCustomUniforms(uniforms, updateNotifier);
+	public static void addDynamicUniforms(DynamicUniformHolder uniforms, FogMode fogMode) {
 		FogUniforms.addFogUniforms(uniforms, fogMode);
 		IrisInternalUniforms.addFogUniforms(uniforms);
 
@@ -84,6 +78,23 @@ public final class CommonUniforms {
 			return new Vector2i((int) atlasSize.x, (int) atlasSize.y);
 		}, StateUpdateNotifiers.atlasTextureNotifier);
 
+		uniforms.uniform1i("entityId", CapturedRenderingState.INSTANCE::getCurrentRenderedEntity,
+				CapturedRenderingState.INSTANCE.getEntityIdNotifier());
+
+		uniforms.uniform1i("blockEntityId", CapturedRenderingState.INSTANCE::getCurrentRenderedBlockEntity,
+				CapturedRenderingState.INSTANCE.getBlockEntityIdNotifier());
+	}
+
+	public static void addNonDynamicUniforms(UniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier) {
+		CameraUniforms.addCameraUniforms(uniforms, updateNotifier);
+		ViewportUniforms.addViewportUniforms(uniforms);
+		WorldTimeUniforms.addWorldTimeUniforms(uniforms);
+		SystemTimeUniforms.addSystemTimeUniforms(uniforms);
+		BiomeParameters.addBiomeUniforms(uniforms);
+		new CelestialUniforms(directives.getSunPathRotation()).addCelestialUniforms(uniforms);
+		IrisExclusiveUniforms.addIrisExclusiveUniforms(uniforms);
+		MatrixUniforms.addMatrixUniforms(uniforms, directives);
+		IdMapUniforms.addIdMapUniforms(uniforms, idMap);
 		CommonUniforms.generalCommonUniforms(uniforms, updateNotifier);
 	}
 
@@ -177,17 +188,24 @@ public final class CommonUniforms {
 		if (cameraEntity instanceof LivingEntity) {
 			LivingEntity livingEntity = (LivingEntity) cameraEntity;
 
-			// See MixinGameRenderer#iris$safecheckNightvisionStrength.
-			//
-			// We modify the behavior of getNightVisionScale so that it's safe for us to call it even on entities that
-			// don't have the effect, allowing us to pick up modified night vision strength values from mods like Origins.
-			//
-			// See: https://github.com/apace100/apoli/blob/320b0ef547fbbf703de7154f60909d30366f6500/src/main/java/io/github/apace100/apoli/mixin/GameRendererMixin.java#L153
-			float nightVisionStrength =
-					GameRenderer.getNightVisionScale(livingEntity, CapturedRenderingState.INSTANCE.getTickDelta());
+			try {
+				// See MixinGameRenderer#iris$safecheckNightvisionStrength.
+				//
+				// We modify the behavior of getNightVisionScale so that it's safe for us to call it even on entities
+				// that don't have the effect, allowing us to pick up modified night vision strength values from mods
+				// like Origins.
+				//
+				// See: https://github.com/apace100/apoli/blob/320b0ef547fbbf703de7154f60909d30366f6500/src/main/java/io/github/apace100/apoli/mixin/GameRendererMixin.java#L153
+				float nightVisionStrength =
+						GameRenderer.getNightVisionScale(livingEntity, CapturedRenderingState.INSTANCE.getTickDelta());
 
-			if (nightVisionStrength > 0) {
-				return nightVisionStrength;
+				if (nightVisionStrength > 0) {
+					return nightVisionStrength;
+				}
+			} catch (NullPointerException e) {
+				// If our injection didn't get applied, a NullPointerException will occur from calling that method if
+				// the entity doesn't currently have night vision. This isn't pretty but it's functional.
+				return 0.0F;
 			}
 		}
 

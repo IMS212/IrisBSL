@@ -19,6 +19,7 @@ import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.layer.GbufferProgram;
 import net.coderbot.iris.mixin.LevelRendererAccessor;
 import net.coderbot.iris.pipeline.newshader.CoreWorldRenderingPipeline;
+import net.coderbot.iris.pipeline.newshader.FogMode;
 import net.coderbot.iris.postprocess.BufferFlipper;
 import net.coderbot.iris.postprocess.CenterDepthSampler;
 import net.coderbot.iris.postprocess.CompositeRenderer;
@@ -33,6 +34,7 @@ import net.coderbot.iris.shaderpack.texture.TextureStage;
 import net.coderbot.iris.shadows.EmptyShadowMapRenderer;
 import net.coderbot.iris.shadows.ShadowMapRenderer;
 import net.coderbot.iris.uniforms.CapturedRenderingState;
+import net.coderbot.iris.uniforms.custom.CustomUniforms;
 import net.coderbot.iris.uniforms.CommonUniforms;
 import net.coderbot.iris.uniforms.FrameUpdateNotifier;
 import net.coderbot.iris.vendored.joml.Vector3d;
@@ -44,6 +46,12 @@ import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL30C;
+import org.lwjgl.opengl.*;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -132,6 +140,8 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 	private final List<String> programStackLog = new ArrayList<>();
 
 	private static final ResourceLocation WATER_IDENTIFIER = new ResourceLocation("minecraft", "water");
+	private final CustomUniforms customUniforms;
+
 
 	public DeferredWorldRenderingPipeline(ProgramSet programs) {
 		Objects.requireNonNull(programs);
@@ -180,9 +190,13 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 		// TODO: Change this once earlier passes are implemented.
 		ImmutableSet<Integer> flippedBeforeTerrain = ImmutableSet.of();
 
+		this.customUniforms = programs.getPack().customUniforms.build(
+				holder -> CommonUniforms.addNonDynamicUniforms(holder, programs.getPack().getIdMap(), programs.getPackDirectives(), this.updateNotifier)
+		);
+
 		createShadowMapRenderer = () -> {
 			shadowMapRenderer = new ShadowRenderer((CoreWorldRenderingPipeline) this, programs.getShadow().orElse(null),
-					programs.getPackDirectives(), renderTargets);
+					programs.getPackDirectives(), renderTargets, customUniforms);
 			createShadowMapRenderer = () -> {};
 		};
 
@@ -200,18 +214,18 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 		this.deferredRenderer = new CompositeRenderer(programs.getPackDirectives(), programs.getDeferred(), renderTargets,
 				customTextureManager.getNoiseTexture(), updateNotifier, centerDepthSampler, flipper, shadowMapRendererSupplier,
 				customTextureManager.getCustomTextureIdMap().getOrDefault(TextureStage.DEFERRED, Object2ObjectMaps.emptyMap()),
-				programs.getPackDirectives().getExplicitFlips("deferred_pre"));
+				programs.getPackDirectives().getExplicitFlips("deferred_pre"), customUniforms);
 
 		flippedAfterTranslucent = flipper.snapshot();
 
 		this.compositeRenderer = new CompositeRenderer(programs.getPackDirectives(), programs.getComposite(), renderTargets,
 				customTextureManager.getNoiseTexture(), updateNotifier, centerDepthSampler, flipper, shadowMapRendererSupplier,
 				customTextureManager.getCustomTextureIdMap().getOrDefault(TextureStage.COMPOSITE_AND_FINAL, Object2ObjectMaps.emptyMap()),
-				programs.getPackDirectives().getExplicitFlips("composite_pre"));
+				programs.getPackDirectives().getExplicitFlips("composite_pre"), customUniforms);
 		this.finalPassRenderer = new FinalPassRenderer(programs, renderTargets, customTextureManager.getNoiseTexture(), updateNotifier, flipper.snapshot(),
 				centerDepthSampler, shadowMapRendererSupplier,
 				customTextureManager.getCustomTextureIdMap().getOrDefault(TextureStage.COMPOSITE_AND_FINAL, Object2ObjectMaps.emptyMap()),
-				this.compositeRenderer.getFlippedAtLeastOnceFinal());
+				this.compositeRenderer.getFlippedAtLeastOnceFinal(), customUniforms);
 
 		Supplier<ImmutableSet<Integer>> flipped =
 				() -> isBeforeTranslucent ? flippedBeforeTranslucent : flippedAfterTranslucent;
@@ -299,7 +313,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 		this.clearPasses = ClearPassCreator.createClearPasses(renderTargets, false,
 				programs.getPackDirectives().getRenderTargetDirectives());
 
-		this.baseline = renderTargets.createFramebufferWritingToMain(new int[] {0});
+		this.baseline = renderTargets.createFramebufferWritingToMain(new int[]{0});
 
 		if (shadowMapRenderer == null) {
 			// Fallback just in case.
@@ -311,6 +325,9 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 				createShadowTerrainSamplers, createTerrainImages, createShadowTerrainImages, renderTargets, flippedBeforeTranslucent, flippedAfterTranslucent,
 				shadowMapRenderer instanceof ShadowRenderer ? ((ShadowRenderer) shadowMapRenderer).getFramebuffer() :
 						null);
+
+		// first optimization pass
+		this.customUniforms.optimise();
 	}
 
 	private void checkWorld() {
@@ -509,13 +526,14 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 
 		try {
 			builder = ProgramBuilder.begin(source.getName(), source.getVertexSource().orElse(null), source.getGeometrySource().orElse(null),
-				source.getFragmentSource().orElse(null), IrisSamplers.WORLD_RESERVED_TEXTURE_UNITS);
+					source.getFragmentSource().orElse(null), IrisSamplers.WORLD_RESERVED_TEXTURE_UNITS);
 		} catch (RuntimeException e) {
 			// TODO: Better error handling
 			throw new RuntimeException("Shader compilation failed!", e);
 		}
 
-		CommonUniforms.addCommonUniforms(builder, source.getParent().getPack().getIdMap(), source.getParent().getPackDirectives(), updateNotifier, null);
+		CommonUniforms.addDynamicUniforms(builder, FogMode.ENABLED);
+		this.customUniforms.assignTo(builder);
 
 		Supplier<ImmutableSet<Integer>> flipped =
 				() -> isBeforeTranslucent ? flippedBeforeTranslucent : flippedAfterTranslucent;
@@ -553,6 +571,10 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 
 		allPasses.add(pass);
 
+		// tell the customUniforms that those locations belong to this pass
+		this.customUniforms.mapholderToPass(builder, pass);
+
+
 		return pass;
 	}
 
@@ -578,9 +600,10 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 			} else {
 				framebufferAfterTranslucents.bind();
 			}
-
 			program.use();
 
+			// push the custom uniforms
+			DeferredWorldRenderingPipeline.this.customUniforms.push(this);
 			if (alphaTestOverride != null) {
 				AlphaTestStorage.overrideAlphaTest(alphaTestOverride);
 			} else {
@@ -631,7 +654,6 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 		GlStateManager._glBindFramebuffer(GL30C.GL_FRAMEBUFFER, 0);
 
 		Minecraft.getInstance().getMainRenderTarget().bindWrite(false);
-
 		// Destroy our render targets
 		//
 		// While it's possible to just clear them instead and reuse them, we'd need to investigate whether or not this
@@ -781,13 +803,16 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 		}
 
 		if (!programStack.isEmpty()) {
-			throw new IllegalStateException("Program stack before the start of rendering, something has gone very wrong!");
+			throw new IllegalStateException(
+					"Program stack before the start of rendering, something has gone very wrong!");
 		}
 
 		updateNotifier.onNewFrame();
-
 		// Get ready for world rendering
 		prepareRenderTargets();
+
+		// Update custom uniforms
+		DeferredWorldRenderingPipeline.this.customUniforms.update();
 
 		// Default to rendering with BASIC for all unknown content.
 		// This probably isn't the best approach, but it works for now.
@@ -809,7 +834,8 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 			Iris.logger.fatal("Program stack not empty at end of rendering, something has gone very wrong!");
 			Iris.logger.fatal("Program stack log: " + programStackLog);
 			Iris.logger.fatal("Program stack content: " + programStack);
-			throw new IllegalStateException("Program stack not empty at end of rendering, something has gone very wrong!");
+			throw new IllegalStateException(
+					"Program stack not empty at end of rendering, something has gone very wrong!");
 		}
 
 		isRenderingWorld = false;

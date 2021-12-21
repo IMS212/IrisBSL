@@ -32,6 +32,7 @@ import net.coderbot.iris.shadows.frustum.CullEverythingFrustum;
 import net.coderbot.iris.shadows.frustum.advanced.AdvancedShadowCullingFrustum;
 import net.coderbot.iris.shadows.frustum.fallback.BoxCullingFrustum;
 import net.coderbot.iris.shadows.frustum.fallback.NonCullingFrustum;
+import net.coderbot.iris.uniforms.custom.CustomUniforms;
 import net.coderbot.iris.uniforms.CameraUniforms;
 import net.coderbot.iris.uniforms.CapturedRenderingState;
 import net.coderbot.iris.uniforms.CelestialUniforms;
@@ -82,8 +83,11 @@ public class ShadowRenderer implements ShadowMapRenderer {
 	private int renderedShadowEntities = 0;
 	private int renderedShadowBlockEntities = 0;
 
-	public ShadowRenderer(CoreWorldRenderingPipeline pipeline, ProgramSource shadow, PackDirectives directives, RenderTargets gbufferRenderTargets) {
+	private final CustomUniforms customUniforms;
+
+	public ShadowRenderer(CoreWorldRenderingPipeline pipeline, ProgramSource shadow, PackDirectives directives, RenderTargets gbufferRenderTargets, CustomUniforms customUniforms) {
 		this.pipeline = pipeline;
+		this.customUniforms = customUniforms;
 
 		final PackShadowDirectives shadowDirectives = directives.getShadowDirectives();
 
