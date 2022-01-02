@@ -3,11 +3,14 @@
 package net.coderbot.iris.gl.shader;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.GlResource;
 import net.coderbot.iris.gl.IrisRenderSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.GL20C;
+import org.lwjgl.opengl.GL32C;
+import org.lwjgl.util.shaderc.Shaderc;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -32,6 +35,25 @@ public class GlShader extends GlResource {
 
 		int handle = GlStateManager.glCreateShader(type.id);
 		ShaderWorkarounds.safeShaderSource(handle, src);
+		long options     = Shaderc.shaderc_compile_options_initialize();
+		long compiler = Shaderc.shaderc_compiler_initialize();
+		Shaderc.shaderc_compile_options_set_target_env(options, Shaderc.shaderc_target_env_opengl, 0);
+
+		int trueType = 0;
+		switch (type.id) {
+			case GL32C.GL_FRAGMENT_SHADER:
+				trueType = Shaderc.shaderc_glsl_fragment_shader;
+			case GL32C.GL_GEOMETRY_SHADER:
+				trueType = Shaderc.shaderc_glsl_geometry_shader;
+			case GL32C.GL_VERTEX_SHADER:
+				trueType = Shaderc.shaderc_glsl_vertex_shader;
+		}
+		long output = Shaderc.shaderc_compile_into_spv(compiler, src, trueType, name, "main", options);
+		Shaderc.shaderc_compile_options_release(options);
+		Shaderc.shaderc_compiler_release(compiler);
+		if (Shaderc.shaderc_result_get_compilation_status(output) != Shaderc.shaderc_compilation_status_success) {
+			Iris.logger.error(Shaderc.shaderc_result_get_error_message(output));
+		}
 		GlStateManager.glCompileShader(handle);
 
 		String log = IrisRenderSystem.getShaderInfoLog(handle);

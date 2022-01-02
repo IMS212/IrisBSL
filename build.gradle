@@ -11,6 +11,10 @@ archivesBaseName = project.archives_base_name
 version = "${project.mod_version}${getVersionMetadata()}"
 group = project.maven_group
 
+import org.gradle.internal.os.OperatingSystem
+
+project.ext.lwjglVersion = "3.3.0"
+project.ext.lwjglNatives = "natives-linux"
 
 minecraft {
 	accessWidener = file("src/main/resources/iris.accesswidener")
@@ -36,6 +40,54 @@ dependencies {
 	modImplementation "org.anarres:jcpp:1.4.14"
 	include "org.anarres:jcpp:1.4.14"
 	include 'org.slf4j:slf4j-api:1.7.12'
+
+	implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
+
+	implementation "org.lwjgl:lwjgl"
+	implementation "org.lwjgl:lwjgl-assimp"
+	implementation "org.lwjgl:lwjgl-bgfx"
+	implementation "org.lwjgl:lwjgl-cuda"
+	implementation "org.lwjgl:lwjgl-egl"
+	implementation "org.lwjgl:lwjgl-glfw"
+	implementation "org.lwjgl:lwjgl-jawt"
+	implementation "org.lwjgl:lwjgl-jemalloc"
+	implementation "org.lwjgl:lwjgl-libdivide"
+	implementation "org.lwjgl:lwjgl-llvm"
+	implementation "org.lwjgl:lwjgl-lmdb"
+	implementation "org.lwjgl:lwjgl-lz4"
+	implementation "org.lwjgl:lwjgl-meow"
+	implementation "org.lwjgl:lwjgl-nanovg"
+	implementation "org.lwjgl:lwjgl-nfd"
+	implementation "org.lwjgl:lwjgl-nuklear"
+	implementation "org.lwjgl:lwjgl-odbc"
+	implementation "org.lwjgl:lwjgl-openal"
+	implementation "org.lwjgl:lwjgl-opencl"
+	implementation "org.lwjgl:lwjgl-opengl"
+	implementation "org.lwjgl:lwjgl-opengles"
+	implementation "org.lwjgl:lwjgl-shaderc"
+	implementation "org.lwjgl:lwjgl-sse"
+	implementation "org.lwjgl:lwjgl-stb"
+	implementation "org.lwjgl:lwjgl-zstd"
+	runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-assimp::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-bgfx::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-jemalloc::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-libdivide::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-llvm::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-lmdb::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-lz4::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-meow::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-nanovg::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-nfd::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-nuklear::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-openal::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-opengles::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-shaderc::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-sse::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
+	runtimeOnly "org.lwjgl:lwjgl-zstd::$lwjglNatives"
 }
 
 if (project.sodium_compatibility == "true") {
