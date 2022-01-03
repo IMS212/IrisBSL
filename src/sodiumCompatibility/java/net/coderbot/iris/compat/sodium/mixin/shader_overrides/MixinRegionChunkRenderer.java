@@ -1,8 +1,7 @@
 package net.coderbot.iris.compat.sodium.mixin.shader_overrides;
 
-import me.jellysquid.mods.sodium.client.gl.buffer.GlMutableBuffer;
+import me.jellysquid.mods.sodium.client.gl.buffer.GlBuffer;
 import me.jellysquid.mods.sodium.client.gl.shader.GlProgram;
-import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
 import me.jellysquid.mods.sodium.client.render.chunk.RegionChunkRenderer;
 import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkShaderInterface;
 import net.coderbot.iris.compat.sodium.impl.shader_overrides.ShaderChunkRendererExt;
@@ -36,18 +35,7 @@ public abstract class MixinRegionChunkRenderer implements ShaderChunkRendererExt
 		}
 	}
 
-	@Redirect(method = "render", remap = false,
-			at = @At(value = "INVOKE",
-					target = "me/jellysquid/mods/sodium/client/render/chunk/shader/ChunkShaderInterface.setDrawUniforms (Lme/jellysquid/mods/sodium/client/gl/buffer/GlMutableBuffer;)V"))
-	private void iris$setDrawUniforms(ChunkShaderInterface itf, GlMutableBuffer buffer) {
-		if (itf != null) {
-			itf.setDrawUniforms(buffer);
-		} else {
-			iris$getOverride().getInterface().setDrawUniforms(buffer);
-		}
-	}
-
-	@Redirect(method = "setModelMatrixUniforms",
+	@Redirect(method = "render",
 			at = @At(value = "INVOKE",
 					target = "Lme/jellysquid/mods/sodium/client/render/chunk/shader/ChunkShaderInterface;setModelViewMatrix(Lorg/joml/Matrix4f;)V"), remap = false)
 	private void iris$setModelViewMatrix(ChunkShaderInterface itf, Matrix4f matrix) {
@@ -55,6 +43,28 @@ public abstract class MixinRegionChunkRenderer implements ShaderChunkRendererExt
 			itf.setModelViewMatrix(matrix);
 		} else {
 			iris$getOverride().getInterface().setModelViewMatrix(matrix);
+		}
+	}
+
+	@Redirect(method = "render", remap = false,
+			at = @At(value = "INVOKE",
+					target = "Lme/jellysquid/mods/sodium/client/render/chunk/shader/ChunkShaderInterface;setDrawUniforms(Lme/jellysquid/mods/sodium/client/gl/buffer/GlBuffer;)V"))
+	private void iris$setDrawUniforms(ChunkShaderInterface instance, GlBuffer buffer) {
+		if (instance != null) {
+			instance.setDrawUniforms(buffer);
+		} else {
+			iris$getOverride().getInterface().setDrawUniforms(buffer);
+		}
+	}
+
+	@Redirect(method = "setModelMatrixUniforms",
+			at = @At(value = "INVOKE",
+					target = "Lme/jellysquid/mods/sodium/client/render/chunk/shader/ChunkShaderInterface;setRegionOffset(FFF)V"), remap = false)
+	private void iris$setRegionOffset(ChunkShaderInterface instance, float x, float y, float z) {
+		if (instance != null) {
+			instance.setRegionOffset(x, y, z);
+		} else {
+			iris$getOverride().getInterface().setRegionOffset(x, y, z);
 		}
 	}
 }
