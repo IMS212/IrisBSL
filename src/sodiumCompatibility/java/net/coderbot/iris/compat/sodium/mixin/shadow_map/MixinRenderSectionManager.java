@@ -3,13 +3,14 @@ package net.coderbot.iris.compat.sodium.mixin.shadow_map;
 import it.unimi.dsi.fastutil.objects.ObjectArrayFIFOQueue;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
-import me.jellysquid.mods.sodium.client.gl.device.CommandList;
-import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
-import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderList;
-import me.jellysquid.mods.sodium.client.render.chunk.RenderSection;
-import me.jellysquid.mods.sodium.client.render.chunk.RenderSectionManager;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPassManager;
-import me.jellysquid.mods.sodium.client.util.frustum.Frustum;
+import me.jellysquid.mods.sodium.interop.vanilla.math.frustum.Frustum;
+import me.jellysquid.mods.sodium.opengl.device.RenderDevice;
+import me.jellysquid.mods.sodium.opengl.shader.ProgramCommandList;
+import me.jellysquid.mods.sodium.render.SodiumWorldRenderer;
+import me.jellysquid.mods.sodium.render.chunk.RenderSection;
+import me.jellysquid.mods.sodium.render.chunk.RenderSectionManager;
+import me.jellysquid.mods.sodium.render.chunk.draw.ChunkRenderList;
+import me.jellysquid.mods.sodium.render.chunk.passes.ChunkRenderPassManager;
 import net.coderbot.iris.pipeline.ShadowRenderer;
 import net.coderbot.iris.shadows.ShadowRenderingState;
 import net.coderbot.iris.compat.sodium.impl.shadow_map.SwappableRenderSectionManager;
@@ -70,8 +71,8 @@ public class MixinRenderSectionManager implements SwappableRenderSectionManager 
     private static final ObjectArrayFIFOQueue<?> EMPTY_QUEUE = new ObjectArrayFIFOQueue<>();
 
     @Inject(method = "<init>", at = @At("RETURN"))
-    private void iris$onInit(SodiumWorldRenderer worldRenderer, BlockRenderPassManager renderPassManager,
-							 ClientLevel world, int renderDistance, CommandList commandList, CallbackInfo ci) {
+    private void iris$onInit(RenderDevice device, SodiumWorldRenderer worldRenderer, ChunkRenderPassManager renderPassManager,
+							 ClientLevel world, int renderDistance, CallbackInfo ci) {
         this.chunkRenderListSwap = new ChunkRenderList();
         this.tickableChunksSwap = new ObjectArrayList<>();
         this.visibleBlockEntitiesSwap = new ObjectArrayList<>();

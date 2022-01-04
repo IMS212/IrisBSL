@@ -1,12 +1,13 @@
 package net.coderbot.iris.compat.sodium.mixin.shader_overrides;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
-import me.jellysquid.mods.sodium.client.gl.shader.GlProgram;
-import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
-import me.jellysquid.mods.sodium.client.render.chunk.ShaderChunkRenderer;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
-import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkShaderInterface;
+import me.jellysquid.mods.sodium.opengl.device.RenderDevice;
+import me.jellysquid.mods.sodium.opengl.shader.Program;
+import me.jellysquid.mods.sodium.render.chunk.draw.ShaderChunkRenderer;
+import me.jellysquid.mods.sodium.render.chunk.passes.ChunkRenderPass;
+import me.jellysquid.mods.sodium.render.chunk.shader.ChunkShaderInterface;
+import me.jellysquid.mods.sodium.render.terrain.format.TerrainVertexType;
+import me.jellysquid.mods.sodium.render.vertex.type.VertexType;
 import net.coderbot.iris.compat.sodium.impl.shader_overrides.IrisChunkShaderInterface;
 import net.coderbot.iris.compat.sodium.impl.shader_overrides.ShaderChunkRendererExt;
 import net.coderbot.iris.gl.program.ProgramUniforms;
@@ -29,23 +30,24 @@ public class MixinShaderChunkRenderer implements ShaderChunkRendererExt {
     private IrisChunkProgramOverrides irisChunkProgramOverrides;
 
     @Unique
-    private GlProgram<IrisChunkShaderInterface> override;
-
-    @Shadow(remap = false)
-    private GlProgram<ChunkShaderInterface> activeProgram;
+    private Program<IrisChunkShaderInterface> override;
 
     @Shadow(remap = false)
 	@Final
-	protected ChunkVertexType vertexType;
+	protected VertexType vertexType;
 
-    @Inject(method = "<init>", at = @At("RETURN"), remap = false)
-    private void iris$onInit(RenderDevice device, ChunkVertexType vertexType, CallbackInfo ci) {
+	@Shadow
+	@Final
+	protected RenderDevice device;
+
+	@Inject(method = "<init>", at = @At("RETURN"), remap = false)
+    private void iris$onInit(RenderDevice device, TerrainVertexType vertexType, CallbackInfo ci) {
         irisChunkProgramOverrides = new IrisChunkProgramOverrides();
     }
 
-	@Inject(method = "begin", at = @At("HEAD"), cancellable = true, remap = false)
-	private void iris$begin(BlockRenderPass pass, CallbackInfo ci) {
-		this.override = irisChunkProgramOverrides.getProgramOverride(pass, this.vertexType);
+	@Inject(method = "beginRendering", at = @At("HEAD"), cancellable = true, remap = false)
+	private void iris$begin(ChunkRenderPass pass, RenderDevice.ProgramGate<IrisChunkShaderInterface> gate, CallbackInfo ci) {
+		this.override = irisChunkProgramOverrides.getProgramOverride(device, pass, this.vertexType);
 
 		irisChunkProgramOverrides.bindFramebuffer(pass);
 
@@ -65,8 +67,10 @@ public class MixinShaderChunkRenderer implements ShaderChunkRendererExt {
 			RenderSystem.disableCull();
 		}
 
-		override.bind();
-		override.getInterface().setup();
+		this.device.useProgram(override, (programCommandList, programInterface) -> {
+			programInterface.setup();
+			gate.run(programCommandList, programInterface);
+		});
 	}
 
     @Inject(method = "end", at = @At("HEAD"), remap = false, cancellable = true)
@@ -74,12 +78,6 @@ public class MixinShaderChunkRenderer implements ShaderChunkRendererExt {
         ProgramUniforms.clearActiveUniforms();
 		irisChunkProgramOverrides.unbindFramebuffer();
 
-        if (override != null) {
-			override.getInterface().restore();
-			override.unbind();
-			override = null;
-			ci.cancel();
-		}
     }
 
     @Inject(method = "delete", at = @At("HEAD"), remap = false)
@@ -88,7 +86,7 @@ public class MixinShaderChunkRenderer implements ShaderChunkRendererExt {
     }
 
 	@Override
-	public GlProgram<IrisChunkShaderInterface> iris$getOverride() {
+	public Program<IrisChunkShaderInterface> iris$getOverride() {
 		return override;
 	}
 }

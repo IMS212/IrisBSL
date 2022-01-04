@@ -1,10 +1,10 @@
 package net.coderbot.iris.compat.sodium.mixin.vertex_format;
 
-import me.jellysquid.mods.sodium.client.model.IndexBufferBuilder;
-import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadWinding;
-import me.jellysquid.mods.sodium.client.render.chunk.compile.buffers.ChunkModelBuilder;
-import me.jellysquid.mods.sodium.client.render.chunk.format.ModelVertexSink;
-import me.jellysquid.mods.sodium.client.render.pipeline.FluidRenderer;
+import me.jellysquid.mods.sodium.render.chunk.compile.buffers.ChunkMeshBuilder;
+import me.jellysquid.mods.sodium.render.chunk.compile.buffers.IndexBufferBuilder;
+import me.jellysquid.mods.sodium.render.terrain.FluidRenderer;
+import me.jellysquid.mods.sodium.render.terrain.quad.properties.ModelQuadWinding;
+import me.jellysquid.mods.sodium.render.vertex.VertexSink;
 import net.coderbot.iris.compat.sodium.impl.vertex_format.xhfp.XHFPModelVertexBufferWriterNio;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockAndTintGetter;
@@ -24,8 +24,7 @@ import org.spongepowered.asm.mixin.injection.Slice;
 public class MixinFluidRenderer {
 	@SuppressWarnings("mapping")
 	@Redirect(method = "render",
-			at = @At(value = "INVOKE", target = "me/jellysquid/mods/sodium/client/model/IndexBufferBuilder.add" +
-					"(ILme/jellysquid/mods/sodium/client/model/quad/properties/ModelQuadWinding;)V",
+			at = @At(value = "INVOKE", target = "add",
 					ordinal = 0),
 	slice = @Slice(
 			from = @At(value = "INVOKE", target = "net/minecraft/world/level/material/FluidState.shouldRenderBackwardUpFace" +
@@ -33,7 +32,7 @@ public class MixinFluidRenderer {
 	))
 	private void iris$fixBackwardUpFaceNormal(IndexBufferBuilder indices, int vertexStart, ModelQuadWinding winding,
 											  BlockAndTintGetter world, FluidState fluidState, BlockPos pos,
-											  BlockPos offset, ChunkModelBuilder buffers) {
+											  BlockPos offset, ChunkMeshBuilder buffers) {
 		iris$addIndicesFixNormals(indices, vertexStart, winding, buffers);
 	}
 
@@ -48,15 +47,15 @@ public class MixinFluidRenderer {
 			))
 	private void iris$fixSidewaysInnerFaceNormal(IndexBufferBuilder indices, int vertexStart, ModelQuadWinding winding,
 												 BlockAndTintGetter world, FluidState fluidState, BlockPos pos,
-												 BlockPos offset, ChunkModelBuilder buffers) {
+												 BlockPos offset, ChunkMeshBuilder buffers) {
 		iris$addIndicesFixNormals(indices, vertexStart, winding, buffers);
 	}
 
 	@Unique
 	private void iris$addIndicesFixNormals(IndexBufferBuilder indices, int vertexStart, ModelQuadWinding winding,
-										   ChunkModelBuilder buffers) {
+										   ChunkMeshBuilder buffers) {
 		if (winding == ModelQuadWinding.COUNTERCLOCKWISE) {
-			ModelVertexSink sink = buffers.getVertexSink();
+			VertexSink sink = buffers.getVertexSink();
 
 			if (sink instanceof XHFPModelVertexBufferWriterNio) {
 				((XHFPModelVertexBufferWriterNio) sink).copyQuadAndFlipNormal();
