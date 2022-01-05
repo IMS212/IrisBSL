@@ -6,6 +6,7 @@ import me.jellysquid.mods.sodium.opengl.shader.Program;
 import me.jellysquid.mods.sodium.opengl.shader.ShaderDescription;
 import me.jellysquid.mods.sodium.opengl.shader.ShaderType;
 import me.jellysquid.mods.sodium.render.chunk.passes.ChunkRenderPass;
+import me.jellysquid.mods.sodium.render.chunk.passes.DefaultRenderPasses;
 import me.jellysquid.mods.sodium.render.chunk.shader.ChunkShaderBindingPoints;
 import me.jellysquid.mods.sodium.render.chunk.shader.ChunkShaderInterface;
 import me.jellysquid.mods.sodium.render.terrain.format.TerrainVertexType;
@@ -119,9 +120,8 @@ public class IrisChunkProgramOverrides {
 			return device.createProgram(description, (binder) -> {
 				// TODO: Better way for this? It's a bit too much casting for me.
 				int handle = ((ManagedObject) binder).handle();
-				ShaderBindingContextExt contextExt = (ShaderBindingContextExt) binder;
 
-				return new IrisChunkShaderInterface(handle, contextExt, pipeline,
+				return new IrisChunkShaderInterface(handle, binder, pipeline,
 						pass == IrisTerrainPass.SHADOW || pass == IrisTerrainPass.SHADOW_CUTOUT, blendOverride);
 
 			});
@@ -164,15 +164,15 @@ public class IrisChunkProgramOverrides {
 		}
 
         if (ShadowRenderingState.areShadowsCurrentlyBeingRendered()) {
-        	if (pass == ChunkRenderPass.CUTOUT || pass == ChunkRenderPass.CUTOUT_MIPPED) {
+        	if (pass == DefaultRenderPasses.CUTOUT || pass == DefaultRenderPasses.CUTOUT_MIPPED) {
 				return this.programs.get(IrisTerrainPass.SHADOW_CUTOUT);
 			} else {
 				return this.programs.get(IrisTerrainPass.SHADOW);
 			}
         } else {
-			if (pass == ChunkRenderPass.CUTOUT || pass == ChunkRenderPass.CUTOUT_MIPPED) {
+			if (pass == DefaultRenderPasses.CUTOUT || pass == DefaultRenderPasses.CUTOUT_MIPPED) {
 				return this.programs.get(IrisTerrainPass.GBUFFER_CUTOUT);
-			} else if (pass.isTranslucent()) {
+			} else if (pass == DefaultRenderPasses.TRANSLUCENT) {
 				return this.programs.get(IrisTerrainPass.GBUFFER_TRANSLUCENT);
 			} else {
 				return this.programs.get(IrisTerrainPass.GBUFFER_SOLID);
@@ -189,7 +189,7 @@ public class IrisChunkProgramOverrides {
 
 			if (isShadowPass) {
 				framebuffer = pipeline.getShadowFramebuffer();
-			} else if (pass.isTranslucent()) {
+			} else if (pass == DefaultRenderPasses.TRANSLUCENT) {
 				framebuffer = pipeline.getTranslucentFramebuffer();
 			} else {
 				framebuffer = pipeline.getTerrainFramebuffer();

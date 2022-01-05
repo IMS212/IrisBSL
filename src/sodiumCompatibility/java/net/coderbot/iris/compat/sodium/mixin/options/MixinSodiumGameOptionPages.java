@@ -1,9 +1,9 @@
 package net.coderbot.iris.compat.sodium.mixin.options;
 
-import me.jellysquid.mods.sodium.client.gui.SodiumGameOptionPages;
-import me.jellysquid.mods.sodium.client.gui.options.Option;
-import me.jellysquid.mods.sodium.client.gui.options.OptionGroup;
-import me.jellysquid.mods.sodium.client.gui.options.storage.MinecraftOptionsStorage;
+import me.jellysquid.mods.sodium.config.user.UserConfigCategories;
+import me.jellysquid.mods.sodium.config.user.options.Option;
+import me.jellysquid.mods.sodium.config.user.options.OptionGroup;
+import me.jellysquid.mods.sodium.interop.vanilla.options.MinecraftOptionsStorage;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.compat.sodium.impl.options.IrisSodiumOptions;
 import org.spongepowered.asm.mixin.Final;
@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.Slice;
 /**
  * Adds the Iris-specific options / option changes to the Sodium game options pages.
  */
-@Mixin(SodiumGameOptionPages.class)
+@Mixin(UserConfigCategories.class)
 public class MixinSodiumGameOptionPages {
     @Shadow(remap = false)
     @Final
@@ -31,12 +31,12 @@ public class MixinSodiumGameOptionPages {
                     to = @At(value = "CONSTANT", args = "stringValue=options.simulationDistance")
             ),
             at = @At(value = "INVOKE", remap = false,
-                    target = "me/jellysquid/mods/sodium/client/gui/options/OptionGroup$Builder.add (" +
-                            "Lme/jellysquid/mods/sodium/client/gui/options/Option;" +
-                            ")Lme/jellysquid/mods/sodium/client/gui/options/OptionGroup$Builder;"),
+                    target = "Lme/jellysquid/mods/sodium/config/user/options/OptionGroup$Builder;" +
+							"add(Lme/jellysquid/mods/sodium/config/user/options/Option;)" +
+							"Lme/jellysquid/mods/sodium/config/user/options/OptionGroup$Builder;"),
             allow = 1)
     private static OptionGroup.Builder iris$addMaxShadowDistanceOption(OptionGroup.Builder builder,
-                                                                       Option<?> candidate) {
+																	   Option<?> candidate) {
         builder.add(candidate);
         builder.add(IrisSodiumOptions.createMaxShadowDistanceSlider(vanillaOpts));
 
@@ -49,9 +49,9 @@ public class MixinSodiumGameOptionPages {
                     to = @At(value = "CONSTANT", args = "stringValue=options.renderClouds")
             ),
             at = @At(value = "INVOKE", remap = false,
-                    target = "me/jellysquid/mods/sodium/client/gui/options/OptionGroup$Builder.add (" +
-                                "Lme/jellysquid/mods/sodium/client/gui/options/Option;" +
-                            ")Lme/jellysquid/mods/sodium/client/gui/options/OptionGroup$Builder;"),
+                    target = "Lme/jellysquid/mods/sodium/config/user/options/OptionGroup$Builder;" +
+							"add(Lme/jellysquid/mods/sodium/config/user/options/Option;)" +
+							"Lme/jellysquid/mods/sodium/config/user/options/OptionGroup$Builder;"),
             allow = 1)
     private static Option<?> iris$replaceGraphicsQualityButton(Option<?> candidate) {
         if (!Iris.getIrisConfig().areShadersEnabled()) {

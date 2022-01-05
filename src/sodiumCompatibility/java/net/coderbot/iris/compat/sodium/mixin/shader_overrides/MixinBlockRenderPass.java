@@ -1,7 +1,7 @@
 package net.coderbot.iris.compat.sodium.mixin.shader_overrides;
 
-import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
-import net.minecraft.client.renderer.RenderType;
+import me.jellysquid.mods.sodium.opengl.types.RenderPipeline;
+import me.jellysquid.mods.sodium.render.chunk.passes.ChunkRenderPass;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(BlockRenderPass.class)
+@Mixin(ChunkRenderPass.class)
 public class MixinBlockRenderPass {
 	@Shadow(remap = false)
 	@Final
@@ -18,8 +18,8 @@ public class MixinBlockRenderPass {
 	private float alphaCutoff;
 
     @Inject(method = "<init>", at = @At("RETURN"))
-	public void changeAlphaCutoff(String layer, int ordinal, RenderType renderType, boolean translucent, float alphaCutoff, CallbackInfo ci) {
-		if (renderType == RenderType.cutoutMipped()) {
+	public void changeAlphaCutoff(RenderPipeline pipeline, boolean mipped, float alphaCutoff, CallbackInfo ci) {
+		if (mipped && alphaCutoff == 0.5F) {
 			this.alphaCutoff = 0.1F;
 		}
 	}

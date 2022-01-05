@@ -1,12 +1,13 @@
 package net.coderbot.iris.compat.sodium.impl.shader_overrides;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import me.jellysquid.mods.sodium.client.gl.buffer.GlBuffer;
-import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformBlock;
-import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformFloat;
-import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformFloat3v;
-import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformMatrix4f;
-import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
+import me.jellysquid.mods.sodium.opengl.buffer.Buffer;
+import me.jellysquid.mods.sodium.opengl.shader.ShaderBindingContext;
+import me.jellysquid.mods.sodium.opengl.shader.uniform.UniformBlock;
+import me.jellysquid.mods.sodium.opengl.shader.uniform.UniformFloat;
+import me.jellysquid.mods.sodium.opengl.shader.uniform.UniformFloatArray;
+import me.jellysquid.mods.sodium.opengl.shader.uniform.UniformInt;
+import me.jellysquid.mods.sodium.opengl.shader.uniform.UniformMatrix4;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
 import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramSamplers;
@@ -17,33 +18,36 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 public class IrisChunkShaderInterface {
-	@Nullable
-	private final GlUniformMatrix4f uniformModelViewMatrix;
-	@Nullable
-	private final GlUniformMatrix4f uniformProjectionMatrix;
-	@Nullable
-	private final GlUniformFloat3v uniformRegionOffset;
-	@Nullable
-	private final GlUniformMatrix4f uniformNormalMatrix;
-	@Nullable
-	private final GlUniformBlock uniformBlockDrawParameters;
+	public final UniformMatrix4 uniformModelViewMatrix;
+	public final UniformMatrix4 uniformProjectionMatrix;
+	public final UniformMatrix4 uniformNormalMatrix;
+	public final UniformFloatArray uniformRegionOffset;
+	public final UniformBlock uniformBlockDrawParameters;
+	private final UniformFloatArray uFogColor;
+	private final UniformFloat uFogStart;
+	private final UniformFloat uFogEnd;
 
 	private final BlendModeOverride blendModeOverride;
-	private final IrisShaderFogComponent fogShaderComponent;
 	private final ProgramUniforms irisProgramUniforms;
 	private final ProgramSamplers irisProgramSamplers;
 	private final ProgramImages irisProgramImages;
 
-	public IrisChunkShaderInterface(int handle, ShaderBindingContextExt contextExt, SodiumTerrainPipeline pipeline,
+	public IrisChunkShaderInterface(int handle, ShaderBindingContext contextExt, SodiumTerrainPipeline pipeline,
 									boolean isShadowPass, BlendModeOverride blendModeOverride) {
-		this.uniformModelViewMatrix = contextExt.bindUniformIfPresent("u_ModelViewMatrix", GlUniformMatrix4f::new);
-		this.uniformProjectionMatrix = contextExt.bindUniformIfPresent("u_ProjectionMatrix", GlUniformMatrix4f::new);
-		this.uniformRegionOffset = contextExt.bindUniformIfPresent("u_RegionOffset", GlUniformFloat3v::new);
-		this.uniformNormalMatrix = contextExt.bindUniformIfPresent("u_NormalMatrix", GlUniformMatrix4f::new);
-		this.uniformBlockDrawParameters = contextExt.bindUniformBlockIfPresent("ubo_DrawParameters", 0);
+		this.uniformModelViewMatrix = contextExt.bindUniform("u_ModelViewMatrix", UniformMatrix4.of());
+		this.uniformProjectionMatrix = contextExt.bindUniform("u_ProjectionMatrix", UniformMatrix4.of());
+		this.uniformNormalMatrix = contextExt.bindUniform("u_NormalMatrix", UniformMatrix4.of());
+		this.uniformRegionOffset = contextExt.bindUniform("u_RegionOffset", UniformFloatArray.ofSize(3));
+		UniformInt uniformBlockTex = contextExt.bindUniform("u_BlockTex", UniformInt.of());
+		uniformBlockTex.setInt(0);
+		UniformInt uniformLightTex = contextExt.bindUniform("u_LightTex", UniformInt.of());
+		uniformLightTex.setInt(1);
+		this.uniformBlockDrawParameters = ((ShaderBindingContextExt) contextExt).bindUniformBlockIfPresent("ubo_DrawParameters", 0);
+		this.uFogColor = contextExt.bindUniform("u_FogColor", UniformFloatArray.ofSize(4));
+		this.uFogStart = contextExt.bindUniform("u_FogStart", UniformFloat.of());
+		this.uFogEnd = contextExt.bindUniform("u_FogEnd", UniformFloat.of());
 
 		this.blendModeOverride = blendModeOverride;
-		this.fogShaderComponent = new IrisShaderFogComponent(contextExt);
 
 		this.irisProgramUniforms = pipeline.initUniforms(handle);
 		this.irisProgramSamplers
@@ -62,7 +66,6 @@ public class IrisChunkShaderInterface {
 			blendModeOverride.apply();
 		}
 
-		fogShaderComponent.setup();
 		irisProgramUniforms.update();
 		irisProgramSamplers.update();
 		irisProgramImages.update();
@@ -93,11 +96,11 @@ public class IrisChunkShaderInterface {
 		}
 	}
 
-	public void setDrawUniforms(GlBuffer buffer) {
+	public void setDrawUniforms(Buffer buffer) {
 		this.uniformBlockDrawParameters.bindBuffer(buffer);
 	}
 
 	public void setRegionOffset(float x, float y, float z) {
-		this.uniformRegionOffset.set(x, y, z);
+		this.uniformRegionOffset.setFloats(x, y, z);
 	}
 }

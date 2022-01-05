@@ -1,18 +1,13 @@
 package net.coderbot.iris.compat.sodium.impl.vertex_format.xhfp;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexAttributeFormat;
-import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexFormat;
-import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferView;
-import me.jellysquid.mods.sodium.client.model.vertex.type.BlittableVertexType;
-import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
-import me.jellysquid.mods.sodium.client.render.chunk.format.ChunkMeshAttribute;
-import me.jellysquid.mods.sodium.client.render.chunk.format.ModelVertexSink;
 import me.jellysquid.mods.sodium.opengl.attribute.VertexAttributeFormat;
+import me.jellysquid.mods.sodium.opengl.attribute.VertexFormat;
 import me.jellysquid.mods.sodium.render.terrain.format.TerrainMeshAttribute;
+import me.jellysquid.mods.sodium.render.terrain.format.TerrainVertexSink;
 import me.jellysquid.mods.sodium.render.terrain.format.TerrainVertexType;
 import me.jellysquid.mods.sodium.render.vertex.buffer.VertexBufferView;
+import me.jellysquid.mods.sodium.render.vertex.type.BlittableVertexType;
 import net.coderbot.iris.compat.sodium.impl.vertex_format.IrisChunkMeshAttributes;
 import net.coderbot.iris.compat.sodium.impl.vertex_format.IrisGlVertexAttributeFormat;
 
@@ -45,22 +40,22 @@ public class XHFPModelVertexType implements TerrainVertexType {
 	private static final float TEXTURE_SCALE = (1.0f / TEXTURE_MAX_VALUE);
 
 	@Override
-	public ModelVertexSink createFallbackWriter(VertexConsumer consumer) {
+	public TerrainVertexSink createFallbackWriter(VertexConsumer consumer) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public ModelVertexSink createBufferWriter(VertexBufferView buffer, boolean direct) {
+	public TerrainVertexSink createBufferWriter(VertexBufferView buffer, boolean direct) {
 		return new XHFPModelVertexBufferWriterNio(buffer);
 	}
 
 	@Override
-	public BlittableVertexType<ModelVertexSink> asBlittable() {
+	public BlittableVertexType<TerrainVertexSink> asBlittable() {
 		return this;
 	}
 
 	@Override
-	public GlVertexFormat<ChunkMeshAttribute> getCustomVertexFormat() {
+	public VertexFormat<TerrainMeshAttribute> getCustomVertexFormat() {
 		return VERTEX_FORMAT;
 	}
 

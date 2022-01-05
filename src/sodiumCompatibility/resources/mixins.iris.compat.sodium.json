@@ -44,8 +44,5 @@
     "vertex_format.MixinRenderRegionArenas",
     "vertex_format.MixinRenderSectionManager"
   ],
-  "refmap": "iris-sodium-compat-refmap.json",
-  "mixins": [
-    "BufferTargetInterface"
-  ]
+  "refmap": "iris-sodium-compat-refmap.json"
 }

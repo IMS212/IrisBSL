@@ -1,10 +1,9 @@
 package net.coderbot.iris.compat.sodium.impl.vertex_format.xhfp;
 
-import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferView;
-import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferWriterNio;
-import me.jellysquid.mods.sodium.client.render.chunk.format.ModelVertexSink;
-import me.jellysquid.mods.sodium.client.util.Norm3b;
-
+import me.jellysquid.mods.sodium.render.terrain.format.TerrainVertexSink;
+import me.jellysquid.mods.sodium.render.vertex.buffer.VertexBufferView;
+import me.jellysquid.mods.sodium.render.vertex.buffer.VertexBufferWriterNio;
+import me.jellysquid.mods.sodium.util.packed.Normal3b;
 import net.coderbot.iris.compat.sodium.impl.block_id.MaterialIdAwareVertexWriter;
 import net.coderbot.iris.block_rendering.MaterialIdHolder;
 import net.coderbot.iris.compat.sodium.impl.vertex_format.IrisModelVertexFormats;
@@ -13,7 +12,7 @@ import net.coderbot.iris.vendored.joml.Vector3f;
 import java.nio.ByteBuffer;
 
 // TODO: Implement an Unsafe variant of this class.
-public class XHFPModelVertexBufferWriterNio extends VertexBufferWriterNio implements ModelVertexSink, MaterialIdAwareVertexWriter {
+public class XHFPModelVertexBufferWriterNio extends VertexBufferWriterNio implements TerrainVertexSink, MaterialIdAwareVertexWriter {
 	private MaterialIdHolder idHolder;
 
 	public XHFPModelVertexBufferWriterNio(VertexBufferView backingBuffer) {
@@ -231,7 +230,7 @@ public class XHFPModelVertexBufferWriterNio extends VertexBufferWriterNio implem
 				tangentW = 127;
 			}
 
-			int tangent = Norm3b.pack(tangentx, tangenty, tangentz);
+			int tangent = Normal3b.pack(tangentx, tangenty, tangentz);
 			tangent |= (tangentW << 24);
 
 			buffer.putInt(i + 24, tangent);

@@ -1,9 +1,6 @@
 package net.coderbot.iris.compat.sodium.mixin.vertex_format;
 
 import com.mojang.blaze3d.vertex.VertexFormat;
-import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexAttribute;
-import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexAttributeFormat;
-import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexFormat;
 import me.jellysquid.mods.sodium.opengl.attribute.VertexAttribute;
 import me.jellysquid.mods.sodium.opengl.attribute.VertexAttributeFormat;
 import net.coderbot.iris.compat.sodium.impl.vertex_format.IrisChunkMeshAttributes;
@@ -18,10 +15,11 @@ public class MixinGlVertexFormatBuilder {
     private static final VertexAttribute EMPTY
             = new VertexAttribute(VertexAttributeFormat.FLOAT, 0, false, 0, 0);
 
-    @Redirect(method = "build",
-            at = @At(value = "INVOKE",
-                    target = "g"),
-            remap = false)
+   // @Redirect(method = "",
+     //       at = @At(value = "INVOKE",
+     //               target = "g"),
+     //       remap = false)
+	// TODO a
     private Object iris$suppressMissingAttributes(EnumMap<?, ?> map, Object key) {
         Object value = map.get(key);
 

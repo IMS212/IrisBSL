@@ -1,8 +1,8 @@
 package net.coderbot.iris.compat.sodium.mixin.options;
 
 import com.google.common.collect.ImmutableList;
-import me.jellysquid.mods.sodium.client.gui.SodiumOptionsGUI;
-import me.jellysquid.mods.sodium.client.gui.options.OptionPage;
+import me.jellysquid.mods.sodium.config.user.options.OptionPage;
+import me.jellysquid.mods.sodium.gui.screen.UserConfigScreen;
 import net.coderbot.iris.gui.screen.ShaderPackScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * Adds our Shader Packs button to the Sodium options GUI.
  */
-@Mixin(SodiumOptionsGUI.class)
+@Mixin(UserConfigScreen.class)
 public class MixinSodiumOptionsGUI extends Screen {
     @Shadow(remap = false)
     @Final

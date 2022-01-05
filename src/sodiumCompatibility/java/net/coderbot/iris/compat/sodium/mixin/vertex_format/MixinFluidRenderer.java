@@ -22,9 +22,9 @@ import org.spongepowered.asm.mixin.injection.Slice;
  */
 @Mixin(FluidRenderer.class)
 public class MixinFluidRenderer {
-	@SuppressWarnings("mapping")
-	@Redirect(method = "render",
-			at = @At(value = "INVOKE", target = "add",
+	//@SuppressWarnings("mapping")
+	/*@Redirect(method = "render",
+			at = @At(value = "INVOKE", target = "a",
 					ordinal = 0),
 	slice = @Slice(
 			from = @At(value = "INVOKE", target = "net/minecraft/world/level/material/FluidState.shouldRenderBackwardUpFace" +
@@ -67,5 +67,5 @@ public class MixinFluidRenderer {
 		}
 
 		indices.add(vertexStart, winding);
-	}
+	}*/
 }
