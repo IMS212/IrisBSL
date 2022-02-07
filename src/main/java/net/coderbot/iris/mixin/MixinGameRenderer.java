@@ -130,7 +130,9 @@ public class MixinGameRenderer {
 
 	@Inject(method = "getRendertypeSolidShader", at = @At("HEAD"), cancellable = true)
 	private static void iris$overrideSolidShader(CallbackInfoReturnable<ShaderInstance> cir) {
-		if (ShadowRenderer.ACTIVE) {
+		if (GbufferPrograms.isRenderingEntities()) {
+			override(ShaderKey.FALLING_SOLID, cir);
+		} else if (ShadowRenderer.ACTIVE) {
 			// TODO: Wrong program
 			override(ShaderKey.SHADOW_TERRAIN_CUTOUT, cir);
 		} else if (isRenderingWorld()) {
@@ -140,7 +142,9 @@ public class MixinGameRenderer {
 
 	@Inject(method = "getRendertypeCutoutMippedShader", at = @At("HEAD"), cancellable = true)
 	private static void iris$overrideCutoutMippedShader(CallbackInfoReturnable<ShaderInstance> cir) {
-		if (ShadowRenderer.ACTIVE) {
+		if (GbufferPrograms.isRenderingEntities()) {
+			override(ShaderKey.FALLING_CUTOUT, cir);
+		} else if (ShadowRenderer.ACTIVE) {
 			// TODO: Wrong program
 			override(ShaderKey.SHADOW_TERRAIN_CUTOUT, cir);
 		} else if (isRenderingWorld()) {
@@ -152,6 +156,8 @@ public class MixinGameRenderer {
 	private static void iris$overrideCutoutShader(CallbackInfoReturnable<ShaderInstance> cir) {
 		if (ShadowRenderer.ACTIVE) {
 			override(ShaderKey.SHADOW_TERRAIN_CUTOUT, cir);
+		} else if (GbufferPrograms.isRenderingEntities()) {
+			override(ShaderKey.FALLING_CUTOUT, cir);
 		} else if (isRenderingWorld()) {
 			override(ShaderKey.TERRAIN_CUTOUT, cir);
 		}
@@ -162,12 +168,24 @@ public class MixinGameRenderer {
 		if (ShadowRenderer.ACTIVE) {
 			// TODO: Wrong program
 			override(ShaderKey.SHADOW_TERRAIN_CUTOUT, cir);
+		} else if (GbufferPrograms.isRenderingEntities()) {
+			override(ShaderKey.FALLING_TRANSLUCENT, cir);
 		} else if (isRenderingWorld()) {
 			override(ShaderKey.TERRAIN_TRANSLUCENT, cir);
 		}
 	}
 
-	// getRenderTypeTranslucentMovingBlockShader, getRenderTypeTranslucentNoCrumblingShader
+	@Inject(method = "getRendertypeTranslucentMovingBlockShader", at = @At("HEAD"), cancellable = true)
+	private static void iris$overrideTranslucentMovingBlockShader(CallbackInfoReturnable<ShaderInstance> cir) {
+		if (ShadowRenderer.ACTIVE) {
+			// TODO: Wrong program
+			override(ShaderKey.SHADOW_ENTITIES_CUTOUT, cir);
+		} else if (isRenderingWorld()) {
+			override(ShaderKey.FALLING_TRANSLUCENT, cir);
+		}
+	}
+
+	//  getRenderTypeTranslucentNoCrumblingShader
 
 	@Inject(method = "getRendertypeTripwireShader", at = @At("HEAD"), cancellable = true)
 	private static void iris$overrideTripwireShader(CallbackInfoReturnable<ShaderInstance> cir) {
