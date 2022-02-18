@@ -34,7 +34,7 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 	HashMap<String, IntSupplier> dynamicSamplers;
 	private ProgramImages currentImages;
 
-	public ExtendedShader(ResourceProvider resourceFactory, String string, VertexFormat vertexFormat, GlFramebuffer writingToBeforeTranslucent, GlFramebuffer writingToAfterTranslucent, GlFramebuffer baseline, BlendModeOverride blendModeOverride, Consumer<DynamicUniformHolder> uniformCreator, NewWorldRenderingPipeline parent) throws IOException {
+	public ExtendedShader(ResourceProvider resourceFactory, String string, VertexFormat vertexFormat, GlFramebuffer writingToBeforeTranslucent, GlFramebuffer writingToAfterTranslucent, GlFramebuffer baseline, BlendModeOverride blendModeOverride, Consumer<DynamicUniformHolder> uniformCreator, boolean isIntensity, NewWorldRenderingPipeline parent) throws IOException {
 		super(resourceFactory, string, vertexFormat);
 
 		int programId = this.getId();
@@ -51,9 +51,7 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 		this.parent = parent;
 		this.imageBuilder = ProgramImages.builder(programId);
 		this.currentImages = null;
-
-		// TODO(coderbot): consider a way of doing this that doesn't rely on checking the shader name.
-		this.intensitySwizzle = getName().contains("intensity");
+		this.intensitySwizzle = isIntensity;
 	}
 
 	public boolean isIntensitySwizzle() {

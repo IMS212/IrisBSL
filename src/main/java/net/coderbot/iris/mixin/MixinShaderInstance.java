@@ -23,7 +23,7 @@ import java.util.Objects;
 @Mixin(ShaderInstance.class)
 public class MixinShaderInstance {
 	@Unique
-	private String lastSamplerName;
+	private int lastSamplerUnit;
 
 	@Unique
 	private static final ImmutableSet<String> ATTRIBUTE_LIST = ImmutableSet.of("Position", "Color", "Normal", "UV0", "UV1", "UV2");
@@ -34,16 +34,13 @@ public class MixinShaderInstance {
 			locals = LocalCapture.CAPTURE_FAILHARD)
 	private void iris$beforeBindTexture(CallbackInfo ci, int lastActiveTexture, int textureUnit, String samplerName) {
 		// Need to do this here since the LVT changes after the bindTexture call.
-		lastSamplerName = samplerName;
+		lastSamplerUnit = textureUnit;
 	}
 
 	@Inject(method = "apply",
 			at = @At(value = "INVOKE", target = "com/mojang/blaze3d/systems/RenderSystem.bindTexture (I)V",
 					remap = false, shift = At.Shift.AFTER))
 	private void iris$afterBindTexture(CallbackInfo ci) {
-		final String samplerName = Objects.requireNonNull(lastSamplerName);
-		lastSamplerName = null;
-
 		if (!(((Object) this) instanceof ExtendedShader)) {
 			return;
 		}
@@ -52,9 +49,7 @@ public class MixinShaderInstance {
 			return;
 		}
 
-		// TODO: Don't hardcode this list of samplers bound to texture unit 0
-		if (samplerName.equals("Sampler0") || samplerName.equals("tex") || samplerName.equals("texture")
-				|| samplerName.equals("gtexture")) {
+		if (lastSamplerUnit == 0) {
 			// Mimic the texture(..., ...).rrrr swizzle behavior that the text_intensity shader (the shader used for
 			// TTF fonts) needs outside of shader code to avoid having to do complex shader patching.
 			//
@@ -65,10 +60,11 @@ public class MixinShaderInstance {
 			// https://www.khronos.org/opengl/wiki/Image_Format#Legacy_Image_Formats
 			// https://www.khronos.org/opengl/wiki/Texture#Swizzle_mask
 
-			// TODO: Avoid direct GL calls
 			IrisRenderSystem.texParameteriv(GL20C.GL_TEXTURE_2D, ARBTextureSwizzle.GL_TEXTURE_SWIZZLE_RGBA,
 					new int[] { GL30C.GL_RED, GL30C.GL_RED, GL30C.GL_RED, GL30C.GL_RED });
 		}
+
+		lastSamplerUnit = -1;
 	}
 
 	@Redirect(method = "updateLocations",
