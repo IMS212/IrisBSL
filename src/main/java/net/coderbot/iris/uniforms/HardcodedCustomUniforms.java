@@ -7,7 +7,9 @@ import net.coderbot.iris.mixin.DimensionTypeAccessor;
 import net.coderbot.iris.uniforms.transforms.SmoothedFloat;
 import net.coderbot.iris.vendored.joml.Math;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.biome.Biome;
 
 // These expressions are copied directly from BSL and Complementary.
@@ -30,6 +32,19 @@ public class HardcodedCustomUniforms {
 		holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "isSnowy", new SmoothedFloat(20, 10, () -> getRawPrecipitation() == 2 ? 1 : 0, updateNotifier));
 		holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "velocity", () -> getVelocity(tracker));
 		holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "starter", getStarter(tracker, updateNotifier));
+		holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "isEyeInCave", new SmoothedFloat(6, 12, HardcodedCustomUniforms::getCaveStatus, updateNotifier));
+	}
+
+	private static float getCaveStatus() {
+		if (CommonUniforms.isEyeInWater() == 0) {
+			if (Minecraft.getInstance().player.getEyeY() < 5.0F) {
+				float f = Minecraft.getInstance().level.getBrightness(LightLayer.SKY, new BlockPos(Minecraft.getInstance().player
+					.getEyePosition(CapturedRenderingState.INSTANCE.getTickDelta()))) / 15F;
+				System.out.println(f);
+				return f;
+			}
+		}
+		return 0.0F;
 	}
 
 	private static float getVelocity(CameraUniforms.CameraPositionTracker tracker) {
