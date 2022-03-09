@@ -7,6 +7,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.coderbot.iris.gl.GlResource;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL13C;
+import org.lwjgl.opengl.GL32C;
 
 public class DepthTexture extends GlResource {
 	public DepthTexture(int width, int height) {
@@ -25,7 +26,8 @@ public class DepthTexture extends GlResource {
 	void resize(int width, int height) {
 		GlStateManager._bindTexture(getGlId());
 
-		GlStateManager._texImage2D(GL11C.GL_TEXTURE_2D, 0, GL11C.GL_DEPTH_COMPONENT, width, height, 0, GL11C.GL_DEPTH_COMPONENT, GL11C.GL_UNSIGNED_BYTE, null);
+		// TODO: Is there a better format to use? This is the easiest format for centerDepthSmooth to process async.
+		GlStateManager._texImage2D(GL11C.GL_TEXTURE_2D, 0, GL32C.GL_DEPTH_COMPONENT32F, width, height, 0, GL11C.GL_DEPTH_COMPONENT, GL11C.GL_FLOAT, null);
 
 		GlStateManager._bindTexture(0);
 	}
