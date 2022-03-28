@@ -1,8 +1,8 @@
-package net.coderbot.iris.pipeline.newshader.fallback;
+package net.coderbot.iris.pipeline.core.fallback;
 
 import net.coderbot.iris.gl.blending.AlphaTest;
-import net.coderbot.iris.pipeline.newshader.FogMode;
-import net.coderbot.iris.pipeline.newshader.ShaderAttributeInputs;
+import net.coderbot.iris.pipeline.core.FogMode;
+import net.coderbot.iris.pipeline.core.ShaderAttributeInputs;
 
 public class ShaderSynthesizer {
 	public static String vsh(boolean hasChunkOffset, ShaderAttributeInputs inputs, FogMode fogMode,

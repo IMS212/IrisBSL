@@ -1,11 +1,10 @@
-package net.coderbot.iris.pipeline.newshader;
+package net.coderbot.iris.pipeline.core;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
 import net.coderbot.iris.block_rendering.BlockMaterialMapping;
@@ -26,7 +25,7 @@ import net.coderbot.iris.pipeline.ShadowRenderer;
 import net.coderbot.iris.pipeline.SodiumTerrainPipeline;
 import net.coderbot.iris.pipeline.WorldRenderingPhase;
 import net.coderbot.iris.pipeline.WorldRenderingPipeline;
-import net.coderbot.iris.pipeline.newshader.fallback.FallbackShader;
+import net.coderbot.iris.pipeline.core.fallback.FallbackShader;
 import net.coderbot.iris.postprocess.BufferFlipper;
 import net.coderbot.iris.postprocess.CenterDepthSampler;
 import net.coderbot.iris.postprocess.CompositeRenderer;
@@ -38,7 +37,6 @@ import net.coderbot.iris.shaderpack.PackShadowDirectives;
 import net.coderbot.iris.shaderpack.ProgramFallbackResolver;
 import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ProgramSource;
-import net.coderbot.iris.shaderpack.loading.ProgramId;
 import net.coderbot.iris.shaderpack.texture.TextureStage;
 import net.coderbot.iris.shadows.EmptyShadowMapRenderer;
 import net.coderbot.iris.shadows.ShadowMapRenderer;
@@ -46,13 +44,11 @@ import net.coderbot.iris.uniforms.CapturedRenderingState;
 import net.coderbot.iris.uniforms.FrameUpdateNotifier;
 import net.coderbot.iris.vendored.joml.Vector3d;
 import net.coderbot.iris.vendored.joml.Vector4f;
-import net.coderbot.iris.vertices.IrisVertexFormats;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
-import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL30C;
@@ -62,14 +58,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
-public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWorldRenderingPipeline {
+public class CoreWorldRenderingPipeline implements WorldRenderingPipeline, CoreWorldRenderingInterface {
 	private final RenderTargets renderTargets;
 	private final ShaderMap shaderMap;
 
@@ -109,7 +104,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 	private Runnable createShadowMapRenderer;
 	private ShadowMapRenderer shadowMapRenderer;
 
-	public NewWorldRenderingPipeline(ProgramSet programSet) throws IOException {
+	public CoreWorldRenderingPipeline(ProgramSet programSet) throws IOException {
 		if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
 			final Path debugOutDir = FabricLoader.getInstance().getGameDir().resolve("patched_shaders");
 
@@ -354,7 +349,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		GlFramebuffer beforeTranslucent = renderTargets.createGbufferFramebuffer(flippedAfterPrepare, source.getDirectives().getDrawBuffers());
 		GlFramebuffer afterTranslucent = renderTargets.createGbufferFramebuffer(flippedAfterTranslucent, source.getDirectives().getDrawBuffers());
 
-		ExtendedShader extendedShader = NewShaderTests.create(name, source, beforeTranslucent, afterTranslucent,
+		ExtendedShader extendedShader = CoreTests.create(name, source, beforeTranslucent, afterTranslucent,
 				baseline, fallbackAlpha, vertexFormat, updateNotifier, this, fogMode, isBeacon, isFullbright);
 
 		loadedShaders.add(extendedShader);
@@ -371,7 +366,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		GlFramebuffer beforeTranslucent = renderTargets.createGbufferFramebuffer(flippedAfterPrepare, new int[] {0});
 		GlFramebuffer afterTranslucent = renderTargets.createGbufferFramebuffer(flippedAfterTranslucent, new int[] {0});
 
-		FallbackShader shader = NewShaderTests.createFallback(name, beforeTranslucent, afterTranslucent,
+		FallbackShader shader = CoreTests.createFallback(name, beforeTranslucent, afterTranslucent,
 				key.getAlphaTest(), key.getVertexFormat(), null, this, key.getFogMode(),
 				key.hasDiffuseLighting(), key.isIntensity(), key.isBeaconBeam(), key.isFullbright());
 
@@ -392,7 +387,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 	private ShaderInstance createFallbackShadowShader(String name, ShaderKey key) throws IOException {
 		GlFramebuffer framebuffer = ((ShadowRenderer) this.shadowMapRenderer).getFramebuffer();
 
-		FallbackShader shader = NewShaderTests.createFallback(name, framebuffer, framebuffer,
+		FallbackShader shader = CoreTests.createFallback(name, framebuffer, framebuffer,
 				key.getAlphaTest(), key.getVertexFormat(), BlendModeOverride.OFF, this, key.getFogMode(),
 				key.hasDiffuseLighting(), key.isIntensity(), key.isBeaconBeam(), key.isFullbright());
 
@@ -405,7 +400,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 											  VertexFormat vertexFormat, boolean isBeacon, boolean isFullbright) throws IOException {
 		GlFramebuffer framebuffer = ((ShadowRenderer) this.shadowMapRenderer).getFramebuffer();
 
-		ExtendedShader extendedShader = NewShaderTests.create(name, source, framebuffer, framebuffer, baseline,
+		ExtendedShader extendedShader = CoreTests.create(name, source, framebuffer, framebuffer, baseline,
 				fallbackAlpha, vertexFormat, updateNotifier, this, FogMode.ENABLED, isBeacon, isFullbright);
 
 		loadedShaders.add(extendedShader);

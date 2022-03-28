@@ -20,7 +20,7 @@ import net.coderbot.iris.gl.shader.ShaderType;
 import net.coderbot.iris.layer.GbufferProgram;
 import net.coderbot.iris.layer.GbufferPrograms;
 import net.coderbot.iris.mixin.LevelRendererAccessor;
-import net.coderbot.iris.pipeline.newshader.CoreWorldRenderingPipeline;
+import net.coderbot.iris.pipeline.core.CoreWorldRenderingInterface;
 import net.coderbot.iris.postprocess.BufferFlipper;
 import net.coderbot.iris.postprocess.CenterDepthSampler;
 import net.coderbot.iris.postprocess.CompositeRenderer;
@@ -45,7 +45,6 @@ import net.coderbot.iris.vendored.joml.Vector3d;
 import net.coderbot.iris.vendored.joml.Vector4f;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL20C;
@@ -201,7 +200,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline {
 		ImmutableSet<Integer> flippedBeforeShadow = ImmutableSet.of();
 
 		createShadowMapRenderer = () -> {
-			shadowMapRenderer = new ShadowRenderer((CoreWorldRenderingPipeline) this, programs,
+			shadowMapRenderer = new ShadowRenderer(this, programs,
 					programs.getPackDirectives(), renderTargets);
 			createShadowMapRenderer = () -> {};
 		};

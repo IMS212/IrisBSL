@@ -6,15 +6,14 @@ import com.mojang.blaze3d.shaders.Program;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.coderbot.iris.Iris;
-import net.coderbot.iris.pipeline.FixedFunctionWorldRenderingPipeline;
 import net.coderbot.iris.layer.GbufferPrograms;
 import net.coderbot.iris.pipeline.HandRenderer;
 import net.coderbot.iris.pipeline.ShadowRenderer;
 import net.coderbot.iris.pipeline.WorldRenderingPhase;
 import net.coderbot.iris.pipeline.WorldRenderingPipeline;
-import net.coderbot.iris.pipeline.newshader.CoreWorldRenderingPipeline;
-import net.coderbot.iris.pipeline.newshader.IrisProgramTypes;
-import net.coderbot.iris.pipeline.newshader.ShaderKey;
+import net.coderbot.iris.pipeline.core.CoreWorldRenderingInterface;
+import net.coderbot.iris.pipeline.core.IrisProgramTypes;
+import net.coderbot.iris.pipeline.core.ShaderKey;
 
 import net.irisshaders.iris.api.v0.IrisApi;
 import org.spongepowered.asm.mixin.Mixin;
@@ -35,7 +34,6 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.ArrayList;
-import java.util.function.Function;
 
 @Mixin(GameRenderer.class)
 public class MixinGameRenderer {
@@ -428,8 +426,8 @@ public class MixinGameRenderer {
 	private static boolean isRenderingWorld() {
 		WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();
 
-		if (pipeline instanceof CoreWorldRenderingPipeline) {
-			return ((CoreWorldRenderingPipeline) pipeline).isRenderingWorld();
+		if (pipeline instanceof CoreWorldRenderingInterface) {
+			return ((CoreWorldRenderingInterface) pipeline).isRenderingWorld();
 		} else {
 			return false;
 		}
@@ -438,8 +436,8 @@ public class MixinGameRenderer {
 	private static void override(ShaderKey key, CallbackInfoReturnable<ShaderInstance> cir) {
 		WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();
 
-		if (pipeline instanceof CoreWorldRenderingPipeline) {
-			ShaderInstance override = ((CoreWorldRenderingPipeline) pipeline).getShaderMap().getShader(key);
+		if (pipeline instanceof CoreWorldRenderingInterface) {
+			ShaderInstance override = ((CoreWorldRenderingInterface) pipeline).getShaderMap().getShader(key);
 
 			if (override != null) {
 				cir.setReturnValue(override);

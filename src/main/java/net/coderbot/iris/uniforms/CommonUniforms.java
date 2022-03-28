@@ -11,7 +11,7 @@ import net.coderbot.iris.gl.uniform.DynamicUniformHolder;
 import net.coderbot.iris.gl.uniform.UniformHolder;
 import net.coderbot.iris.layer.GbufferPrograms;
 import net.coderbot.iris.mixin.statelisteners.BooleanStateAccessor;
-import net.coderbot.iris.pipeline.newshader.FogMode;
+import net.coderbot.iris.pipeline.core.FogMode;
 import net.coderbot.iris.samplers.TextureAtlasTracker;
 import net.coderbot.iris.shaderpack.IdMap;
 import net.coderbot.iris.shaderpack.PackDirectives;

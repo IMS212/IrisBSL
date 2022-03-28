@@ -1,4 +1,4 @@
-package net.coderbot.iris.pipeline.newshader;
+package net.coderbot.iris.pipeline.core;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.preprocessor.GlslPreprocessor;
@@ -29,7 +29,7 @@ import java.util.function.IntSupplier;
 public class ExtendedShader extends ShaderInstance implements SamplerHolder, ImageHolder, ShaderInstanceInterface {
 	private final boolean intensitySwizzle;
 	private final ProgramImages.Builder imageBuilder;
-	NewWorldRenderingPipeline parent;
+	CoreWorldRenderingPipeline parent;
 	ProgramUniforms uniforms;
 	GlFramebuffer writingToBeforeTranslucent;
 	GlFramebuffer writingToAfterTranslucent;
@@ -40,7 +40,7 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 	private Program geometry;
 	private boolean isFullbright;
 
-	public ExtendedShader(ResourceProvider resourceFactory, String string, VertexFormat vertexFormat, GlFramebuffer writingToBeforeTranslucent, GlFramebuffer writingToAfterTranslucent, GlFramebuffer baseline, BlendModeOverride blendModeOverride, Consumer<DynamicUniformHolder> uniformCreator, boolean isFullbright, NewWorldRenderingPipeline parent) throws IOException {
+	public ExtendedShader(ResourceProvider resourceFactory, String string, VertexFormat vertexFormat, GlFramebuffer writingToBeforeTranslucent, GlFramebuffer writingToAfterTranslucent, GlFramebuffer baseline, BlendModeOverride blendModeOverride, Consumer<DynamicUniformHolder> uniformCreator, boolean isFullbright, CoreWorldRenderingPipeline parent) throws IOException {
 		super(resourceFactory, string, vertexFormat);
 
 		int programId = this.getId();

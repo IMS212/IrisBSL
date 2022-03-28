@@ -22,7 +22,7 @@ import net.coderbot.iris.compat.sodium.SodiumVersionCheck;
 import net.coderbot.iris.config.IrisConfig;
 import net.coderbot.iris.gui.screen.ShaderPackScreen;
 import net.coderbot.iris.pipeline.*;
-import net.coderbot.iris.pipeline.newshader.NewWorldRenderingPipeline;
+import net.coderbot.iris.pipeline.core.CoreWorldRenderingPipeline;
 import net.coderbot.iris.shaderpack.DimensionId;
 import net.coderbot.iris.shaderpack.OptionalBoolean;
 import net.coderbot.iris.shaderpack.ProgramSet;
@@ -39,11 +39,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.dimension.DimensionType;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 import net.fabricmc.api.ClientModInitializer;
@@ -516,9 +512,9 @@ public class Iris implements ClientModInitializer {
 
 		ProgramSet programs = currentPack.getProgramSet(dimensionId);
 
-		// We use DeferredWorldRenderingPipeline on 1.16, and NewWorldRendering pipeline on 1.17 when rendering shaders.
+		// We use DeferredWorldRenderingPipeline on 1.16, and CoreWorldRendering pipeline on 1.17 when rendering shaders.
 		try {
-			return new NewWorldRenderingPipeline(programs);
+			return new CoreWorldRenderingPipeline(programs);
 		} catch (Exception e) {
 			logger.error("Failed to create shader rendering pipeline, disabling shaders!", e);
 			// TODO: This should be reverted if a dimension change causes shaders to compile again

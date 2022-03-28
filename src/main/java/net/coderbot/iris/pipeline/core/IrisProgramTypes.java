@@ -1,4 +1,4 @@
-package net.coderbot.iris.pipeline.newshader;
+package net.coderbot.iris.pipeline.core;
 
 import com.mojang.blaze3d.shaders.Program;
 

@@ -1,10 +1,10 @@
-package net.coderbot.iris.pipeline.newshader.fallback;
+package net.coderbot.iris.pipeline.core.fallback;
 
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
-import net.coderbot.iris.pipeline.newshader.NewWorldRenderingPipeline;
+import net.coderbot.iris.pipeline.core.CoreWorldRenderingPipeline;
 import net.coderbot.iris.uniforms.CapturedRenderingState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 
 public class FallbackShader extends ShaderInstance {
-	private final NewWorldRenderingPipeline parent;
+	private final CoreWorldRenderingPipeline parent;
 	private final BlendModeOverride blendModeOverride;
 	private final GlFramebuffer writingToBeforeTranslucent;
 	private final GlFramebuffer writingToAfterTranslucent;
@@ -27,7 +27,7 @@ public class FallbackShader extends ShaderInstance {
 
 	public FallbackShader(ResourceProvider resourceFactory, String string, VertexFormat vertexFormat,
 						  GlFramebuffer writingToBeforeTranslucent, GlFramebuffer writingToAfterTranslucent,
-						  BlendModeOverride blendModeOverride, NewWorldRenderingPipeline parent) throws IOException {
+						  BlendModeOverride blendModeOverride, CoreWorldRenderingPipeline parent) throws IOException {
 		super(resourceFactory, string, vertexFormat);
 
 		this.parent = parent;

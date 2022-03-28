@@ -9,17 +9,14 @@ import net.coderbot.batchedentityrendering.impl.BatchingDebugMessageHelper;
 import net.coderbot.batchedentityrendering.impl.DrawCallTrackingRenderBuffers;
 import net.coderbot.batchedentityrendering.impl.RenderBuffersExt;
 import net.coderbot.iris.gl.IrisRenderSystem;
-import net.coderbot.iris.gl.blending.AlphaTestOverride;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
 import net.coderbot.iris.gl.texture.InternalTextureFormat;
 import net.coderbot.iris.gui.option.IrisVideoSettings;
 import net.coderbot.iris.layer.GbufferProgram;
 import net.coderbot.iris.mixin.LevelRendererAccessor;
-import net.coderbot.iris.pipeline.newshader.CoreWorldRenderingPipeline;
+import net.coderbot.iris.pipeline.core.CoreWorldRenderingInterface;
 import net.coderbot.iris.rendertarget.RenderTargets;
-import net.coderbot.iris.samplers.IrisImages;
-import net.coderbot.iris.samplers.IrisSamplers;
 import net.coderbot.iris.shaderpack.OptionalBoolean;
 import net.coderbot.iris.shaderpack.PackDirectives;
 import net.coderbot.iris.shaderpack.PackShadowDirectives;
@@ -48,7 +45,6 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.core.BlockPos;
@@ -94,7 +90,7 @@ public class ShadowRenderer implements ShadowMapRenderer {
 	private int renderedShadowEntities = 0;
 	private int renderedShadowBlockEntities = 0;
 
-	public ShadowRenderer(CoreWorldRenderingPipeline pipeline, ProgramSet set, PackDirectives directives, RenderTargets gbufferRenderTargets) {
+	public ShadowRenderer(WorldRenderingPipeline pipeline, ProgramSet set, PackDirectives directives, RenderTargets gbufferRenderTargets) {
 		this.pipeline = pipeline;
 
 		final PackShadowDirectives shadowDirectives = directives.getShadowDirectives();
