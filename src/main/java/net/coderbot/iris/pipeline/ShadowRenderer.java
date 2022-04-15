@@ -87,7 +87,12 @@ public class ShadowRenderer implements ShadowMapRenderer {
 	private final WorldRenderingPipeline pipeline;
 	private final ShadowRenderTargets targets;
 
-	private final Program shadowProgram;
+	private final Program shadowTerrainProgram;
+	private final Program shadowTranslucentProgram;
+	private final Program shadowEntitiesProgram;
+	private final Program shadowBlockProgram;
+	@Nullable
+	private final Program shadowCloudsProgram;
 	@Nullable
 	private final BlendModeOverride blendModeOverride;
 	@Nullable
@@ -161,19 +166,22 @@ public class ShadowRenderer implements ShadowMapRenderer {
 		this.noise = noise;
 		this.customTextureIds = customTextureIds;
 
-		if (shadow != null) {
-			this.shadowProgram = createProgram(shadow, directives, flipped);
+		this.shadowTerrainProgram = createProgram(programSet.getShadowTerrain().orElse(shadow), directives, flipped);
+		this.shadowTranslucentProgram = createProgram(programSet.getShadowTranslucent().orElse(shadow), directives, flipped);
+		this.shadowEntitiesProgram = createProgram(programSet.getShadowEntities().orElse(shadow), directives, flipped);
+		this.shadowBlockProgram = createProgram(programSet.getShadowBlock().orElse(shadow), directives, flipped);
+		this.shadowCloudsProgram = createProgram(programSet.getShadowClouds().orElse(null), directives, flipped);
 
+		if (shadow != null) {
 			// Note: ProgramSet handles defaulting this to "OFF" on the shadow program.
 			this.blendModeOverride = shadow.getDirectives().getBlendModeOverride();
 			this.alphaTestOverride = shadow.getDirectives().getAlphaTestOverride().orElse(null);
 
 			// Assume that the shader pack is doing voxelization if a geometry shader is detected.
 			// Also assume voxelization if image load / store is detected.
-			this.packHasVoxelization = shadow.getGeometrySource().isPresent() || shadowProgram.getActiveImages() > 0;
+			this.packHasVoxelization = shadow.getGeometrySource().isPresent() || shadowTerrainProgram.getActiveImages() > 0;
 			this.packCullingState = shadowDirectives.getCullingState();
 		} else {
-			this.shadowProgram = null;
 			this.blendModeOverride = BlendModeOverride.OFF;
 			this.alphaTestOverride = null;
 			this.packHasVoxelization = false;
@@ -280,6 +288,10 @@ public class ShadowRenderer implements ShadowMapRenderer {
 	// TODO: Don't just copy this from ShaderPipeline
 	private Program createProgram(ProgramSource source, PackDirectives directives,
 								  Supplier<ImmutableSet<Integer>> flipped) {
+		if (source == null || !source.isValid()) {
+			return null;
+		}
+
 		// TODO: Properly handle empty shaders
 		Objects.requireNonNull(source.getVertexSource());
 		Objects.requireNonNull(source.getFragmentSource());
@@ -415,9 +427,6 @@ public class ShadowRenderer implements ShadowMapRenderer {
 	}
 
 	private void setupGlState(float[] projMatrix) {
-		// Set up the shadow program
-		setupShadowProgram();
-
 		// Set up and clear our framebuffer
 		targets.getFramebuffer().bind();
 
@@ -627,16 +636,14 @@ public class ShadowRenderer implements ShadowMapRenderer {
 
 		// Render all opaque terrain unless pack requests not to
 		if (shouldRenderTerrain) {
+			// Set up the shadow program
+			setupShadowProgram(shadowTerrainProgram);
 			levelRenderer.invokeRenderChunkLayer(RenderType.solid(), modelView, cameraX, cameraY, cameraZ);
 			levelRenderer.invokeRenderChunkLayer(RenderType.cutout(), modelView, cameraX, cameraY, cameraZ);
 			levelRenderer.invokeRenderChunkLayer(RenderType.cutoutMipped(), modelView, cameraX, cameraY, cameraZ);
 		}
 
-		// Reset our shader program in case Sodium overrode it.
-		//
-		// If we forget to do this entities will be very small on most shaderpacks since they're being rendered
-		// without shaders, which doesn't integrate with their shadow distortion code.
-		setupShadowProgram();
+		setupShadowProgram(shadowEntitiesProgram);
 
 		profiler.popPush("entities");
 
@@ -675,6 +682,7 @@ public class ShadowRenderer implements ShadowMapRenderer {
 		}
 
 		if (shouldRenderBlockEntities) {
+			setupShadowProgram(shadowBlockProgram);
 			renderBlockEntities(bufferSource, modelView, cameraX, cameraY, cameraZ, tickDelta, hasEntityFrustum);
 		}
 
@@ -693,8 +701,18 @@ public class ShadowRenderer implements ShadowMapRenderer {
 		// It doesn't matter a ton, since this just means that they won't be sorted in the normal rendering pass.
 		// Just something to watch out for, however...
 		if (shouldRenderTranslucent) {
+			setupShadowProgram(shadowTranslucentProgram);
 			levelRenderer.invokeRenderChunkLayer(RenderType.translucent(), modelView, cameraX, cameraY, cameraZ);
 		}
+
+		if (shadowCloudsProgram != null) {
+			setupShadowProgram(shadowCloudsProgram);
+			levelRenderer.invokeRenderClouds(modelView, tickDelta, cameraX, cameraY, cameraZ);
+		}
+
+		// Disable any active programs.
+		setupShadowProgram(null);
+
 		// Note: Apparently tripwire isn't rendered in the shadow pass.
 		// worldRenderer.invokeRenderType(RenderType.getTripwire(), modelView, cameraX, cameraY, cameraZ);
 
@@ -752,10 +770,10 @@ public class ShadowRenderer implements ShadowMapRenderer {
 		}
 	}
 
-	private void setupShadowProgram() {
-		if (shadowProgram != null) {
-			shadowProgram.use();
-			setupAttributes(shadowProgram);
+	private void setupShadowProgram(Program program) {
+		if (program != null) {
+			program.use();
+			setupAttributes(program);
 		} else {
 			ProgramManager.glUseProgram(0);
 		}
@@ -827,8 +845,8 @@ public class ShadowRenderer implements ShadowMapRenderer {
 	public void destroy() {
 		this.targets.destroy();
 
-		if (this.shadowProgram != null) {
-			this.shadowProgram.destroy();
+		if (this.shadowTerrainProgram != null) {
+			this.shadowTerrainProgram.destroy();
 		}
 	}
 

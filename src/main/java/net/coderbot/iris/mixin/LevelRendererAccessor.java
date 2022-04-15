@@ -46,4 +46,7 @@ public interface LevelRendererAccessor {
 
 	@Accessor("renderBuffers")
 	void setRenderBuffers(RenderBuffers buffers);
+
+	@Invoker
+	void invokeRenderClouds(PoseStack arg, float f, double d, double e, double g);
 }

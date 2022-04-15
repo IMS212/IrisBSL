@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumMap;
 import java.util.Locale;
-import java.util.Optional;
 
 public class IrisChunkProgramOverrides {
     private static final ShaderConstants EMPTY_CONSTANTS = ShaderConstants.builder().build();
@@ -29,19 +28,19 @@ public class IrisChunkProgramOverrides {
     private final EnumMap<IrisTerrainPass, ChunkProgram> programs = new EnumMap<>(IrisTerrainPass.class);
 
     private GlShader createVertexShader(RenderDevice device, IrisTerrainPass pass, SodiumTerrainPipeline pipeline) {
-        Optional<String> irisVertexShader;
+        String source;
 
-        if (pass == IrisTerrainPass.SHADOW) {
-            irisVertexShader = pipeline.getShadowVertexShaderSource();
+        if (pass == IrisTerrainPass.SHADOW_SOLID) {
+			source = pipeline.getShadowTerrainSourceSet().vertex;
+        } else if (pass == IrisTerrainPass.SHADOW_TRANSLUCENT) {
+			source = pipeline.getShadowTranslucentSourceSet().vertex;
         } else if (pass == IrisTerrainPass.GBUFFER_SOLID) {
-            irisVertexShader = pipeline.getTerrainVertexShaderSource();
+			source = pipeline.getTerrainShaderSet().vertex;
         } else if (pass == IrisTerrainPass.GBUFFER_TRANSLUCENT) {
-            irisVertexShader = pipeline.getTranslucentVertexShaderSource();
+			source = pipeline.getTranslucentShaderSet().vertex;
         } else {
             throw new IllegalArgumentException("Unknown pass type " + pass);
         }
-
-        String source = irisVertexShader.orElse(null);
 
         if (source == null) {
             return null;
@@ -52,19 +51,19 @@ public class IrisChunkProgramOverrides {
     }
 
     private GlShader createGeometryShader(RenderDevice device, IrisTerrainPass pass, SodiumTerrainPipeline pipeline) {
-        Optional<String> irisGeometryShader;
+        String source;
 
-        if (pass == IrisTerrainPass.SHADOW) {
-            irisGeometryShader = pipeline.getShadowGeometryShaderSource();
-        } else if (pass == IrisTerrainPass.GBUFFER_SOLID) {
-            irisGeometryShader = pipeline.getTerrainGeometryShaderSource();
-        } else if (pass == IrisTerrainPass.GBUFFER_TRANSLUCENT) {
-            irisGeometryShader = pipeline.getTranslucentGeometryShaderSource();
-        } else {
+		if (pass == IrisTerrainPass.SHADOW_SOLID) {
+			source = pipeline.getShadowTerrainSourceSet().geometry;
+		} else if (pass == IrisTerrainPass.SHADOW_TRANSLUCENT) {
+			source = pipeline.getShadowTranslucentSourceSet().geometry;
+		} else if (pass == IrisTerrainPass.GBUFFER_SOLID) {
+			source = pipeline.getTerrainShaderSet().geometry;
+		} else if (pass == IrisTerrainPass.GBUFFER_TRANSLUCENT) {
+			source = pipeline.getTranslucentShaderSet().geometry;
+		} else {
             throw new IllegalArgumentException("Unknown pass type " + pass);
         }
-
-        String source = irisGeometryShader.orElse(null);
 
         if (source == null) {
             return null;
@@ -75,19 +74,19 @@ public class IrisChunkProgramOverrides {
     }
 
     private GlShader createFragmentShader(RenderDevice device, IrisTerrainPass pass, SodiumTerrainPipeline pipeline) {
-        Optional<String> irisFragmentShader;
+        String source;
 
-        if (pass == IrisTerrainPass.SHADOW) {
-            irisFragmentShader = pipeline.getShadowFragmentShaderSource();
-        } else if (pass == IrisTerrainPass.GBUFFER_SOLID) {
-            irisFragmentShader = pipeline.getTerrainFragmentShaderSource();
+        if (pass == IrisTerrainPass.SHADOW_SOLID) {
+            source = pipeline.getShadowTerrainSourceSet().fragment;
+		} else if (pass == IrisTerrainPass.SHADOW_TRANSLUCENT) {
+			source = pipeline.getShadowTranslucentSourceSet().fragment;
+		} else if (pass == IrisTerrainPass.GBUFFER_SOLID) {
+			source = pipeline.getTerrainShaderSet().fragment;;
         } else if (pass == IrisTerrainPass.GBUFFER_TRANSLUCENT) {
-            irisFragmentShader = pipeline.getTranslucentFragmentShaderSource();
+			source = pipeline.getTranslucentShaderSet().fragment;
         } else {
             throw new IllegalArgumentException("Unknown pass type " + pass);
         }
-
-        String source = irisFragmentShader.orElse(null);
 
         if (source == null) {
             return null;
@@ -144,7 +143,7 @@ public class IrisChunkProgramOverrides {
                         ProgramSamplers samplers;
 						ProgramImages images;
 
-                        if (pass == IrisTerrainPass.SHADOW) {
+                        if (pass.isShadow()) {
                             samplers = pipeline.initShadowSamplers(name);
 							images = pipeline.initShadowImages(name);
                         } else {
@@ -175,7 +174,7 @@ public class IrisChunkProgramOverrides {
 
         if (sodiumTerrainPipeline != null) {
             for (IrisTerrainPass pass : IrisTerrainPass.values()) {
-				if (pass == IrisTerrainPass.SHADOW && !sodiumTerrainPipeline.hasShadowPass()) {
+				if (pass.isShadow() && !sodiumTerrainPipeline.hasShadowPass()) {
 					this.programs.put(pass, null);
 					continue;
 				}
@@ -195,7 +194,7 @@ public class IrisChunkProgramOverrides {
         }
 
         if (ShadowRenderingState.areShadowsCurrentlyBeingRendered()) {
-			ChunkProgram shadowProgram = this.programs.get(IrisTerrainPass.SHADOW);
+			ChunkProgram shadowProgram = this.programs.get(pass.isTranslucent() ? IrisTerrainPass.SHADOW_TRANSLUCENT : IrisTerrainPass.SHADOW_SOLID);
 
 			if (shadowProgram == null) {
 				throw new IllegalStateException("Shadow program requested, but the pack does not have a shadow pass?");

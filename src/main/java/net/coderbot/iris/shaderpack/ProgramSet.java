@@ -14,6 +14,11 @@ public class ProgramSet {
 	private final PackDirectives packDirectives;
 
 	private final ProgramSource shadow;
+	private final ProgramSource shadowTerrain;
+	private final ProgramSource shadowTranslucent;
+	private final ProgramSource shadowEntities;
+	private final ProgramSource shadowBlock;
+	private final ProgramSource shadowClouds;
 
 	private final ProgramSource[] shadowcomp;
 	private final ProgramSource[] prepare;
@@ -61,6 +66,16 @@ public class ProgramSet {
 		// - https://github.com/IrisShaders/Iris/issues/483
 		// - https://github.com/IrisShaders/Iris/issues/987
 		this.shadow = readProgramSource(directory, sourceProvider, "shadow", this, shaderProperties,
+				BlendModeOverride.OFF);
+		this.shadowTerrain = readProgramSource(directory, sourceProvider, "shadow_terrain", this, shaderProperties,
+				BlendModeOverride.OFF);
+		this.shadowTranslucent = readProgramSource(directory, sourceProvider, "shadow_translucent", this, shaderProperties,
+				BlendModeOverride.OFF);
+		this.shadowEntities = readProgramSource(directory, sourceProvider, "shadow_entities", this, shaderProperties,
+				BlendModeOverride.OFF);
+		this.shadowBlock = readProgramSource(directory, sourceProvider, "shadow_block", this, shaderProperties,
+				BlendModeOverride.OFF);
+		this.shadowClouds = readProgramSource(directory, sourceProvider, "shadow_clouds", this, shaderProperties,
 				BlendModeOverride.OFF);
 
 		this.shadowcomp = readProgramArray(directory, sourceProvider, "shadowcomp", shaderProperties);
@@ -132,7 +147,7 @@ public class ProgramSet {
 	private void locateDirectives() {
 		List<ProgramSource> programs = new ArrayList<>();
 
-		programs.add(shadow);
+		programs.addAll(Arrays.asList(shadow, shadowTerrain, shadowTranslucent, shadowEntities, shadowBlock, shadowClouds));
 		programs.addAll(Arrays.asList(shadowcomp));
 		programs.addAll(Arrays.asList(prepare));
 
@@ -172,6 +187,26 @@ public class ProgramSet {
 
 	public Optional<ProgramSource> getShadow() {
 		return shadow.requireValid();
+	}
+
+	public Optional<ProgramSource> getShadowTerrain() {
+		return shadowTerrain.requireValid();
+	}
+
+	public Optional<ProgramSource> getShadowTranslucent() {
+		return shadowTranslucent.requireValid();
+	}
+
+	public Optional<ProgramSource> getShadowEntities() {
+		return shadowEntities.requireValid();
+	}
+
+	public Optional<ProgramSource> getShadowBlock() {
+		return shadowBlock.requireValid();
+	}
+
+	public Optional<ProgramSource> getShadowClouds() {
+		return shadowClouds.requireValid();
 	}
 
 	public ProgramSource[] getShadowComposite() {

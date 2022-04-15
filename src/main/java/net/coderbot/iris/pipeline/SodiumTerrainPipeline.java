@@ -4,6 +4,7 @@ import net.coderbot.iris.IrisLogging;
 import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.program.ProgramUniforms;
+import net.coderbot.iris.gl.shader.ShaderSourceSet;
 import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ProgramSource;
 import net.coderbot.iris.shaderpack.transform.BuiltinUniformReplacementTransformer;
@@ -17,15 +18,10 @@ import java.util.Optional;
 import java.util.function.IntFunction;
 
 public class SodiumTerrainPipeline {
-	String terrainVertex;
-	String terrainGeometry;
-	String terrainFragment;
-	String translucentVertex;
-	String translucentGeometry;
-	String translucentFragment;
-	String shadowVertex;
-	String shadowGeometry;
-	String shadowFragment;
+	ShaderSourceSet terrain;
+	ShaderSourceSet translucent;
+	ShaderSourceSet shadowTerrain;
+	ShaderSourceSet shadowTranslucent;
 	//GlFramebuffer framebuffer;
 	ProgramSet programSet;
 
@@ -46,50 +42,58 @@ public class SodiumTerrainPipeline {
 
 		Optional<ProgramSource> terrainSource = first(programSet.getGbuffersTerrain(), programSet.getGbuffersTexturedLit(), programSet.getGbuffersTextured(), programSet.getGbuffersBasic());
 		Optional<ProgramSource> translucentSource = first(programSet.getGbuffersWater(), terrainSource);
-		Optional<ProgramSource> shadowSource = programSet.getShadow();
+		ProgramSource shadowSource = programSet.getShadow().orElse(null);
+		ProgramSource shadowTerrainSource = programSet.getShadowTerrain().orElse(shadowSource);
+		ProgramSource shadowTranslucentSource = programSet.getShadowTranslucent().orElse(shadowSource);
 
 		this.programSet = programSet;
 
 		terrainSource.ifPresent(sources -> {
-			terrainVertex = sources.getVertexSource().orElse(null);
-			terrainGeometry = sources.getGeometrySource().orElse(null);
-			terrainFragment = sources.getFragmentSource().orElse(null);
+			terrain = new ShaderSourceSet(sources.getVertexSource().orElse(null), sources.getFragmentSource().orElse(null), sources.getGeometrySource().orElse(null));
 		});
 
 		translucentSource.ifPresent(sources -> {
-			translucentVertex = sources.getVertexSource().orElse(null);
-			translucentGeometry = sources.getGeometrySource().orElse(null);
-			translucentFragment = sources.getFragmentSource().orElse(null);
+			translucent = new ShaderSourceSet(sources.getVertexSource().orElse(null), sources.getFragmentSource().orElse(null), sources.getGeometrySource().orElse(null));
 		});
 
-		shadowSource.ifPresent(sources -> {
-			shadowVertex = sources.getVertexSource().orElse(null);
-			shadowGeometry = sources.getGeometrySource().orElse(null);
-			shadowFragment = sources.getFragmentSource().orElse(null);
-		});
-
-		if (terrainVertex != null) {
-			terrainVertex = transformVertexShader(terrainVertex);
+		if (shadowTerrainSource != null && shadowTerrainSource.isValid()) {
+			shadowTerrain = new ShaderSourceSet(shadowTerrainSource.getVertexSource().orElse(null), shadowTerrainSource.getFragmentSource().orElse(null), shadowTerrainSource.getGeometrySource().orElse(null));
 		}
 
-		if (translucentVertex != null) {
-			translucentVertex = transformVertexShader(translucentVertex);
+		if (shadowTranslucentSource != null && shadowTranslucentSource.isValid()) {
+			shadowTranslucent = new ShaderSourceSet(shadowTranslucentSource.getVertexSource().orElse(null), shadowTranslucentSource.getFragmentSource().orElse(null), shadowTranslucentSource.getGeometrySource().orElse(null));
 		}
 
-		if (shadowVertex != null) {
-			shadowVertex = transformVertexShader(shadowVertex);
+		if (terrain.vertex != null) {
+			terrain.vertex = transformVertexShader(terrain.vertex);
 		}
 
-		if (terrainFragment != null) {
-			terrainFragment = transformFragmentShader(terrainFragment);
+		if (translucent.vertex != null) {
+			translucent.vertex = transformVertexShader(translucent.vertex);
 		}
 
-		if (translucentFragment != null) {
-			translucentFragment = transformFragmentShader(translucentFragment);
+		if (shadowTerrain.vertex != null) {
+			shadowTerrain.vertex = transformVertexShader(shadowTerrain.vertex);
 		}
 
-		if (shadowFragment != null) {
-			shadowFragment = transformFragmentShader(shadowFragment);
+		if (shadowTranslucent.vertex != null) {
+			shadowTranslucent.vertex = transformVertexShader(shadowTranslucent.vertex);
+		}
+
+		if (terrain.fragment != null) {
+			terrain.fragment = transformFragmentShader(terrain.fragment);
+		}
+
+		if (translucent.fragment != null) {
+			translucent.fragment = transformFragmentShader(translucent.fragment);
+		}
+
+		if (shadowTerrain.fragment != null) {
+			shadowTerrain.fragment = transformFragmentShader(shadowTerrain.fragment);
+		}
+
+		if (shadowTranslucent.fragment != null) {
+			shadowTranslucent.fragment = transformFragmentShader(shadowTranslucent.fragment);
 		}
 
 		this.createTerrainSamplers = createTerrainSamplers;
@@ -166,40 +170,20 @@ public class SodiumTerrainPipeline {
 		return transformations.toString();
 	}
 
-	public Optional<String> getTerrainVertexShaderSource() {
-		return Optional.ofNullable(terrainVertex);
+	public ShaderSourceSet getTerrainShaderSet() {
+		return terrain;
 	}
 
-	public Optional<String> getTerrainGeometryShaderSource() {
-		return Optional.ofNullable(terrainGeometry);
+	public ShaderSourceSet getTranslucentShaderSet() {
+		return translucent;
 	}
 
-	public Optional<String> getTerrainFragmentShaderSource() {
-		return Optional.ofNullable(terrainFragment);
+	public ShaderSourceSet getShadowTerrainSourceSet() {
+		return shadowTerrain;
 	}
 
-	public Optional<String> getTranslucentVertexShaderSource() {
-		return Optional.ofNullable(translucentVertex);
-	}
-
-	public Optional<String> getTranslucentGeometryShaderSource() {
-		return Optional.ofNullable(translucentGeometry);
-	}
-
-	public Optional<String> getTranslucentFragmentShaderSource() {
-		return Optional.ofNullable(translucentFragment);
-	}
-
-	public Optional<String> getShadowVertexShaderSource() {
-		return Optional.ofNullable(shadowVertex);
-	}
-
-	public Optional<String> getShadowGeometryShaderSource() {
-		return Optional.ofNullable(shadowGeometry);
-	}
-
-	public Optional<String> getShadowFragmentShaderSource() {
-		return Optional.ofNullable(shadowFragment);
+	public ShaderSourceSet getShadowTranslucentSourceSet() {
+		return shadowTranslucent;
 	}
 
 	public ProgramUniforms initUniforms(int programId) {
