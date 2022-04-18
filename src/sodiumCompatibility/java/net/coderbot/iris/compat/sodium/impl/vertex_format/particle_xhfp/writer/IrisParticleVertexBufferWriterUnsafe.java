@@ -47,12 +47,13 @@ public class IrisParticleVertexBufferWriterUnsafe extends VertexBufferWriterUnsa
 
 		quad.setup(i, STRIDE);
 
-		midU *= 0.25;
-		midV *= 0.25;
+		midU = (int)(65535.0F * Math.min(midU * 0.25f, 1.0f)) & 0xFFFF;
+		midV = (int)(65535.0F * Math.min(midV * 0.25f, 1.0f)) & 0xFFFF;
+
+		int midTexCoord = ((int) midV << 16) | (int) midU;
 
 		for (long vertex = 0; vertex < length; vertex++) {
-			MemoryUtil.memPutFloat(i - 8 - STRIDE * vertex, midU);
-			MemoryUtil.memPutFloat(i - 4 - STRIDE * vertex, midV);
+			MemoryUtil.memPutInt(i - 4 - STRIDE * vertex, midTexCoord);
 		}
 
 		midU = 0;

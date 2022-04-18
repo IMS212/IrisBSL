@@ -2,6 +2,7 @@ package net.coderbot.iris.block_rendering;
 
 import it.unimi.dsi.fastutil.objects.Object2IntFunction;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.coderbot.iris.shaderpack.materialmap.NamespacedId;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
@@ -20,6 +21,7 @@ public class BlockRenderingSettings {
 	public BlockRenderingSettings() {
 		reloadRequired = false;
 		blockStateIds = null;
+		particleIds = new Object2IntOpenHashMap<>();
 		ambientOcclusionLevel = 1.0F;
 		disableDirectionalShading = false;
 		useSeparateAo = false;

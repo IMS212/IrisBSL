@@ -50,12 +50,15 @@ public class IrisParticleVertexBufferWriterNio extends VertexBufferWriterNio imp
 
 		quad.setup(buffer, i, STRIDE);
 
-		midU *= 0.25;
-		midV *= 0.25;
+
+
+		midU = (int)(65535.0F * Math.min(midU * 0.25f, 1.0f)) & 0xFFFF;
+		midV = (int)(65535.0F * Math.min(midV * 0.25f, 1.0f)) & 0xFFFF;
+
+		int midTexCoord = ((int) midV << 16) | (int) midU;
 
 		for (int vertex = 0; vertex < length; vertex++) {
-			buffer.putFloat(i - 8 - STRIDE * vertex, midU);
-			buffer.putFloat(i - 4 - STRIDE * vertex, midV);
+			buffer.putInt(i - 4 - STRIDE * vertex, midTexCoord);
 		}
 
 		midU = 0;
