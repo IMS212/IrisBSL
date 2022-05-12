@@ -68,6 +68,9 @@ public abstract class MixinBufferBuilder implements BufferVertexConsumer, BlockS
 	@Shadow
 	public abstract void putShort(int i, short s);
 
+	@Shadow
+	public abstract void putFloat(int i, float f);
+
 	@Inject(method = "begin", at = @At("HEAD"))
 	private void iris$onBegin(int drawMode, VertexFormat format, CallbackInfo ci) {
 		extending = IrisApi.getInstance().isShaderPackInUse() && (format == DefaultVertexFormat.BLOCK || format == IrisVertexFormats.TERRAIN || format == DefaultVertexFormat.NEW_ENTITY || format == IrisVertexFormats.ENTITY);
@@ -108,8 +111,14 @@ public abstract class MixinBufferBuilder implements BufferVertexConsumer, BlockS
 			return;
 		}
 
-		this.putShort(0, currentBlock);
-		this.putShort(2, currentRenderType);
+		if (format == IrisVertexFormats.ENTITY) {
+			this.putFloat(0, 0);
+			this.putFloat(4, 0);
+			this.putFloat(8, 0);
+		} else {
+			this.putShort(0, currentBlock);
+			this.putShort(2, currentRenderType);
+		}
 		this.nextElement();
 		this.putFloat(0, 0);
 		this.putFloat(4, 0);
@@ -127,7 +136,7 @@ public abstract class MixinBufferBuilder implements BufferVertexConsumer, BlockS
 		vertexCount = 0;
 
 		// TODO: Keep this in sync with the extensions
-		int extendedDataLength = (2 * 2) + (2 * 4) + (1 * 4);
+		int extendedDataLength = (format == IrisVertexFormats.ENTITY ? (3 * 4) : 2 * 2) + (2 * 4) + (1 * 4);
 
 		int stride = this.format.getVertexSize();
 

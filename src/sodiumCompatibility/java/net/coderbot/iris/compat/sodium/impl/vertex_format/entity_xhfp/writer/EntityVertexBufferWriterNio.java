@@ -5,12 +5,13 @@ import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferView;
 import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferWriterNio;
 import me.jellysquid.mods.sodium.client.model.vertex.formats.quad.QuadVertexSink;
 import me.jellysquid.mods.sodium.client.util.Norm3b;
+import net.coderbot.iris.compat.sodium.impl.vertex_format.entity_xhfp.EntityVertexWriter;
 import net.coderbot.iris.compat.sodium.impl.vertex_format.entity_xhfp.QuadViewEntity;
 import net.coderbot.iris.vertices.IrisVertexFormats;
 
 import java.nio.ByteBuffer;
 
-public class EntityVertexBufferWriterNio extends VertexBufferWriterNio implements QuadVertexSink {
+public class EntityVertexBufferWriterNio extends VertexBufferWriterNio implements QuadVertexSink, EntityVertexWriter {
 	private final QuadViewEntity.QuadViewEntityNio quad = new QuadViewEntity.QuadViewEntityNio();
 	private static final int STRIDE = IrisVertexFormats.ENTITY.getVertexSize();
 	private float midU = 0;
@@ -74,5 +75,10 @@ public class EntityVertexBufferWriterNio extends VertexBufferWriterNio implement
 		midU = 0;
 		midV = 0;
 		vertexCount = 0;
+	}
+
+	@Override
+	public void setVelocity(float x, float y, float z) {
+
 	}
 }

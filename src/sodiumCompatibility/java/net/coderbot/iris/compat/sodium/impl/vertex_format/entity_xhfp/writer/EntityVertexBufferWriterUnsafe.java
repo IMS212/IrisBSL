@@ -5,16 +5,19 @@ import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferView;
 import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferWriterUnsafe;
 import me.jellysquid.mods.sodium.client.model.vertex.formats.quad.QuadVertexSink;
 import me.jellysquid.mods.sodium.client.util.Norm3b;
+import net.coderbot.iris.compat.sodium.impl.vertex_format.entity_xhfp.EntityVertexWriter;
 import net.coderbot.iris.compat.sodium.impl.vertex_format.entity_xhfp.QuadViewEntity;
+import net.coderbot.iris.vendored.joml.Vector3f;
 import net.coderbot.iris.vertices.IrisVertexFormats;
 import org.lwjgl.system.MemoryUtil;
 
-public class EntityVertexBufferWriterUnsafe extends VertexBufferWriterUnsafe implements QuadVertexSink {
+public class EntityVertexBufferWriterUnsafe extends VertexBufferWriterUnsafe implements QuadVertexSink, EntityVertexWriter {
 	private final QuadViewEntity.QuadViewEntityUnsafe quad = new QuadViewEntity.QuadViewEntityUnsafe();
 	private static final int STRIDE = IrisVertexFormats.ENTITY.getVertexSize();
 	float midU = 0;
 	float midV = 0;
 	private int vertexCount;
+	private Vector3f velocity = new Vector3f();
 
 	public EntityVertexBufferWriterUnsafe(VertexBufferView backingBuffer) {
 		super(backingBuffer, VanillaVertexTypes.QUADS);
@@ -37,8 +40,9 @@ public class EntityVertexBufferWriterUnsafe extends VertexBufferWriterUnsafe imp
 		MemoryUtil.memPutInt(i + 24, overlay);
 		MemoryUtil.memPutInt(i + 28, light);
 		MemoryUtil.memPutInt(i + 32, normal);
-		MemoryUtil.memPutShort(i + 36, (short) -1);
-		MemoryUtil.memPutShort(i + 38, (short) -1);
+		MemoryUtil.memPutFloat(i + 36, velocity.x);
+		MemoryUtil.memPutFloat(i + 40, velocity.y);
+		MemoryUtil.memPutFloat(i + 44, velocity.z);
 
 		this.advance();
 
@@ -69,5 +73,10 @@ public class EntityVertexBufferWriterUnsafe extends VertexBufferWriterUnsafe imp
 		midU = 0;
 		midV = 0;
 		vertexCount = 0;
+	}
+
+	@Override
+	public void setVelocity(float x, float y, float z) {
+		velocity.set(x, y, z);
 	}
 }
