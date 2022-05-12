@@ -42,7 +42,8 @@
 
   "custom": {
     "sodium:options": {
-      "mixin.features.entity.fast_render": false
+      "mixin.features.entity.fast_render": false,
+      "mixin.features.item": false
     }
   },
 

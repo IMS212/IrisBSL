@@ -72,7 +72,7 @@ public class MixinModelPart {
 					float z2 = modelExt.transformVecZ(x1, y1, z1);
 
 					if (drain instanceof EntityVertexWriter) {
-						((EntityVertexWriter) drain).setVelocity(((VertexInterface) vertex).getPrevX() - x2, ((VertexInterface) vertex).getPrevY() - y2, ((VertexInterface) vertex).getPrevZ() - z2);
+						((EntityVertexWriter) drain).setVelocity(x2 - ((VertexInterface) vertex).getPrevX(), y2 - ((VertexInterface) vertex).getPrevY(), z2 - ((VertexInterface) vertex).getPrevZ());
 					}
 
 					drain.writeQuad(x2, y2, z2, color, vertex.u, vertex.v, light, overlay, norm);
