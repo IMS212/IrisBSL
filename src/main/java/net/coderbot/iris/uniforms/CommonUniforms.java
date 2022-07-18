@@ -75,7 +75,7 @@ public final class CommonUniforms {
 
 			AbstractTexture texture = TextureTracker.INSTANCE.getTexture(glId);
 			if (texture instanceof TextureAtlas) {
-				TextureInfo info = TextureInfoCache.INSTANCE.getInfo(glId);
+				TextureInfo info = TextureInfoCache.INSTANCE.getInfo(-1, glId);
 				return new Vector2i(info.getWidth(), info.getHeight());
 			}
 

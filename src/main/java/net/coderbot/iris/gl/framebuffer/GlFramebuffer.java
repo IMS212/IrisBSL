@@ -25,21 +25,21 @@ public class GlFramebuffer extends GlResource {
 	}
 
 	public void addDepthAttachment(int texture) {
-		int internalFormat = TextureInfoCache.INSTANCE.getInfo(texture).getInternalFormat();
-		DepthBufferFormat depthBufferFormat = DepthBufferFormat.fromGlEnumOrDefault(internalFormat);
+		TextureInfoCache.TextureInfo textureInfo = TextureInfoCache.INSTANCE.getInfo(-1, texture);
+		DepthBufferFormat depthBufferFormat = DepthBufferFormat.fromGlEnumOrDefault(textureInfo.getInternalFormat());
 
 		bind();
 
 		if (depthBufferFormat.isCombinedStencil()) {
-			GlStateManager._glFramebufferTexture2D(GL30C.GL_FRAMEBUFFER, GL30C.GL_DEPTH_STENCIL_ATTACHMENT, GL30C.GL_TEXTURE_2D, texture, 0);
+			GlStateManager._glFramebufferTexture2D(GL30C.GL_FRAMEBUFFER, GL30C.GL_DEPTH_STENCIL_ATTACHMENT, textureInfo.getTarget(), texture, 0);
 		} else {
-			GlStateManager._glFramebufferTexture2D(GL30C.GL_FRAMEBUFFER, GL30C.GL_DEPTH_ATTACHMENT, GL30C.GL_TEXTURE_2D, texture, 0);
+			GlStateManager._glFramebufferTexture2D(GL30C.GL_FRAMEBUFFER, GL30C.GL_DEPTH_ATTACHMENT, textureInfo.getTarget(), texture, 0);
 		}
 	}
 
 	public void addColorAttachment(int index, int texture) {
 		bind();
-		GlStateManager._glFramebufferTexture2D(GL30C.GL_FRAMEBUFFER, GL30C.GL_COLOR_ATTACHMENT0 + index, GL30C.GL_TEXTURE_2D, texture, 0);
+		GlStateManager._glFramebufferTexture2D(GL30C.GL_FRAMEBUFFER, GL30C.GL_COLOR_ATTACHMENT0 + index, TextureInfoCache.INSTANCE.getInfo(-1, texture).getTarget(), texture, 0);
 		attachments.put(index, texture);
 	}
 
