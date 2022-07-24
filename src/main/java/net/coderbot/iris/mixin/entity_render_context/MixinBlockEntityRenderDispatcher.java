@@ -6,6 +6,7 @@ import net.coderbot.iris.block_rendering.BlockRenderingSettings;
 import net.coderbot.iris.fantastic.WrappingMultiBufferSource;
 import net.coderbot.iris.layer.BlockEntityRenderStateShard;
 import net.coderbot.iris.layer.OuterWrappedRenderType;
+import net.coderbot.iris.uniforms.CapturedRenderingState;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
@@ -36,10 +37,6 @@ public class MixinBlockEntityRenderDispatcher {
 	@Inject(method = "render", at = @At(value = "INVOKE", target = RUN_REPORTED))
 	private void iris$beforeRender(BlockEntity blockEntity, float tickDelta, PoseStack poseStack,
 								   MultiBufferSource bufferSource, CallbackInfo ci) {
-		if (!(bufferSource instanceof WrappingMultiBufferSource)) {
-			return;
-		}
-
 		Object2IntMap<BlockState> blockStateIds = BlockRenderingSettings.INSTANCE.getBlockStateIds();
 
 		if (blockStateIds == null) {
@@ -51,29 +48,14 @@ public class MixinBlockEntityRenderDispatcher {
 		// - The block entity has a world
 		// - The block entity thinks that it's supported by a valid block
 
-		int intId = blockStateIds.getOrDefault(blockEntity.getBlockState(), -1);
-		RenderStateShard stateShard = BlockEntityRenderStateShard.forId(intId);
+		int intId = blockStateIds.getOrDefault(blockEntity.getBlockState(), 0);
 
-		((WrappingMultiBufferSource) bufferSource).pushWrappingFunction(type ->
-				new OuterWrappedRenderType("iris:is_block_entity", type, stateShard));
+		CapturedRenderingState.INSTANCE.setCurrentBlockEntity(intId);
 	}
 
 	@Inject(method = "render", at = @At(value = "INVOKE", target = RUN_REPORTED, shift = At.Shift.AFTER))
 	private void iris$afterRender(BlockEntity blockEntity, float tickDelta, PoseStack matrix,
 								  MultiBufferSource bufferSource, CallbackInfo ci) {
-		if (!(bufferSource instanceof WrappingMultiBufferSource)) {
-			return;
-		}
-
-		// This might not get called if we crash and something like NotEnoughCrashes tries
-		// to act like nothing happened.
-		//
-		// Supporting that is hard so I decided to just ignore that for now.
-		//
-		// This might also not get called if a different mod cancels before runReported but
-		// after my inject, but I placed my inject there in the hopes that it would
-		// not be likely to be affected by a cancel. I hope that the universe doesn't
-		// conspire against me and cause that to break.
-		((WrappingMultiBufferSource) bufferSource).popWrappingFunction();
+		CapturedRenderingState.INSTANCE.setCurrentBlockEntity(0);
 	}
 }

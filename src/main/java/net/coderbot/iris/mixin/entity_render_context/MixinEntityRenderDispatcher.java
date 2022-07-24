@@ -7,6 +7,7 @@ import net.coderbot.iris.fantastic.WrappingMultiBufferSource;
 import net.coderbot.iris.layer.EntityRenderStateShard;
 import net.coderbot.iris.layer.OuterWrappedRenderType;
 import net.coderbot.iris.shaderpack.materialmap.NamespacedId;
+import net.coderbot.iris.uniforms.CapturedRenderingState;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
@@ -34,10 +35,6 @@ public class MixinEntityRenderDispatcher {
 	private void iris$beginEntityRender(Entity entity, double x, double y, double z, float yaw, float tickDelta,
 										PoseStack poseStack, MultiBufferSource bufferSource, int light,
 										CallbackInfo ci) {
-		if (!(bufferSource instanceof WrappingMultiBufferSource)) {
-			return;
-		}
-
 		ResourceLocation entityId = Registry.ENTITY_TYPE.getKey(entity.getType());
 
 		Object2IntFunction<NamespacedId> entityIds = BlockRenderingSettings.INSTANCE.getEntityIds();
@@ -47,10 +44,8 @@ public class MixinEntityRenderDispatcher {
 		}
 
 		int intId = entityIds.applyAsInt(new NamespacedId(entityId.getNamespace(), entityId.getPath()));
-		RenderStateShard phase = EntityRenderStateShard.forId(intId);
 
-		((WrappingMultiBufferSource) bufferSource).pushWrappingFunction(layer ->
-				new OuterWrappedRenderType("iris:is_entity", layer, phase));
+		CapturedRenderingState.INSTANCE.setCurrentEntity(intId);
 	}
 
 	// Inject before MatrixStack#pop so that our wrapper stack management operations naturally line up
@@ -59,21 +54,13 @@ public class MixinEntityRenderDispatcher {
 	private void iris$endEntityRender(Entity entity, double x, double y, double z, float yaw, float tickDelta,
 									  PoseStack poseStack, MultiBufferSource bufferSource, int light,
 									  CallbackInfo ci) {
-		if (!(bufferSource instanceof WrappingMultiBufferSource)) {
-			return;
-		}
-
-		((WrappingMultiBufferSource) bufferSource).popWrappingFunction();
+		CapturedRenderingState.INSTANCE.setCurrentEntity(0);
 	}
 
 	@Inject(method = "render", at = @At(value = "INVOKE", target = CRASHREPORT_CREATE))
 	private void iris$crashedEntityRender(Entity entity, double x, double y, double z, float yaw, float tickDelta,
 									      PoseStack poseStack, MultiBufferSource bufferSource, int light,
 									      CallbackInfo ci) {
-		if (!(bufferSource instanceof WrappingMultiBufferSource)) {
-			return;
-		}
-
 		try {
 			// Try to avoid leaving the wrapping stack in a bad state if we crash.
 			// This will only be an issue with mods like NotEnoughCrashes that try
@@ -82,7 +69,7 @@ public class MixinEntityRenderDispatcher {
 			// This could fail if we crash before MatrixStack#push, but this is mostly
 			// a best-effort thing, it doesn't have to work perfectly. NEC will cause
 			// weird chaos no matter what we do.
-			((WrappingMultiBufferSource) bufferSource).popWrappingFunction();
+			CapturedRenderingState.INSTANCE.setCurrentEntity(0);
 		} catch (Exception e) {
 			// oh well, we're gonna crash anyways.
 		}

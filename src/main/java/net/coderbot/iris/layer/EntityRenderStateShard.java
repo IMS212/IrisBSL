@@ -13,7 +13,7 @@ public final class EntityRenderStateShard extends RenderStateShard {
 			CapturedRenderingState.INSTANCE.setCurrentEntity(entityId);
 			GbufferPrograms.beginEntities();
 		}, () -> {
-			CapturedRenderingState.INSTANCE.setCurrentEntity(-1);
+			CapturedRenderingState.INSTANCE.setCurrentEntity(0);
 			GbufferPrograms.endEntities();
 		});
 

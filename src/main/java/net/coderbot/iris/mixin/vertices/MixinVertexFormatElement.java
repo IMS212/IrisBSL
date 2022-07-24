@@ -1,6 +1,7 @@
 package net.coderbot.iris.mixin.vertices;
 
 import com.mojang.blaze3d.vertex.VertexFormatElement;
+import net.coderbot.iris.vertices.IrisVertexUsages;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -13,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class MixinVertexFormatElement {
 	@Inject(method = "supportsUsage", at = @At("HEAD"), cancellable = true)
 	private void iris$fixGenericAttributes(int index, VertexFormatElement.Usage type, CallbackInfoReturnable<Boolean> cir) {
-		if (type == VertexFormatElement.Usage.GENERIC) {
+		if (type == VertexFormatElement.Usage.GENERIC || type == IrisVertexUsages.INTEGER) {
 			cir.setReturnValue(true);
 		}
 	}

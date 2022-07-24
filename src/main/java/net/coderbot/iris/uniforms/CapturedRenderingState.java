@@ -17,7 +17,7 @@ public class CapturedRenderingState {
 	private int currentRenderedBlockEntity;
 	private Runnable blockEntityIdListener = null;
 
-	private int currentRenderedEntity = -1;
+	private int currentRenderedEntity = 0;
 	private Runnable entityIdListener = null;
 
 	private CapturedRenderingState() {

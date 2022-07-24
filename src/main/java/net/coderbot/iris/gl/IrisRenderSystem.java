@@ -134,6 +134,10 @@ public class IrisRenderSystem {
 		GL30C.glReadPixels(x, y, width, height, format, type, pixels);
 	}
 
+	public static void vertexAttribIPointer(int index, int size, int type, int stride, long value) {
+		GL30C.glVertexAttribIPointer(index, size, type, stride, value);
+	}
+
 	public static void bufferData(int target, float[] data, int usage) {
 		RenderSystem.assertThread(RenderSystem::isOnRenderThreadOrInit);
 		GL30C.glBufferData(target, data, usage);
