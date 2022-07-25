@@ -13,6 +13,7 @@ import net.coderbot.iris.gl.program.ProgramBuilder;
 import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.program.ProgramUniforms;
 import net.coderbot.iris.gl.sampler.SamplerLimits;
+import net.coderbot.iris.gl.uniform.UBOCreator;
 import net.coderbot.iris.pipeline.patcher.CompositeDepthTransformer;
 import net.coderbot.iris.rendertarget.Blaze3dRenderTargetExt;
 import net.coderbot.iris.rendertarget.RenderTarget;
@@ -46,6 +47,7 @@ public class FinalPassRenderer {
 	private final ImmutableList<SwapPass> swapPasses;
 	private final GlFramebuffer baseline;
 	private final GlFramebuffer colorHolder;
+	private final UBOCreator uboCreator;
 	private int lastColorTextureId;
 	private int lastColorTextureVersion;
 	private final IntSupplier noiseTexture;
@@ -54,7 +56,7 @@ public class FinalPassRenderer {
 	private final Object2ObjectMap<String, IntSupplier> customTextureIds;
 
 	// TODO: The length of this argument list is getting a bit ridiculous
-	public FinalPassRenderer(ProgramSet pack, RenderTargets renderTargets, IntSupplier noiseTexture,
+	public FinalPassRenderer(ProgramSet pack, UBOCreator creator, RenderTargets renderTargets, IntSupplier noiseTexture,
 							 FrameUpdateNotifier updateNotifier, ImmutableSet<Integer> flippedBuffers,
 							 CenterDepthSampler centerDepthSampler,
 							 Supplier<ShadowRenderTargets> shadowTargetsSupplier,
@@ -63,6 +65,7 @@ public class FinalPassRenderer {
 		this.updateNotifier = updateNotifier;
 		this.centerDepthSampler = centerDepthSampler;
 		this.customTextureIds = customTextureIds;
+		this.uboCreator = creator;
 
 		final PackRenderTargetDirectives renderTargetDirectives = pack.getPackDirectives().getRenderTargetDirectives();
 		final Map<Integer, PackRenderTargetDirectives.RenderTargetSettings> renderTargetSettings =
@@ -277,8 +280,8 @@ public class FinalPassRenderer {
 		ProgramBuilder builder;
 
 		try {
-			builder = ProgramBuilder.begin(source.getName(), CompositeDepthTransformer.patch(source.getVertexSource().orElse(null)), CompositeDepthTransformer.patch(source.getGeometrySource().orElse(null)),
-				CompositeDepthTransformer.patch(source.getFragmentSource().orElse(null)), IrisSamplers.COMPOSITE_RESERVED_TEXTURE_UNITS);
+			builder = ProgramBuilder.begin(source.getName(), CompositeDepthTransformer.patch(uboCreator, source.getVertexSource().orElse(null)), CompositeDepthTransformer.patch(uboCreator, source.getGeometrySource().orElse(null)),
+				CompositeDepthTransformer.patch(uboCreator, source.getFragmentSource().orElse(null)), IrisSamplers.COMPOSITE_RESERVED_TEXTURE_UNITS);
 		} catch (RuntimeException e) {
 			// TODO: Better error handling
 			throw new RuntimeException("Shader compilation failed!", e);

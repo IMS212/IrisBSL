@@ -8,6 +8,7 @@ import net.coderbot.iris.IrisLogging;
 import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.program.ProgramUniforms;
+import net.coderbot.iris.gl.uniform.UBOCreator;
 import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ProgramSource;
 import net.coderbot.iris.shaderpack.transform.BuiltinUniformReplacementTransformer;
@@ -31,18 +32,20 @@ public class SodiumTerrainPipeline {
 
 	private final WorldRenderingPipeline parent;
 
+	private final UBOCreator creator;
 	private final IntFunction<ProgramSamplers> createTerrainSamplers;
 	private final IntFunction<ProgramSamplers> createShadowSamplers;
 
 	private final IntFunction<ProgramImages> createTerrainImages;
 	private final IntFunction<ProgramImages> createShadowImages;
 
-	public SodiumTerrainPipeline(WorldRenderingPipeline parent,
+	public SodiumTerrainPipeline(WorldRenderingPipeline parent, UBOCreator uboCreator,
 								 ProgramSet programSet, IntFunction<ProgramSamplers> createTerrainSamplers,
 								 IntFunction<ProgramSamplers> createShadowSamplers,
 								 IntFunction<ProgramImages> createTerrainImages,
 								 IntFunction<ProgramImages> createShadowImages) {
 		this.parent = Objects.requireNonNull(parent);
+		this.creator = uboCreator;
 
 		Optional<ProgramSource> terrainSource = first(programSet.getGbuffersTerrain(), programSet.getGbuffersTexturedLit(), programSet.getGbuffersTextured(), programSet.getGbuffersBasic());
 		Optional<ProgramSource> translucentSource = first(programSet.getGbuffersWater(), terrainSource);
@@ -96,6 +99,10 @@ public class SodiumTerrainPipeline {
 		this.createShadowSamplers = createShadowSamplers;
 		this.createTerrainImages = createTerrainImages;
 		this.createShadowImages = createShadowImages;
+	}
+
+	public UBOCreator getCreator() {
+		return creator;
 	}
 
 	private static String transformVertexShader(String base) {

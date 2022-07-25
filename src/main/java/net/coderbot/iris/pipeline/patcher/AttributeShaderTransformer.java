@@ -2,17 +2,19 @@ package net.coderbot.iris.pipeline.patcher;
 
 import net.coderbot.iris.gbuffer_overrides.matching.InputAvailability;
 import net.coderbot.iris.gl.shader.ShaderType;
+import net.coderbot.iris.gl.uniform.UBOCreator;
 import net.coderbot.iris.shaderpack.transform.StringTransformations;
 import net.coderbot.iris.shaderpack.transform.Transformations;
 
 public class AttributeShaderTransformer {
-	public static String patch(String source, ShaderType type, boolean hasGeometry, InputAvailability inputs) {
+	public static String patch(String source, UBOCreator creator, ShaderType type, boolean hasGeometry, InputAvailability inputs) {
 		if (source.contains("iris_")) {
 			throw new IllegalStateException("Shader is attempting to exploit internal Iris code!");
 		}
 
 		StringTransformations transformations = new StringTransformations(source);
 
+		transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, creator.getBufferStuff());
 		// gl_MultiTexCoord1 and gl_MultiTexCoord2 are both ways to refer to the lightmap texture coordinate.
 		// See https://github.com/IrisShaders/Iris/issues/1149
 		if (!inputs.lightmap) {

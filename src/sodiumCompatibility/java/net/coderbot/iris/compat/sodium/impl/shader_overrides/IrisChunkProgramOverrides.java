@@ -15,6 +15,8 @@ import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.program.ProgramUniforms;
 import net.coderbot.iris.pipeline.SodiumTerrainPipeline;
 import net.coderbot.iris.pipeline.WorldRenderingPipeline;
+import net.coderbot.iris.shaderpack.transform.StringTransformations;
+import net.coderbot.iris.shaderpack.transform.Transformations;
 import net.coderbot.iris.shadows.ShadowRenderingState;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
@@ -49,6 +51,10 @@ public class IrisChunkProgramOverrides {
 			return null;
 		}
 
+		StringTransformations transformations = new StringTransformations(source);
+		transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, pipeline.getCreator().getBufferStuff());
+		source = transformations.toString();
+
 		return new GlShader(device, ShaderType.VERTEX, new ResourceLocation("iris",
 			"sodium-terrain-" + pass.toString().toLowerCase(Locale.ROOT) + ".vsh"), source, EMPTY_CONSTANTS);
 	}
@@ -72,6 +78,10 @@ public class IrisChunkProgramOverrides {
 			return null;
 		}
 
+		StringTransformations transformations = new StringTransformations(source);
+		transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, pipeline.getCreator().getBufferStuff());
+		source = transformations.toString();
+
 		return new GlShader(device, IrisShaderTypes.GEOMETRY, new ResourceLocation("iris",
 			"sodium-terrain-" + pass.toString().toLowerCase(Locale.ROOT) + ".gsh"), source, EMPTY_CONSTANTS);
 	}
@@ -94,6 +104,10 @@ public class IrisChunkProgramOverrides {
 		if (source == null) {
 			return null;
 		}
+
+		StringTransformations transformations = new StringTransformations(source);
+		transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, pipeline.getCreator().getBufferStuff());
+		source = transformations.toString();
 
 		return new GlShader(device, ShaderType.FRAGMENT, new ResourceLocation("iris",
 			"sodium-terrain-" + pass.toString().toLowerCase(Locale.ROOT) + ".fsh"), source, EMPTY_CONSTANTS);
@@ -155,7 +169,7 @@ public class IrisChunkProgramOverrides {
 							images = pipeline.initTerrainImages(name);
 						}
 
-						return new IrisChunkProgram(device, program, name, uniforms, samplers, images);
+						return new IrisChunkProgram(device, pipeline.getCreator(), program, name, uniforms, samplers, images);
 					});
 		} finally {
 			vertShader.delete();

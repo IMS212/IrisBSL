@@ -9,8 +9,12 @@ import net.coderbot.iris.gl.shader.GlShader;
 import net.coderbot.iris.gl.shader.ProgramCreator;
 import net.coderbot.iris.gl.shader.ShaderType;
 import net.coderbot.iris.gl.texture.InternalTextureFormat;
+import net.fabricmc.loader.api.FabricLoader;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.function.IntSupplier;
 
 public class ProgramBuilder extends ProgramUniforms.Builder implements SamplerHolder, ImageHolder {
@@ -75,6 +79,15 @@ public class ProgramBuilder extends ProgramUniforms.Builder implements SamplerHo
 		try {
 			return new GlShader(shaderType, name, source);
 		} catch (RuntimeException e) {
+			try {
+				Files.deleteIfExists(FabricLoader.getInstance().getGameDir().resolve("patched_shaders").resolve(name));
+				if (Files.notExists(FabricLoader.getInstance().getGameDir().resolve("patched_shaders"))) {
+					Files.createDirectory(FabricLoader.getInstance().getGameDir().resolve("patched_shaders"));
+				}
+				Files.write(FabricLoader.getInstance().getGameDir().resolve("patched_shaders").resolve(name), source.getBytes(StandardCharsets.UTF_8));
+			} catch (IOException ex) {
+				throw new RuntimeException(ex);
+			}
 			throw new RuntimeException("Failed to compile " + shaderType + " shader for program " + name, e);
 		}
 	}

@@ -7,21 +7,21 @@ import net.coderbot.iris.vendored.joml.Vector4f;
 
 import java.util.function.Supplier;
 
-public class Vector3Uniform extends Uniform {
+public class Vector3Uniform extends Uniform<Vector3f> {
 	private final Vector3f cachedValue;
 	private final Supplier<Vector3f> value;
 
-	Vector3Uniform(int location, Supplier<Vector3f> value) {
-		super(location);
+	Vector3Uniform(String name, int location, Supplier<Vector3f> value) {
+		super(name, UniformType.VEC3, location);
 
 		this.cachedValue = new Vector3f();
 		this.value = value;
 	}
 
-	static Vector3Uniform converted(int location, Supplier<Vector3d> value) {
+	static Vector3Uniform converted(String name, int location, Supplier<Vector3d> value) {
 		Vector3f held = new Vector3f();
 
-		return new Vector3Uniform(location, () -> {
+		return new Vector3Uniform(name, location, () -> {
 			Vector3d updated = value.get();
 
 			held.set((float) updated.x, (float) updated.y, (float) updated.z);
@@ -30,16 +30,21 @@ public class Vector3Uniform extends Uniform {
 		});
 	}
 
-	static Vector3Uniform truncated(int location, Supplier<Vector4f> value) {
+	static Vector3Uniform truncated(String name, int location, Supplier<Vector4f> value) {
 		Vector3f held = new Vector3f();
 
-		return new Vector3Uniform(location, () -> {
+		return new Vector3Uniform(name, location, () -> {
 			Vector4f updated = value.get();
 
 			held.set(updated.x(), updated.y(), updated.z());
 
 			return held;
 		});
+	}
+
+	@Override
+	public Vector3f getValue() {
+		return value.get();
 	}
 
 	@Override
@@ -50,5 +55,10 @@ public class Vector3Uniform extends Uniform {
 			cachedValue.set(newValue.x(), newValue.y(), newValue.z());
 			IrisRenderSystem.uniform3f(location, cachedValue.x(), cachedValue.y(), cachedValue.z());
 		}
+	}
+
+	@Override
+	public int getByteSize() {
+		return 12;
 	}
 }

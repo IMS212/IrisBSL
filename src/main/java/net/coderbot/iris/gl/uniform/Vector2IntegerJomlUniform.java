@@ -5,19 +5,24 @@ import net.coderbot.iris.vendored.joml.Vector2i;
 
 import java.util.function.Supplier;
 
-public class Vector2IntegerJomlUniform extends Uniform {
+public class Vector2IntegerJomlUniform extends Uniform<Vector2i> {
 	private Vector2i cachedValue;
 	private final Supplier<Vector2i> value;
 
-	Vector2IntegerJomlUniform(int location, Supplier<Vector2i> value) {
-		this(location, value, null);
+	Vector2IntegerJomlUniform(String name, int location, Supplier<Vector2i> value) {
+		this(name, location, value, null);
 	}
 
-	Vector2IntegerJomlUniform(int location, Supplier<Vector2i> value, ValueUpdateNotifier notifier) {
-		super(location, notifier);
+	Vector2IntegerJomlUniform(String name, int location, Supplier<Vector2i> value, ValueUpdateNotifier notifier) {
+		super(name, UniformType.IVEC2, location, notifier);
 
 		this.cachedValue = null;
 		this.value = value;
+	}
+
+	@Override
+	public Vector2i getValue() {
+		return value.get();
 	}
 
 	@Override
@@ -27,6 +32,11 @@ public class Vector2IntegerJomlUniform extends Uniform {
 		if (notifier != null) {
 			notifier.setListener(this::updateValue);
 		}
+	}
+
+	@Override
+	public int getByteSize() {
+		return 8;
 	}
 
 	private void updateValue() {

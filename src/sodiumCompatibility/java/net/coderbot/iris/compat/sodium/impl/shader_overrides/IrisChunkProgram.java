@@ -2,7 +2,9 @@ package net.coderbot.iris.compat.sodium.impl.shader_overrides;
 
 import java.nio.FloatBuffer;
 
+import net.coderbot.iris.gl.uniform.UBOCreator;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.opengl.GL32C;
 import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -31,10 +33,11 @@ public class IrisChunkProgram extends ChunkProgram {
 	@Nullable
 	private final ProgramImages irisProgramImages;
 
-	public IrisChunkProgram(RenderDevice owner, ResourceLocation name, int handle,
+	public IrisChunkProgram(RenderDevice owner, UBOCreator creator, ResourceLocation name, int handle,
 							@Nullable ProgramUniforms irisProgramUniforms, @Nullable ProgramSamplers irisProgramSamplers,
 							@Nullable ProgramImages irisProgramImages) {
 		super(owner, name, handle, ChunkShaderFogComponent.None::new);
+
 		this.uModelViewMatrix = this.getUniformLocation("iris_ModelViewMatrix");
 		this.uNormalMatrix = this.getUniformLocation("iris_NormalMatrix");
 		this.irisProgramUniforms = irisProgramUniforms;
