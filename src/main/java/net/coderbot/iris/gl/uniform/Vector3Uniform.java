@@ -59,6 +59,6 @@ public class Vector3Uniform extends Uniform<Vector3f> {
 
 	@Override
 	public int getByteSize() {
-		return 12;
+		return 16;
 	}
 }

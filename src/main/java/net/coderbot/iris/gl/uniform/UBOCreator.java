@@ -1,19 +1,18 @@
 package net.coderbot.iris.gl.uniform;
 
 import net.coderbot.iris.gl.GlResource;
-import org.lwjgl.opengl.ARBShaderImageLoadStore;
+import net.coderbot.iris.shadows.Matrix4fAccess;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL30C;
 import org.lwjgl.opengl.GL32C;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
 import java.util.List;
-import java.util.Locale;
 
 public class UBOCreator extends GlResource {
 	private ByteBuffer buffer;
+	private long currentAddress;
 	private int size;
 	private List<Uniform> uniformTypes;
 
@@ -31,6 +30,7 @@ public class UBOCreator extends GlResource {
 			MemoryUtil.memFree(this.buffer);
 		}
 		this.buffer = MemoryUtil.memAlloc(size);
+		this.currentAddress = MemoryUtil.memAddress(this.buffer);
 	}
 
 	public void update() {
@@ -66,52 +66,69 @@ public class UBOCreator extends GlResource {
 	}
 
 	public void putIntUniform(IntUniform uniform) {
-		buffer.putInt(uniform.getValue());
+		MemoryUtil.memPutInt(currentAddress, uniform.getValue());
+		currentAddress += 4;
 	}
 
 	public void putFloatUniform(FloatUniform uniform) {
-		buffer.putFloat(uniform.getValue());
+		MemoryUtil.memPutFloat(currentAddress, uniform.getValue());
+		currentAddress += 4;
 	}
 
 	public void putJomlMatrixUniform(JomlMatrixUniform uniform) {
-		uniform.getValue().get(buffer);
-		buffer.position(buffer.position() + 16);
+		for (float value : uniform.getValue().get(new float[16])) {
+			MemoryUtil.memPutFloat(currentAddress, value);
+			currentAddress += 4;
+		}
 	}
 
 	public void putMatrixFromFloatArrayUniform(MatrixFromFloatArrayUniform uniform) {
 		for (float value : uniform.getValue()) {
-			buffer.putFloat(value);
+			MemoryUtil.memPutFloat(currentAddress, value);
+			currentAddress += 4;
 		}
 	}
 
 	public void putMatrixUniform(MatrixUniform uniform) {
-		uniform.getValue().store(buffer.asFloatBuffer());
+		for (float value : ((Matrix4fAccess) (Object) uniform.getValue()).copyIntoArray()) {
+			MemoryUtil.memPutFloat(currentAddress, value);
+			currentAddress += 4;
+		}
 	}
 
 	public void putVector2IntegerJomlUniform(Vector2IntegerJomlUniform uniform) {
-		uniform.getValue().get(buffer);
-		buffer.position(buffer.position() + 8);
+		MemoryUtil.memPutInt(currentAddress, uniform.getValue().x);
+		MemoryUtil.memPutInt(currentAddress + 4, uniform.getValue().y);
+		currentAddress += 8;
 	}
 
 	public void putVector2Uniform(Vector2Uniform uniform) {
-		uniform.getValue().get(buffer);
-		buffer.position(buffer.position() + 8);
+		MemoryUtil.memPutFloat(currentAddress, uniform.getValue().x);
+		MemoryUtil.memPutFloat(currentAddress + 4, uniform.getValue().y);
+		currentAddress += 8;
 	}
 
 	public void putVector3Uniform(Vector3Uniform uniform) {
-		uniform.getValue().get(buffer);
-		// Aligned to std140
-		buffer.position(buffer.position() + 16);
+		MemoryUtil.memPutFloat(currentAddress, uniform.getValue().x);
+		MemoryUtil.memPutFloat(currentAddress + 4, uniform.getValue().y);
+		MemoryUtil.memPutFloat(currentAddress + 8, uniform.getValue().z);
+		currentAddress += 16;
 	}
 
 	public void putVector4IntegerJomlUniform(Vector4IntegerJomlUniform uniform) {
-		uniform.getValue().get(buffer);
-		buffer.position(buffer.position() + 16);
+		MemoryUtil.memPutInt(currentAddress, uniform.getValue().x);
+		MemoryUtil.memPutInt(currentAddress + 4, uniform.getValue().y);
+		MemoryUtil.memPutInt(currentAddress + 8, uniform.getValue().z);
+		MemoryUtil.memPutInt(currentAddress + 12, uniform.getValue().w);
+		currentAddress += 16;
 	}
 
 	public void putVector4Uniform(Vector4Uniform uniform) {
-		uniform.getValue().get(buffer);
-		buffer.position(buffer.position() + 16);
+		MemoryUtil.memPutFloat(currentAddress, uniform.getValue().x);
+		MemoryUtil.memPutFloat(currentAddress + 4, uniform.getValue().y);
+		MemoryUtil.memPutFloat(currentAddress + 8, uniform.getValue().z);
+		MemoryUtil.memPutFloat(currentAddress + 12, uniform.getValue().w);
+		currentAddress += 16;
 	}
 
 	public String getBufferStuff() {
