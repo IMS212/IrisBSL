@@ -5,16 +5,21 @@ import net.coderbot.iris.vendored.joml.Vector2f;
 
 import java.util.function.Supplier;
 
-public class Vector2Uniform extends Uniform {
+public class Vector2Uniform extends Uniform<Vector2f> {
 	private Vector2f cachedValue;
 	private final Supplier<Vector2f> value;
 
-	Vector2Uniform(int location, Supplier<Vector2f> value) {
-		super(location);
+	Vector2Uniform(String name, int location, Supplier<Vector2f> value) {
+		super(name, UniformType.VEC2, location);
 
 		this.cachedValue = null;
 		this.value = value;
 
+	}
+
+	@Override
+	public Vector2f getValue() {
+		return value.get();
 	}
 
 	@Override
@@ -25,5 +30,10 @@ public class Vector2Uniform extends Uniform {
 			cachedValue = newValue;
 			IrisRenderSystem.uniform2f(this.location, newValue.x, newValue.y);
 		}
+	}
+
+	@Override
+	public int getByteSize() {
+		return 8;
 	}
 }

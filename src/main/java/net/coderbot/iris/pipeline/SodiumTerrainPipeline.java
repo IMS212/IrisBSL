@@ -16,6 +16,7 @@ import net.coderbot.iris.pipeline.newshader.FogMode;
 import net.coderbot.iris.pipeline.newshader.ShaderAttributeInputs;
 import net.coderbot.iris.pipeline.newshader.TriforcePatcher;
 import net.coderbot.iris.rendertarget.RenderTargets;
+import net.coderbot.iris.gl.uniform.UBOCreator;
 import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ProgramSource;
 import net.coderbot.iris.uniforms.CommonUniforms;
@@ -56,18 +57,20 @@ public class SodiumTerrainPipeline {
 
 	private final WorldRenderingPipeline parent;
 
+	private final UBOCreator creator;
 	private final IntFunction<ProgramSamplers> createTerrainSamplers;
 	private final IntFunction<ProgramSamplers> createShadowSamplers;
 
 	private final IntFunction<ProgramImages> createTerrainImages;
 	private final IntFunction<ProgramImages> createShadowImages;
 
-	public SodiumTerrainPipeline(WorldRenderingPipeline parent, ProgramSet programSet, IntFunction<ProgramSamplers> createTerrainSamplers,
+	public SodiumTerrainPipeline(WorldRenderingPipeline parent, UBOCreator creator, ProgramSet programSet, IntFunction<ProgramSamplers> createTerrainSamplers,
 								 IntFunction<ProgramSamplers> createShadowSamplers, IntFunction<ProgramImages> createTerrainImages, IntFunction<ProgramImages> createShadowImages,
 								 RenderTargets targets,
 								 ImmutableSet<Integer> flippedAfterPrepare,
 								 ImmutableSet<Integer> flippedAfterTranslucent, GlFramebuffer shadowFramebuffer) {
 		this.parent = Objects.requireNonNull(parent);
+		this.creator = uboCreator;
 
 		Optional<ProgramSource> terrainSource = first(programSet.getGbuffersTerrain(), programSet.getGbuffersTexturedLit(), programSet.getGbuffersTextured(), programSet.getGbuffersBasic());
 		Optional<ProgramSource> translucentSource = first(programSet.getGbuffersWater(), terrainSource);
@@ -166,6 +169,10 @@ public class SodiumTerrainPipeline {
 			shadowFragment = TriforcePatcher.patchSodium(fragment, ShaderType.FRAGMENT, AlphaTest.ALWAYS, inputs, vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale());
 			shadowCutoutFragment = TriforcePatcher.patchSodium(fragment, ShaderType.FRAGMENT, shadowAlpha, inputs, vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale());
 		}
+	}
+
+	public UBOCreator getCreator() {
+		return creator;
 	}
 
 	public Optional<String> getTerrainVertexShaderSource() {

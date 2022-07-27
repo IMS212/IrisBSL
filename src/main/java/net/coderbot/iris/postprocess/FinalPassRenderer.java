@@ -18,6 +18,8 @@ import net.coderbot.iris.gl.sampler.SamplerLimits;
 import net.coderbot.iris.gl.uniform.UniformUpdateFrequency;
 import net.coderbot.iris.pipeline.newshader.FogMode;
 import net.coderbot.iris.pipeline.newshader.TriforcePatcher;
+import net.coderbot.iris.gl.uniform.UBOCreator;
+import net.coderbot.iris.pipeline.patcher.CompositeDepthTransformer;
 import net.coderbot.iris.rendertarget.Blaze3dRenderTargetExt;
 import net.coderbot.iris.rendertarget.RenderTarget;
 import net.coderbot.iris.rendertarget.RenderTargets;
@@ -57,6 +59,7 @@ public class FinalPassRenderer {
 	private final ImmutableList<SwapPass> swapPasses;
 	private final GlFramebuffer baseline;
 	private final GlFramebuffer colorHolder;
+	private final UBOCreator uboCreator;
 	private int lastColorTextureId;
 	private int lastColorTextureVersion;
 	private final IntSupplier noiseTexture;
@@ -65,7 +68,7 @@ public class FinalPassRenderer {
 	private final Object2ObjectMap<String, IntSupplier> customTextureIds;
 
 	// TODO: The length of this argument list is getting a bit ridiculous
-	public FinalPassRenderer(ProgramSet pack, RenderTargets renderTargets, IntSupplier noiseTexture,
+	public FinalPassRenderer(ProgramSet pack, UBOCreator creator, RenderTargets renderTargets, IntSupplier noiseTexture,
 							 FrameUpdateNotifier updateNotifier, ImmutableSet<Integer> flippedBuffers,
 							 CenterDepthSampler centerDepthSampler,
 							 Supplier<ShadowRenderTargets> shadowTargetsSupplier,
@@ -74,6 +77,7 @@ public class FinalPassRenderer {
 		this.updateNotifier = updateNotifier;
 		this.centerDepthSampler = centerDepthSampler;
 		this.customTextureIds = customTextureIds;
+		this.uboCreator = creator;
 
 		final PackRenderTargetDirectives renderTargetDirectives = pack.getPackDirectives().getRenderTargetDirectives();
 		final Map<Integer, PackRenderTargetDirectives.RenderTargetSettings> renderTargetSettings =
@@ -282,14 +286,14 @@ public class FinalPassRenderer {
 	// TODO: Don't just copy this from DeferredWorldRenderingPipeline
 	private Program createProgram(ProgramSource source, ImmutableSet<Integer> flipped, ImmutableSet<Integer> flippedAtLeastOnceSnapshot,
 								  Supplier<ShadowRenderTargets> shadowTargetsSupplier) {
-		String vertex = TriforcePatcher.patchComposite(source.getVertexSource().orElseThrow(RuntimeException::new), ShaderType.VERTEX);
+		String vertex = TriforcePatcher.patchComposite(source.getVertexSource().orElseThrow(RuntimeException::new), ShaderType.VERTEX, uboCreator);
 
 		String geometry = null;
 		if (source.getGeometrySource().isPresent()) {
-			geometry = TriforcePatcher.patchComposite(source.getGeometrySource().orElseThrow(RuntimeException::new), ShaderType.GEOMETRY);
+			geometry = TriforcePatcher.patchComposite(source.getGeometrySource().orElseThrow(RuntimeException::new), ShaderType.GEOMETRY, uboCreator);
 		}
 
-		String fragment = TriforcePatcher.patchComposite(source.getFragmentSource().orElseThrow(RuntimeException::new), ShaderType.FRAGMENT);
+		String fragment = TriforcePatcher.patchComposite(source.getFragmentSource().orElseThrow(RuntimeException::new), ShaderType.FRAGMENT, uboCreator);
 
 		Objects.requireNonNull(flipped);
 

@@ -231,9 +231,9 @@ public class ProgramUniforms {
 					}
 
 					if (size == 1) {
-						Iris.logger.warn("[" + this.name + "] Unsupported uniform: " + typeName + " " + name);
+					//	Iris.logger.warn("[" + this.name + "] Unsupported uniform: " + typeName + " " + name);
 					} else {
-						Iris.logger.warn("[" + this.name + "] Unsupported uniform: " + name + " of size " + size + " and type " + typeName);
+					//	Iris.logger.warn("[" + this.name + "] Unsupported uniform: " + name + " of size " + size + " and type " + typeName);
 					}
 
 					continue;
@@ -344,7 +344,7 @@ public class ProgramUniforms {
 		} else if (type == GL20C.GL_FLOAT_VEC4) {
 			return UniformType.VEC4;
 		} else if (type == GL20C.GL_INT_VEC4) {
-			return UniformType.VEC4I;
+			return UniformType.IVEC4;
 		} else if (type == GL20C.GL_FLOAT_MAT3) {
 			return null;
 		} else if (type == GL20C.GL_FLOAT_VEC3) {
@@ -356,7 +356,7 @@ public class ProgramUniforms {
 		} else if (type == GL20C.GL_FLOAT_VEC2) {
 			return UniformType.VEC2;
 		} else if (type == GL20C.GL_INT_VEC2) {
-			return UniformType.VEC2I;
+			return UniformType.IVEC2;
 		} else if (type == GL20C.GL_SAMPLER_3D) {
 			return UniformType.INT;
 		} else if (type == GL20C.GL_SAMPLER_2D) {

@@ -7,16 +7,21 @@ import java.nio.FloatBuffer;
 import java.util.Arrays;
 import java.util.function.Supplier;
 
-public class MatrixFromFloatArrayUniform extends Uniform {
+public class MatrixFromFloatArrayUniform extends Uniform<float[]> {
 	private final FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
 	private float[] cachedValue;
 	private final Supplier<float[]> value;
 
-	MatrixFromFloatArrayUniform(int location, Supplier<float[]> value) {
-		super(location);
+	MatrixFromFloatArrayUniform(String name, int location, Supplier<float[]> value) {
+		super(name, UniformType.MAT4, location);
 
 		this.cachedValue = null;
 		this.value = value;
+	}
+
+	@Override
+	public float[] getValue() {
+		return value.get();
 	}
 
 	@Override
@@ -31,5 +36,10 @@ public class MatrixFromFloatArrayUniform extends Uniform {
 
 			RenderSystem.glUniformMatrix4(location, false, buffer);
 		}
+	}
+
+	@Override
+	public int getByteSize() {
+		return 64;
 	}
 }

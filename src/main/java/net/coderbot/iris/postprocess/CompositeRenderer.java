@@ -25,6 +25,8 @@ import net.coderbot.iris.gl.sampler.SamplerLimits;
 import net.coderbot.iris.gl.shader.ShaderType;
 import net.coderbot.iris.gl.uniform.UniformUpdateFrequency;
 import net.coderbot.iris.pipeline.newshader.TriforcePatcher;
+import net.coderbot.iris.gl.uniform.UBOCreator;
+import net.coderbot.iris.pipeline.patcher.CompositeDepthTransformer;
 import net.coderbot.iris.rendertarget.RenderTargets;
 import net.coderbot.iris.pipeline.newshader.FogMode;
 import net.coderbot.iris.samplers.IrisImages;
@@ -55,8 +57,9 @@ public class CompositeRenderer {
 	private final CenterDepthSampler centerDepthSampler;
 	private final Object2ObjectMap<String, IntSupplier> customTextureIds;
 	private final ImmutableSet<Integer> flippedAtLeastOnceFinal;
+	private UBOCreator uboCreator;
 
-	public CompositeRenderer(PackDirectives packDirectives, ProgramSource[] sources, RenderTargets renderTargets,
+	public CompositeRenderer(PackDirectives packDirectives, UBOCreator uboCreator, ProgramSource[] sources, RenderTargets renderTargets,
 							 IntSupplier noiseTexture, FrameUpdateNotifier updateNotifier,
 							 CenterDepthSampler centerDepthSampler, BufferFlipper bufferFlipper,
 							 Supplier<ShadowRenderTargets> shadowTargetsSupplier,
@@ -66,6 +69,7 @@ public class CompositeRenderer {
 		this.centerDepthSampler = centerDepthSampler;
 		this.renderTargets = renderTargets;
 		this.customTextureIds = customTextureIds;
+		this.uboCreator = uboCreator;
 
 		final PackRenderTargetDirectives renderTargetDirectives = packDirectives.getRenderTargetDirectives();
 		final Map<Integer, PackRenderTargetDirectives.RenderTargetSettings> renderTargetSettings =
@@ -219,14 +223,14 @@ public class CompositeRenderer {
 	// TODO: Don't just copy this from DeferredWorldRenderingPipeline
 	private Program createProgram(ProgramSource source, ImmutableSet<Integer> flipped, ImmutableSet<Integer> flippedAtLeastOnceSnapshot,
 														   Supplier<ShadowRenderTargets> shadowTargetsSupplier) {
-		String vertex = TriforcePatcher.patchComposite(source.getVertexSource().orElseThrow(RuntimeException::new), ShaderType.VERTEX);
+		String vertex = TriforcePatcher.patchComposite(source.getVertexSource().orElseThrow(RuntimeException::new), ShaderType.VERTEX, uboCreator);
 
 		String geometry = null;
 		if (source.getGeometrySource().isPresent()) {
-			geometry = TriforcePatcher.patchComposite(source.getGeometrySource().orElseThrow(RuntimeException::new), ShaderType.GEOMETRY);
+			geometry = TriforcePatcher.patchComposite(source.getGeometrySource().orElseThrow(RuntimeException::new), ShaderType.GEOMETRY, uboCreator);
 		}
 
-		String fragment = TriforcePatcher.patchComposite(source.getFragmentSource().orElseThrow(RuntimeException::new), ShaderType.FRAGMENT);
+		String fragment = TriforcePatcher.patchComposite(source.getFragmentSource().orElseThrow(RuntimeException::new), ShaderType.FRAGMENT, uboCreator);
 
 		ProgramBuilder builder;
 

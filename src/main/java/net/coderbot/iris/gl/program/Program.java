@@ -3,6 +3,9 @@ package net.coderbot.iris.gl.program;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.shaders.ProgramManager;
 import net.coderbot.iris.gl.GlResource;
+import net.coderbot.iris.gl.uniform.UBOCreator;
+import org.lwjgl.opengl.GL30C;
+import org.lwjgl.opengl.GL32C;
 
 public final class Program extends GlResource {
 	private final ProgramUniforms uniforms;
@@ -11,6 +14,7 @@ public final class Program extends GlResource {
 
 	Program(int program, ProgramUniforms uniforms, ProgramSamplers samplers, ProgramImages images) {
 		super(program);
+
 
 		this.uniforms = uniforms;
 		this.samplers = samplers;
