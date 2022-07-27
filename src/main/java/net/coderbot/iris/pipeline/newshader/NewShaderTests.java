@@ -4,6 +4,7 @@ import net.coderbot.iris.gl.blending.AlphaTest;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
 import net.coderbot.iris.gl.shader.ShaderType;
+import net.coderbot.iris.gl.uniform.UBOCreator;
 import net.coderbot.iris.pipeline.newshader.fallback.FallbackShader;
 import net.coderbot.iris.pipeline.newshader.fallback.ShaderSynthesizer;
 import net.coderbot.iris.rendertarget.RenderTargets;
@@ -33,7 +34,7 @@ public class NewShaderTests {
 										GlFramebuffer writingToAfterTranslucent, GlFramebuffer baseline, AlphaTest fallbackAlpha,
 										VertexFormat vertexFormat, FrameUpdateNotifier updateNotifier,
 										NewWorldRenderingPipeline parent, FogMode fogMode, boolean isIntensity,
-										boolean isFullbright) throws IOException {
+										boolean isFullbright, UBOCreator creator) throws IOException {
 		AlphaTest alpha = source.getDirectives().getAlphaTestOverride().orElse(fallbackAlpha);
 		BlendModeOverride blendModeOverride = source.getDirectives().getBlendModeOverride();
 
@@ -43,11 +44,11 @@ public class NewShaderTests {
 		boolean hasGeometry = false;
 		if (source.getGeometrySource().isPresent()) {
 			hasGeometry = true;
-			geometry = TriforcePatcher.patchVanilla(source.getGeometrySource().get(), ShaderType.GEOMETRY, alpha, true, inputs, true);
+			geometry = TriforcePatcher.patchVanilla(source.getGeometrySource().get(), ShaderType.GEOMETRY, alpha, true, inputs, true, creator);
 		}
 
-		String vertex = TriforcePatcher.patchVanilla(source.getVertexSource().orElseThrow(RuntimeException::new), ShaderType.VERTEX, alpha, true, inputs, hasGeometry);
-		String fragment = TriforcePatcher.patchVanilla(source.getFragmentSource().orElseThrow(RuntimeException::new), ShaderType.FRAGMENT, alpha, true, inputs, hasGeometry);
+		String vertex = TriforcePatcher.patchVanilla(source.getVertexSource().orElseThrow(RuntimeException::new), ShaderType.VERTEX, alpha, true, inputs, hasGeometry, creator);
+		String fragment = TriforcePatcher.patchVanilla(source.getFragmentSource().orElseThrow(RuntimeException::new), ShaderType.FRAGMENT, alpha, true, inputs, hasGeometry, creator);
 
 		StringBuilder shaderJson = new StringBuilder("{\n" +
 				"    \"blend\": {\n" +

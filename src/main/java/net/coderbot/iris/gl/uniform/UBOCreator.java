@@ -1,10 +1,12 @@
 package net.coderbot.iris.gl.uniform;
 
+import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.GlResource;
 import net.coderbot.iris.shadows.Matrix4fAccess;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL30C;
 import org.lwjgl.opengl.GL32C;
+import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
@@ -21,7 +23,12 @@ public class UBOCreator extends GlResource {
 	}
 
 	public void reset(int size) {
+		Iris.logger.warn("size: " + size);
 		this.size = size;
+		GL20C.glBindBuffer(GL32C.GL_UNIFORM_BUFFER, getGlId());
+		GL45C.glBufferStorage(GL32C.GL_UNIFORM_BUFFER, size, 0);
+		GL20C.glBindBuffer(GL32C.GL_UNIFORM_BUFFER, 0);
+		GL30C.glBindBufferBase(GL32C.GL_UNIFORM_BUFFER, 1, getGlId());
 		reset();
 	}
 
@@ -133,7 +140,7 @@ public class UBOCreator extends GlResource {
 
 	public String getBufferStuff() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("layout (std140, binding = 0) uniform CommonUniforms { \n");
+		sb.append("layout (std140, binding = 1) uniform CommonUniforms { \n");
 		for (Uniform uniform : uniformTypes) {
 			sb.append(uniform.getType().name().toLowerCase()).append(" ").append(uniform.getName()).append(";\n");
 		}
@@ -142,11 +149,10 @@ public class UBOCreator extends GlResource {
 	}
 
 	public void sendBufferToGPU() {
-		buffer.rewind();
-		GL20C.glBindBuffer(GL32C.GL_UNIFORM_BUFFER, getGlId());
-		GL20C.glBufferData(GL32C.GL_UNIFORM_BUFFER, buffer, GL30C.GL_STATIC_DRAW);
-		GL20C.glBindBuffer(GL32C.GL_UNIFORM_BUFFER, 0);
-		GL30C.glBindBufferBase(GL32C.GL_UNIFORM_BUFFER, 0, getGlId());
+		buffer.position((int) (currentAddress - MemoryUtil.memAddress(buffer)));
+		GL32C.glBindBuffer(GL32C.GL_UNIFORM_BUFFER, getGlId());
+		GL20C.glBufferSubData(GL32C.GL_UNIFORM_BUFFER, 0, buffer);
+		GL32C.glBindBuffer(GL32C.GL_UNIFORM_BUFFER, 0);
 	}
 
 	public void addUniforms(List<Uniform> uniforms) {

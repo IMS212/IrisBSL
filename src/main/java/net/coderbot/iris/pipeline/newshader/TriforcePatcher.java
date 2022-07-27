@@ -3,6 +3,7 @@ package net.coderbot.iris.pipeline.newshader;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.blending.AlphaTest;
 import net.coderbot.iris.gl.shader.ShaderType;
+import net.coderbot.iris.gl.uniform.UBOCreator;
 import net.coderbot.iris.pipeline.SodiumTerrainPipeline;
 import net.coderbot.iris.pipeline.patcher.AttributeShaderTransformer;
 import net.coderbot.iris.pipeline.patcher.CompositeDepthTransformer;
@@ -18,9 +19,6 @@ public class TriforcePatcher {
 			throw new IllegalStateException("Iris shader programs may not use moj_import directives.");
 		}
 
-		if (transformations.contains("iris_")) {
-			throw new IllegalStateException("Detected a potential reference to unstable and internal Iris shader interfaces (iris_). This isn't currently supported.");
-		}
 
 		fixVersion(transformations);
 
@@ -111,9 +109,10 @@ public class TriforcePatcher {
 		//System.out.println(transformations.toString());
 	}
 
-	public static String patchVanilla(String source, ShaderType type, AlphaTest alpha, boolean hasChunkOffset, ShaderAttributeInputs inputs, boolean hasGeometry) {
+	public static String patchVanilla(String source, ShaderType type, AlphaTest alpha, boolean hasChunkOffset, ShaderAttributeInputs inputs, boolean hasGeometry, UBOCreator creator) {
 		StringTransformations transformations = new StringTransformations(source);
 
+		transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, creator.getBufferStuff());
 		patchCommon(transformations, type);
 
 		if (inputs.hasOverlay()) {
@@ -295,7 +294,7 @@ public class TriforcePatcher {
 		return transformations.toString();
 	}
 
-	public static String patchSodium(String source, ShaderType type, AlphaTest alpha, ShaderAttributeInputs inputs, float positionScale, float positionOffset, float textureScale) {
+	public static String patchSodium(String source, ShaderType type, AlphaTest alpha, ShaderAttributeInputs inputs, float positionScale, float positionOffset, float textureScale, UBOCreator creator) {
 		StringTransformations transformations = new StringTransformations(source);
 
 		patchCommon(transformations, type);
@@ -400,11 +399,11 @@ public class TriforcePatcher {
 		return transformations.toString();
 	}
 
-	public static String patchComposite(String source, ShaderType type) {
+	public static String patchComposite(String source, ShaderType type, UBOCreator creator) {
 		StringTransformations transformations = new StringTransformations(source);
 		patchCommon(transformations, type);
 
-		transformations = CompositeDepthTransformer.patch(transformations);
+		transformations = CompositeDepthTransformer.patch(creator, transformations);
 
 		// TODO: More solid way to handle texture matrices
 		// TODO: Provide these values with uniforms

@@ -20,6 +20,8 @@ import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.texture.DepthBufferFormat;
 import net.coderbot.iris.gl.texture.InternalTextureFormat;
+import net.coderbot.iris.gl.uniform.UBOCreator;
+import net.coderbot.iris.gl.uniform.UBOUniformBuilder;
 import net.coderbot.iris.mixin.LevelRendererAccessor;
 import net.coderbot.iris.pipeline.ClearPass;
 import net.coderbot.iris.pipeline.ClearPassCreator;
@@ -48,6 +50,7 @@ import net.coderbot.iris.shaderpack.texture.TextureStage;
 import net.coderbot.iris.shadows.ShadowRenderTargets;
 import net.coderbot.iris.texture.TextureInfoCache;
 import net.coderbot.iris.uniforms.CapturedRenderingState;
+import net.coderbot.iris.uniforms.CommonUniforms;
 import net.coderbot.iris.uniforms.FrameUpdateNotifier;
 import net.coderbot.iris.vendored.joml.Vector3d;
 import net.coderbot.iris.vendored.joml.Vector4f;
@@ -79,6 +82,7 @@ import java.util.function.Supplier;
 public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWorldRenderingPipeline, RenderTargetStateListener {
 	private final RenderTargets renderTargets;
 	private final ShaderMap shaderMap;
+	private final UBOCreator creator;
 
 	private ShadowRenderTargets shadowRenderTargets;
 	private final Supplier<ShadowRenderTargets> shadowTargetsSupplier;
@@ -160,6 +164,12 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		this.shouldRenderMoon = programSet.getPackDirectives().shouldRenderMoon();
 		this.prepareBeforeShadow = programSet.getPackDirectives().isPrepareBeforeShadow();
 
+		UBOUniformBuilder uniformBuilder = new UBOUniformBuilder();
+
+		CommonUniforms.addCommonUniforms(uniformBuilder, programSet.getPack().getIdMap(), programSet.getPackDirectives(), updateNotifier, FogMode.PER_VERTEX);
+
+		this.creator = uniformBuilder.build();
+
 		RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
 		int depthTextureId = main.getDepthTextureId();
 		int internalFormat = TextureInfoCache.INSTANCE.getInfo(depthTextureId).getInternalFormat();
@@ -207,25 +217,25 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 			return shadowRenderTargets;
 		};
 
-		this.prepareRenderer = new CompositeRenderer(programSet.getPackDirectives(), programSet.getPrepare(), renderTargets,
+		this.prepareRenderer = new CompositeRenderer(programSet.getPackDirectives(), creator, programSet.getPrepare(), renderTargets,
 				customTextureManager.getNoiseTexture(), updateNotifier, centerDepthSampler, flipper, shadowTargetsSupplier,
 				customTextureManager.getCustomTextureIdMap().getOrDefault(TextureStage.PREPARE, Object2ObjectMaps.emptyMap()),
 				programSet.getPackDirectives().getExplicitFlips("prepare_pre"));
 
 		flippedAfterPrepare = flipper.snapshot();
 
-		this.deferredRenderer = new CompositeRenderer(programSet.getPackDirectives(), programSet.getDeferred(), renderTargets,
+		this.deferredRenderer = new CompositeRenderer(programSet.getPackDirectives(), creator, programSet.getDeferred(), renderTargets,
 				customTextureManager.getNoiseTexture(), updateNotifier, centerDepthSampler, flipper, shadowTargetsSupplier,
 				customTextureManager.getCustomTextureIdMap().getOrDefault(TextureStage.DEFERRED, Object2ObjectMaps.emptyMap()),
 				programSet.getPackDirectives().getExplicitFlips("deferred_pre"));
 
 		flippedAfterTranslucent = flipper.snapshot();
 
-		this.compositeRenderer = new CompositeRenderer(programSet.getPackDirectives(), programSet.getComposite(), renderTargets,
+		this.compositeRenderer = new CompositeRenderer(programSet.getPackDirectives(), creator, programSet.getComposite(), renderTargets,
 				customTextureManager.getNoiseTexture(), updateNotifier, centerDepthSampler, flipper, shadowTargetsSupplier,
 				customTextureManager.getCustomTextureIdMap().getOrDefault(TextureStage.COMPOSITE_AND_FINAL, Object2ObjectMaps.emptyMap()),
 				programSet.getPackDirectives().getExplicitFlips("composite_pre"));
-		this.finalPassRenderer = new FinalPassRenderer(programSet, renderTargets, customTextureManager.getNoiseTexture(), updateNotifier, flipper.snapshot(),
+		this.finalPassRenderer = new FinalPassRenderer(programSet,creator,  renderTargets, customTextureManager.getNoiseTexture(), updateNotifier, flipper.snapshot(),
 				centerDepthSampler, shadowTargetsSupplier,
 				customTextureManager.getCustomTextureIdMap().getOrDefault(TextureStage.COMPOSITE_AND_FINAL, Object2ObjectMaps.emptyMap()),
 				this.compositeRenderer.getFlippedAtLeastOnceFinal());
@@ -369,7 +379,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 
 		// TODO: Create fallback Sodium shaders if the pack doesn't provide terrain shaders
 		//       Currently we use Sodium's shaders but they don't support EXP2 fog underwater.
-		this.sodiumTerrainPipeline = new SodiumTerrainPipeline(this, programSet, createTerrainSamplers,
+		this.sodiumTerrainPipeline = new SodiumTerrainPipeline(this, creator, programSet, createTerrainSamplers,
 			shadowRenderTargets == null ? null : createShadowTerrainSamplers, createTerrainImages, createShadowTerrainImages, renderTargets, flippedAfterPrepare, flippedAfterTranslucent,
 			shadowRenderTargets != null ? shadowRenderTargets.getFramebuffer() : null);
 	}
@@ -401,7 +411,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		GlFramebuffer afterTranslucent = renderTargets.createGbufferFramebuffer(flippedAfterTranslucent, source.getDirectives().getDrawBuffers());
 
 		ExtendedShader extendedShader = NewShaderTests.create(name, source, beforeTranslucent, afterTranslucent,
-				baseline, fallbackAlpha, vertexFormat, updateNotifier, this, fogMode, isIntensity, isFullbright);
+				baseline, fallbackAlpha, vertexFormat, updateNotifier, this, fogMode, isIntensity, isFullbright, creator);
 
 		loadedShaders.add(extendedShader);
 
@@ -452,7 +462,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		GlFramebuffer framebuffer = this.shadowRenderTargets.getFramebuffer();
 
 		ExtendedShader extendedShader = NewShaderTests.create(name, source, framebuffer, framebuffer, baseline,
-				fallbackAlpha, vertexFormat, updateNotifier, this, FogMode.PER_VERTEX, isIntensity, isFullbright);
+				fallbackAlpha, vertexFormat, updateNotifier, this, FogMode.PER_VERTEX, isIntensity, isFullbright, creator);
 
 		loadedShaders.add(extendedShader);
 
@@ -538,6 +548,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 	@Override
 	public void beginLevelRendering() {
 		isRenderingWorld = true;
+		creator.update();
 
 		// Make sure we're using texture unit 0 for this.
 		RenderSystem.activeTexture(GL15C.GL_TEXTURE0);

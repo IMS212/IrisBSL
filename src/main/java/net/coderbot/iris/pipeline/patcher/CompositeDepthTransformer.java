@@ -10,7 +10,7 @@ public class CompositeDepthTransformer {
 			return null;
 		}
 
-		transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, creator.getBufferStuff());
+		source.injectLine(Transformations.InjectionPoint.BEFORE_CODE, creator.getBufferStuff());
 
 		// replace original declaration (fragile!!! we need glsl-transformer to do this robustly)
 		// if centerDepthSmooth is not declared as a uniform, we don't make it available

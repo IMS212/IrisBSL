@@ -24,28 +24,6 @@ public class UBOUniformBuilder implements DynamicLocationalUniformHolder {
 		return this;
 	}
 
-	@Override
-	public LocationalUniformHolder uniform3f(UniformUpdateFrequency updateFrequency, String name, Supplier<Vector3f> value) {
-		Iris.logger.warn(name);
-		location(name, UniformType.VEC4).ifPresent(id -> addUniform(updateFrequency, new Vector4Uniform(name, value)));
-
-		return this;
-	}
-
-	@Override
-	public LocationalUniformHolder uniformTruncated3f(UniformUpdateFrequency updateFrequency, String name, Supplier<Vector4f> value) {
-		location(name, UniformType.VEC4).ifPresent(id -> addUniform(updateFrequency, new Vector4Uniform(name, id, value)));
-
-		return this;
-	}
-
-	@Override
-	public LocationalUniformHolder uniform3d(UniformUpdateFrequency updateFrequency, String name, Supplier<Vector3d> value) {
-		location(name, UniformType.VEC4).ifPresent(id -> addUniform(updateFrequency, new Vector4Uniform(name, "", value)));
-
-		return this;
-	}
-
 	public UBOCreator build() {
 		UBOCreator creator = new UBOCreator();
 		int byteSize = 0;

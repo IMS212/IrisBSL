@@ -32,6 +32,7 @@ import net.coderbot.iris.gl.uniform.UBOUniformBuilder;
 import net.coderbot.iris.layer.GbufferPrograms;
 import net.coderbot.iris.mixin.LevelRendererAccessor;
 import net.coderbot.iris.pipeline.newshader.CoreWorldRenderingPipeline;
+import net.coderbot.iris.pipeline.newshader.FogMode;
 import net.coderbot.iris.pipeline.patcher.AttributeShaderTransformer;
 import net.coderbot.iris.postprocess.BufferFlipper;
 import net.coderbot.iris.postprocess.CenterDepthSampler;
@@ -157,7 +158,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 
 		UBOUniformBuilder uniformBuilder = new UBOUniformBuilder();
 
-		CommonUniforms.addCommonUniforms(uniformBuilder, programs.getPack().getIdMap(), programs.getPackDirectives(), updateNotifier);
+		CommonUniforms.addCommonUniforms(uniformBuilder, programs.getPack().getIdMap(), programs.getPackDirectives(), updateNotifier, FogMode.PER_VERTEX);
 
 		this.creator = uniformBuilder.build();
 

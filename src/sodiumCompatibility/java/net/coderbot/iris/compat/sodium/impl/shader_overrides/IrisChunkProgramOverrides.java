@@ -53,8 +53,8 @@ public class IrisChunkProgramOverrides {
 		transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, pipeline.getCreator().getBufferStuff());
 		source = transformations.toString();
 
-		return new GlShader(device, ShaderType.VERTEX, new ResourceLocation("iris",
-			"sodium-terrain-" + pass.toString().toLowerCase(Locale.ROOT) + ".vsh"), source, EMPTY_CONSTANTS);
+		return new GlShader(ShaderType.VERTEX, new ResourceLocation("iris",
+			"sodium-terrain-" + pass.toString().toLowerCase(Locale.ROOT) + ".vsh"), source);
 	}
 
     private GlShader createGeometryShader(IrisTerrainPass pass, SodiumTerrainPipeline pipeline) {
@@ -80,8 +80,8 @@ public class IrisChunkProgramOverrides {
 		transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, pipeline.getCreator().getBufferStuff());
 		source = transformations.toString();
 
-		return new GlShader(device, IrisShaderTypes.GEOMETRY, new ResourceLocation("iris",
-			"sodium-terrain-" + pass.toString().toLowerCase(Locale.ROOT) + ".gsh"), source, EMPTY_CONSTANTS);
+		return new GlShader(IrisShaderTypes.GEOMETRY, new ResourceLocation("iris",
+			"sodium-terrain-" + pass.toString().toLowerCase(Locale.ROOT) + ".gsh"), source);
 	}
 
     private GlShader createFragmentShader(IrisTerrainPass pass, SodiumTerrainPipeline pipeline) {
@@ -111,8 +111,8 @@ public class IrisChunkProgramOverrides {
 		transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, pipeline.getCreator().getBufferStuff());
 		source = transformations.toString();
 
-		return new GlShader(device, ShaderType.FRAGMENT, new ResourceLocation("iris",
-			"sodium-terrain-" + pass.toString().toLowerCase(Locale.ROOT) + ".fsh"), source, EMPTY_CONSTANTS);
+		return new GlShader(ShaderType.FRAGMENT, new ResourceLocation("iris",
+			"sodium-terrain-" + pass.toString().toLowerCase(Locale.ROOT) + ".fsh"), source);
 	}
 
 	private BlendModeOverride getBlendOverride(IrisTerrainPass pass, SodiumTerrainPipeline pipeline) {
