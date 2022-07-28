@@ -34,12 +34,12 @@ import net.coderbot.iris.mixin.LevelRendererAccessor;
 import net.coderbot.iris.pipeline.newshader.CoreWorldRenderingPipeline;
 import net.coderbot.iris.pipeline.newshader.FogMode;
 import net.coderbot.iris.pipeline.patcher.AttributeShaderTransformer;
+import net.coderbot.iris.pipeline.transform.TransformPatcher;
 import net.coderbot.iris.postprocess.BufferFlipper;
 import net.coderbot.iris.postprocess.CenterDepthSampler;
 import net.coderbot.iris.postprocess.CompositeRenderer;
 import net.coderbot.iris.postprocess.FinalPassRenderer;
 import net.coderbot.iris.rendertarget.Blaze3dRenderTargetExt;
-import net.coderbot.iris.rendertarget.NativeImageBackedSingleColorTexture;
 import net.coderbot.iris.rendertarget.NativeImageBackedSingleColorTexture;
 import net.coderbot.iris.rendertarget.RenderTargets;
 import net.coderbot.iris.samplers.IrisImages;
@@ -54,7 +54,6 @@ import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ProgramSource;
 import net.coderbot.iris.shaderpack.loading.ProgramId;
 import net.coderbot.iris.shaderpack.texture.TextureStage;
-import net.coderbot.iris.shaderpack.transform.StringTransformations;
 import net.coderbot.iris.shadows.ShadowRenderTargets;
 import net.coderbot.iris.texture.TextureInfoCache;
 import net.coderbot.iris.uniforms.CapturedRenderingState;
@@ -403,7 +402,6 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 			return builder.build();
 		};
 
-
 		this.sodiumTerrainPipeline = new SodiumTerrainPipeline(this, creator, programs, createTerrainSamplers,
 			shadowRenderTargets == null ? null : createShadowTerrainSamplers, createTerrainImages, createShadowTerrainImages, renderTargets, flippedAfterPrepare, flippedAfterTranslucent,
 			shadowRenderTargets != null ? shadowRenderTargets.getFramebuffer() : null);
@@ -573,13 +571,13 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 		// TODO: Properly handle empty shaders
 		String geometry = null;
 		if (source.getGeometrySource().isPresent()) {
-			geometry = AttributeShaderTransformer.patch(source.getGeometrySource().orElse(null), creator,
+			geometry = TransformPatcher.patchAttributes(source.getGeometrySource().orElse(null),
 				ShaderType.GEOMETRY, true, availability);
 		}
-		String vertex = AttributeShaderTransformer.patch(source.getVertexSource().orElseThrow(NullPointerException::new),
-			creator,ShaderType.VERTEX, geometry != null, availability);
-		String fragment = AttributeShaderTransformer.patch(source.getFragmentSource().orElseThrow(NullPointerException::new),
-			creator,ShaderType.FRAGMENT, geometry != null, availability);
+		String vertex = TransformPatcher.patchAttributes(source.getVertexSource().orElseThrow(NullPointerException::new),
+				ShaderType.VERTEX, geometry != null, availability);
+		String fragment = TransformPatcher.patchAttributes(source.getFragmentSource().orElseThrow(NullPointerException::new),
+				ShaderType.FRAGMENT, geometry != null, availability);
 
 		ProgramBuilder builder = ProgramBuilder.begin(source.getName(), vertex, geometry,
 				fragment, IrisSamplers.WORLD_RESERVED_TEXTURE_UNITS);

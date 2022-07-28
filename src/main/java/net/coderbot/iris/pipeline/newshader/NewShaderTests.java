@@ -4,17 +4,15 @@ import net.coderbot.iris.gl.blending.AlphaTest;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
 import net.coderbot.iris.gl.shader.ShaderType;
+import net.coderbot.iris.pipeline.transform.TransformPatcher;
 import net.coderbot.iris.gl.uniform.UBOCreator;
 import net.coderbot.iris.pipeline.newshader.fallback.FallbackShader;
 import net.coderbot.iris.pipeline.newshader.fallback.ShaderSynthesizer;
-import net.coderbot.iris.rendertarget.RenderTargets;
 import net.coderbot.iris.shaderpack.PackRenderTargetDirectives;
-import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ProgramSource;
 import net.coderbot.iris.uniforms.CommonUniforms;
 import net.coderbot.iris.uniforms.FrameUpdateNotifier;
 import net.coderbot.iris.uniforms.builtin.BuiltinReplacementUniforms;
-import net.coderbot.iris.vertices.IrisVertexFormats;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.metadata.MetadataSectionSerializer;
@@ -39,16 +37,15 @@ public class NewShaderTests {
 		BlendModeOverride blendModeOverride = source.getDirectives().getBlendModeOverride();
 
 		ShaderAttributeInputs inputs = new ShaderAttributeInputs(vertexFormat, isFullbright);
-
 		String geometry = null;
 		boolean hasGeometry = false;
 		if (source.getGeometrySource().isPresent()) {
 			hasGeometry = true;
-			geometry = TriforcePatcher.patchVanilla(source.getGeometrySource().get(), ShaderType.GEOMETRY, alpha, true, inputs, true, creator);
+			geometry = TransformPatcher.patchVanilla(source.getGeometrySource().get(), ShaderType.GEOMETRY, alpha, true, inputs, true, creator);
 		}
 
-		String vertex = TriforcePatcher.patchVanilla(source.getVertexSource().orElseThrow(RuntimeException::new), ShaderType.VERTEX, alpha, true, inputs, hasGeometry, creator);
-		String fragment = TriforcePatcher.patchVanilla(source.getFragmentSource().orElseThrow(RuntimeException::new), ShaderType.FRAGMENT, alpha, true, inputs, hasGeometry, creator);
+		String vertex = TransformPatcher.patchVanilla(source.getVertexSource().orElseThrow(RuntimeException::new), ShaderType.VERTEX, alpha, true, inputs, hasGeometry, creator);
+		String fragment = TransformPatcher.patchVanilla(source.getFragmentSource().orElseThrow(RuntimeException::new), ShaderType.FRAGMENT, alpha, true, inputs, hasGeometry, creator);
 
 		StringBuilder shaderJson = new StringBuilder("{\n" +
 				"    \"blend\": {\n" +
