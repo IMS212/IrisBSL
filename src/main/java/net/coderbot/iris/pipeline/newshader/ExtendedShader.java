@@ -22,6 +22,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceProvider;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.opengl.GL43C;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -51,6 +52,12 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 		super(resourceFactory, string, vertexFormat);
 
 		int programId = this.getId();
+
+		int index = GL43C.glGetUniformBlockIndex(programId, "CommonUniforms");
+		if (index != GL43C.GL_INVALID_INDEX) {
+			GL43C.glUniformBlockBinding(programId, index, 1);
+		}
+
 
 		ProgramUniforms.Builder uniformBuilder = ProgramUniforms.builder(string, programId);
 		uniformCreator.accept(uniformBuilder);

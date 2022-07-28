@@ -15,12 +15,9 @@ import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.shader.ShaderType;
 import net.coderbot.iris.gl.program.ProgramUniforms;
 import net.coderbot.iris.gl.sampler.SamplerLimits;
-import net.coderbot.iris.gl.uniform.UniformUpdateFrequency;
 import net.coderbot.iris.pipeline.transform.TransformPatcher;
 import net.coderbot.iris.pipeline.newshader.FogMode;
-import net.coderbot.iris.pipeline.newshader.TriforcePatcher;
 import net.coderbot.iris.gl.uniform.UBOCreator;
-import net.coderbot.iris.pipeline.patcher.CompositeDepthTransformer;
 import net.coderbot.iris.rendertarget.Blaze3dRenderTargetExt;
 import net.coderbot.iris.rendertarget.RenderTarget;
 import net.coderbot.iris.rendertarget.RenderTargets;
@@ -32,7 +29,6 @@ import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ProgramSource;
 import net.coderbot.iris.shadows.ShadowRenderTargets;
 import net.coderbot.iris.uniforms.CommonUniforms;
-import net.coderbot.iris.uniforms.IrisInternalUniforms;
 import net.coderbot.iris.uniforms.FrameUpdateNotifier;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
@@ -286,14 +282,14 @@ public class FinalPassRenderer {
 	// TODO: Don't just copy this from DeferredWorldRenderingPipeline
 	private Program createProgram(ProgramSource source, ImmutableSet<Integer> flipped, ImmutableSet<Integer> flippedAtLeastOnceSnapshot,
 								  Supplier<ShadowRenderTargets> shadowTargetsSupplier) {
-		String vertex = TransformPatcher.patchComposite(source.getVertexSource().orElseThrow(RuntimeException::new), ShaderType.VERTEX, uboCreator);
+		String vertex = TransformPatcher.patchComposite(source.getVertexSource().orElseThrow(RuntimeException::new), ShaderType.VERTEX);
 
 		String geometry = null;
 		if (source.getGeometrySource().isPresent()) {
-			geometry = TransformPatcher.patchComposite(source.getGeometrySource().orElseThrow(RuntimeException::new), ShaderType.GEOMETRY, uboCreator);
+			geometry = TransformPatcher.patchComposite(source.getGeometrySource().orElseThrow(RuntimeException::new), ShaderType.GEOMETRY);
 		}
 
-		String fragment = TransformPatcher.patchComposite(source.getFragmentSource().orElseThrow(RuntimeException::new), ShaderType.FRAGMENT, uboCreator);
+		String fragment = TransformPatcher.patchComposite(source.getFragmentSource().orElseThrow(RuntimeException::new), ShaderType.FRAGMENT);
 
 		Objects.requireNonNull(flipped);
 
@@ -309,7 +305,7 @@ public class FinalPassRenderer {
 
 		ProgramSamplers.CustomTextureSamplerInterceptor customTextureSamplerInterceptor = ProgramSamplers.customTextureSamplerInterceptor(builder, customTextureIds, flippedAtLeastOnceSnapshot);
 
-		CommonUniforms.addCommonUniforms(builder, source.getParent().getPack().getIdMap(), source.getParent().getPackDirectives(), updateNotifier, FogMode.OFF);
+		CommonUniforms.addDynamicUniforms(builder, FogMode.OFF);
 		IrisSamplers.addRenderTargetSamplers(customTextureSamplerInterceptor, () -> flipped, renderTargets, true);
 		IrisImages.addRenderTargetImages(builder, () -> flipped, renderTargets);
 		IrisSamplers.addNoiseSampler(customTextureSamplerInterceptor, noiseTexture);

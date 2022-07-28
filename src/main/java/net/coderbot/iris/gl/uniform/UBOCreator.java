@@ -11,6 +11,7 @@ import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 public class UBOCreator extends GlResource {
@@ -18,6 +19,7 @@ public class UBOCreator extends GlResource {
 	private long currentAddress;
 	private int size;
 	private List<Uniform> uniformTypes;
+	public List<String> uniformNames;
 
 	public UBOCreator() {
 		super(GL30C.glGenBuffers());
@@ -153,7 +155,7 @@ public class UBOCreator extends GlResource {
 
 	public String getBufferStuff() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("layout (std140, binding = 1) uniform CommonUniforms { \n");
+		sb.append("layout (std140) uniform CommonUniforms { \n");
 		for (Uniform uniform : uniformTypes) {
 			if (uniform instanceof BooleanUniform) {
 				sb.append("bool").append(" ").append(uniform.getName()).append(";\n");
@@ -178,6 +180,10 @@ public class UBOCreator extends GlResource {
 
 	public void addUniforms(List<Uniform> uniforms) {
 		this.uniformTypes = uniforms;
+		this.uniformNames = new ArrayList<>();
+		for (Uniform uniform : uniformTypes) {
+			this.uniformNames.add(uniform.getName());
+		}
 	}
 
 	@Override

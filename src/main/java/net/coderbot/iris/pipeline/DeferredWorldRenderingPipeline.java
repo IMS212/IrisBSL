@@ -14,7 +14,6 @@ import net.coderbot.iris.gbuffer_overrides.matching.ProgramTable;
 import net.coderbot.iris.gbuffer_overrides.matching.RenderCondition;
 import net.coderbot.iris.gbuffer_overrides.matching.SpecialCondition;
 import net.coderbot.iris.gbuffer_overrides.state.RenderTargetStateListener;
-import net.coderbot.iris.gl.IrisRenderSystem;
 import net.coderbot.iris.gl.blending.AlphaTest;
 import net.coderbot.iris.gl.blending.AlphaTestOverride;
 import net.coderbot.iris.gl.blending.AlphaTestStorage;
@@ -26,14 +25,11 @@ import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.shader.ShaderType;
 import net.coderbot.iris.gl.texture.DepthBufferFormat;
-import net.coderbot.iris.gl.texture.InternalTextureFormat;
 import net.coderbot.iris.gl.uniform.UBOCreator;
 import net.coderbot.iris.gl.uniform.UBOUniformBuilder;
 import net.coderbot.iris.layer.GbufferPrograms;
 import net.coderbot.iris.mixin.LevelRendererAccessor;
-import net.coderbot.iris.pipeline.newshader.CoreWorldRenderingPipeline;
 import net.coderbot.iris.pipeline.newshader.FogMode;
-import net.coderbot.iris.pipeline.patcher.AttributeShaderTransformer;
 import net.coderbot.iris.pipeline.transform.TransformPatcher;
 import net.coderbot.iris.postprocess.BufferFlipper;
 import net.coderbot.iris.postprocess.CenterDepthSampler;
@@ -45,8 +41,6 @@ import net.coderbot.iris.rendertarget.RenderTargets;
 import net.coderbot.iris.samplers.IrisImages;
 import net.coderbot.iris.samplers.IrisSamplers;
 import net.coderbot.iris.shaderpack.CloudSetting;
-import net.coderbot.iris.shaderpack.IdMap;
-import net.coderbot.iris.shaderpack.PackDirectives;
 import net.coderbot.iris.shaderpack.PackShadowDirectives;
 import net.coderbot.iris.shaderpack.ProgramDirectives;
 import net.coderbot.iris.shaderpack.ProgramFallbackResolver;
@@ -157,7 +151,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 
 		UBOUniformBuilder uniformBuilder = new UBOUniformBuilder();
 
-		CommonUniforms.addCommonUniforms(uniformBuilder, programs.getPack().getIdMap(), programs.getPackDirectives(), updateNotifier, FogMode.PER_VERTEX);
+		CommonUniforms.addDynamicUniforms(uniformBuilder, FogMode.PER_VERTEX);
 
 		this.creator = uniformBuilder.build();
 
@@ -582,13 +576,13 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 		ProgramBuilder builder = ProgramBuilder.begin(source.getName(), vertex, geometry,
 				fragment, IrisSamplers.WORLD_RESERVED_TEXTURE_UNITS);
 
-		return createPassInner(builder, source.getParent().getPack().getIdMap(), source.getDirectives(), source.getParent().getPackDirectives(), availability, shadow);
+		return createPassInner(builder, source.getDirectives(), availability, shadow);
 	}
 
-	private Pass createPassInner(ProgramBuilder builder, IdMap map, ProgramDirectives programDirectives,
-								 PackDirectives packDirectives, InputAvailability availability, boolean shadow) {
+	private Pass createPassInner(ProgramBuilder builder, ProgramDirectives programDirectives,
+								 InputAvailability availability, boolean shadow) {
 
-		CommonUniforms.addCommonUniforms(builder, map, packDirectives, updateNotifier, null);
+		CommonUniforms.addDynamicUniforms(builder, null);
 
 		Supplier<ImmutableSet<Integer>> flipped;
 

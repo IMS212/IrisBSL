@@ -6,6 +6,7 @@ import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformBlock;
 import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformFloat;
 import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformMatrix4f;
 import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
+import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
 import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramSamplers;
@@ -16,6 +17,7 @@ import net.coderbot.iris.uniforms.CapturedRenderingState;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL32C;
+import org.lwjgl.opengl.GL43C;
 
 public class IrisChunkShaderInterface {
 	@Nullable
@@ -38,6 +40,12 @@ public class IrisChunkShaderInterface {
 
 	public IrisChunkShaderInterface(int handle, ShaderBindingContextExt contextExt, SodiumTerrainPipeline pipeline,
 									boolean isShadowPass, BlendModeOverride blendModeOverride, float alpha) {
+
+		int index = GL43C.glGetUniformBlockIndex(handle, "CommonUniforms");
+		if (index != GL43C.GL_INVALID_INDEX) {
+			GL43C.glUniformBlockBinding(handle, index, 1);
+		}
+
 		this.uniformModelViewMatrix = contextExt.bindUniformIfPresent("iris_ModelViewMatrix", GlUniformMatrix4f::new);
 		this.uniformProjectionMatrix = contextExt.bindUniformIfPresent("iris_ProjectionMatrix", GlUniformMatrix4f::new);
 		this.uniformModelViewProjectionMatrix = contextExt.bindUniformIfPresent("iris_ModelViewProjectionMatrix", GlUniformMatrix4f::new);

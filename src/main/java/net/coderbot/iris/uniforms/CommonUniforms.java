@@ -21,7 +21,6 @@ import net.coderbot.iris.vendored.joml.Math;
 import net.coderbot.iris.vendored.joml.Vector2f;
 import net.coderbot.iris.vendored.joml.Vector2i;
 import net.coderbot.iris.vendored.joml.Vector3d;
-import net.coderbot.iris.vendored.joml.Vector4f;
 import net.coderbot.iris.vendored.joml.Vector4i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -43,7 +42,6 @@ import net.minecraft.world.phys.Vec3;
 import java.util.Objects;
 import java.util.function.IntSupplier;
 
-import static net.coderbot.iris.gl.uniform.UniformUpdateFrequency.ONCE;
 import static net.coderbot.iris.gl.uniform.UniformUpdateFrequency.PER_FRAME;
 import static net.coderbot.iris.gl.uniform.UniformUpdateFrequency.PER_TICK;
 
@@ -58,18 +56,8 @@ public final class CommonUniforms {
 	}
 
 	// Needs to use a LocationalUniformHolder as we need it for the common uniforms
-	public static void addCommonUniforms(DynamicUniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier, FogMode fogMode) {
-		CameraUniforms.addCameraUniforms(uniforms, updateNotifier);
-		ViewportUniforms.addViewportUniforms(uniforms);
-		WorldTimeUniforms.addWorldTimeUniforms(uniforms);
-		SystemTimeUniforms.addSystemTimeUniforms(uniforms);
-		new CelestialUniforms(directives.getSunPathRotation()).addCelestialUniforms(uniforms);
-		IdMapUniforms.addIdMapUniforms(uniforms, idMap);
-		IrisExclusiveUniforms.addIrisExclusiveUniforms(uniforms);
-		MatrixUniforms.addMatrixUniforms(uniforms, directives);
-		HardcodedCustomUniforms.addHardcodedCustomUniforms(uniforms, updateNotifier);
+	public static void addDynamicUniforms(DynamicUniformHolder uniforms, FogMode fogMode) {
 		FogUniforms.addFogUniforms(uniforms, fogMode);
-		IrisInternalUniforms.addFogUniforms(uniforms);
 
 		// TODO: OptiFine doesn't think that atlasSize is a "dynamic" uniform,
 		//       but we do. How will custom uniforms depending on atlasSize work?
@@ -101,6 +89,25 @@ public final class CommonUniforms {
 
 		uniforms.uniform1i("renderStage", () -> GbufferPrograms.getCurrentPhase().ordinal(), StateUpdateNotifiers.phaseChangeNotifier);
 
+		uniforms.uniform1i("entityId", CapturedRenderingState.INSTANCE::getCurrentRenderedEntity,
+			CapturedRenderingState.INSTANCE.getEntityIdNotifier());
+
+		uniforms.uniform1i("blockEntityId", CapturedRenderingState.INSTANCE::getCurrentRenderedBlockEntity,
+			CapturedRenderingState.INSTANCE.getBlockEntityIdNotifier());
+	}
+
+	public static void addUBOUniforms(DynamicUniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier, FogMode fogMode) {
+		CameraUniforms.addCameraUniforms(uniforms, updateNotifier);
+		ViewportUniforms.addViewportUniforms(uniforms);
+		WorldTimeUniforms.addWorldTimeUniforms(uniforms);
+		SystemTimeUniforms.addSystemTimeUniforms(uniforms);
+		new CelestialUniforms(directives.getSunPathRotation()).addCelestialUniforms(uniforms);
+		IdMapUniforms.addIdMapUniforms(uniforms, idMap);
+		IrisExclusiveUniforms.addIrisExclusiveUniforms(uniforms);
+		MatrixUniforms.addMatrixUniforms(uniforms, directives);
+		HardcodedCustomUniforms.addHardcodedCustomUniforms(uniforms, updateNotifier);
+		IrisInternalUniforms.addFogUniforms(uniforms);
+
 		CommonUniforms.generalCommonUniforms(uniforms, updateNotifier, directives);
 	}
 
@@ -122,7 +129,6 @@ public final class CommonUniforms {
 			.uniform1f(PER_FRAME, "screenBrightness", () -> client.options.gamma)
 			// just a dummy value for shaders where entityColor isn't supplied through a vertex attribute (and thus is
 			// not available) - suppresses warnings. See AttributeShaderTransformer for the actual entityColor code.
-			.uniform4f(ONCE, "entityColor", Vector4f::new)
 			.uniform1f(PER_TICK, "playerMood", CommonUniforms::getPlayerMood)
 			.uniform2i(PER_FRAME, "eyeBrightness", CommonUniforms::getEyeBrightness)
 			.uniform2i(PER_FRAME, "eyeBrightnessSmooth", () -> {

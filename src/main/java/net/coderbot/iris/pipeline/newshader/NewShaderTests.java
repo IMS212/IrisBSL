@@ -11,7 +11,6 @@ import net.coderbot.iris.pipeline.newshader.fallback.ShaderSynthesizer;
 import net.coderbot.iris.shaderpack.PackRenderTargetDirectives;
 import net.coderbot.iris.shaderpack.ProgramSource;
 import net.coderbot.iris.uniforms.CommonUniforms;
-import net.coderbot.iris.uniforms.FrameUpdateNotifier;
 import net.coderbot.iris.uniforms.builtin.BuiltinReplacementUniforms;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.ResourceLocation;
@@ -30,7 +29,7 @@ import java.nio.file.Path;
 public class NewShaderTests {
 	public static ExtendedShader create(String name, ProgramSource source, GlFramebuffer writingToBeforeTranslucent,
 										GlFramebuffer writingToAfterTranslucent, GlFramebuffer baseline, AlphaTest fallbackAlpha,
-										VertexFormat vertexFormat, FrameUpdateNotifier updateNotifier,
+										VertexFormat vertexFormat,
 										NewWorldRenderingPipeline parent, FogMode fogMode, boolean isIntensity,
 										boolean isFullbright, UBOCreator creator) throws IOException {
 		AlphaTest alpha = source.getDirectives().getAlphaTestOverride().orElse(fallbackAlpha);
@@ -41,11 +40,11 @@ public class NewShaderTests {
 		boolean hasGeometry = false;
 		if (source.getGeometrySource().isPresent()) {
 			hasGeometry = true;
-			geometry = TransformPatcher.patchVanilla(source.getGeometrySource().get(), ShaderType.GEOMETRY, alpha, true, inputs, true, creator);
+			geometry = TransformPatcher.patchVanilla(source.getGeometrySource().get(), ShaderType.GEOMETRY, alpha, true, inputs, true);
 		}
 
-		String vertex = TransformPatcher.patchVanilla(source.getVertexSource().orElseThrow(RuntimeException::new), ShaderType.VERTEX, alpha, true, inputs, hasGeometry, creator);
-		String fragment = TransformPatcher.patchVanilla(source.getFragmentSource().orElseThrow(RuntimeException::new), ShaderType.FRAGMENT, alpha, true, inputs, hasGeometry, creator);
+		String vertex = TransformPatcher.patchVanilla(source.getVertexSource().orElseThrow(RuntimeException::new), ShaderType.VERTEX, alpha, true, inputs, hasGeometry);
+		String fragment = TransformPatcher.patchVanilla(source.getFragmentSource().orElseThrow(RuntimeException::new), ShaderType.FRAGMENT, alpha, true, inputs, hasGeometry);
 
 		StringBuilder shaderJson = new StringBuilder("{\n" +
 				"    \"blend\": {\n" +
@@ -130,7 +129,7 @@ public class NewShaderTests {
 		}
 
 		return new ExtendedShader(shaderResourceFactory, name, vertexFormat, writingToBeforeTranslucent, writingToAfterTranslucent, baseline, blendModeOverride, alpha, uniforms -> {
-			CommonUniforms.addCommonUniforms(uniforms, source.getParent().getPack().getIdMap(), source.getParent().getPackDirectives(), updateNotifier, fogMode);
+			CommonUniforms.addDynamicUniforms(uniforms, fogMode);
 			//SamplerUniforms.addWorldSamplerUniforms(uniforms);
 			//SamplerUniforms.addDepthSamplerUniforms(uniforms);
 			BuiltinReplacementUniforms.addBuiltinReplacementUniforms(uniforms);

@@ -19,7 +19,6 @@ import net.coderbot.iris.gl.image.ImageHolder;
 import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.texture.DepthBufferFormat;
-import net.coderbot.iris.gl.texture.InternalTextureFormat;
 import net.coderbot.iris.gl.uniform.UBOCreator;
 import net.coderbot.iris.gl.uniform.UBOUniformBuilder;
 import net.coderbot.iris.mixin.LevelRendererAccessor;
@@ -32,6 +31,7 @@ import net.coderbot.iris.pipeline.SodiumTerrainPipeline;
 import net.coderbot.iris.pipeline.WorldRenderingPhase;
 import net.coderbot.iris.pipeline.WorldRenderingPipeline;
 import net.coderbot.iris.pipeline.newshader.fallback.FallbackShader;
+import net.coderbot.iris.pipeline.transform.TransformPatcher;
 import net.coderbot.iris.postprocess.BufferFlipper;
 import net.coderbot.iris.postprocess.CenterDepthSampler;
 import net.coderbot.iris.postprocess.CompositeRenderer;
@@ -62,7 +62,6 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL30C;
@@ -166,9 +165,11 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 
 		UBOUniformBuilder uniformBuilder = new UBOUniformBuilder();
 
-		CommonUniforms.addCommonUniforms(uniformBuilder, programSet.getPack().getIdMap(), programSet.getPackDirectives(), updateNotifier, FogMode.PER_VERTEX);
+		CommonUniforms.addUBOUniforms(uniformBuilder, programSet.getPack().getIdMap(), programSet.getPackDirectives(), updateNotifier, FogMode.PER_VERTEX);
 
 		this.creator = uniformBuilder.build();
+
+		TransformPatcher.setUBOCreator(creator);
 
 		RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
 		int depthTextureId = main.getDepthTextureId();
@@ -411,7 +412,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		GlFramebuffer afterTranslucent = renderTargets.createGbufferFramebuffer(flippedAfterTranslucent, source.getDirectives().getDrawBuffers());
 
 		ExtendedShader extendedShader = NewShaderTests.create(name, source, beforeTranslucent, afterTranslucent,
-				baseline, fallbackAlpha, vertexFormat, updateNotifier, this, fogMode, isIntensity, isFullbright, creator);
+				baseline, fallbackAlpha, vertexFormat, this, fogMode, isIntensity, isFullbright, creator);
 
 		loadedShaders.add(extendedShader);
 
@@ -462,7 +463,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		GlFramebuffer framebuffer = this.shadowRenderTargets.getFramebuffer();
 
 		ExtendedShader extendedShader = NewShaderTests.create(name, source, framebuffer, framebuffer, baseline,
-				fallbackAlpha, vertexFormat, updateNotifier, this, FogMode.PER_VERTEX, isIntensity, isFullbright, creator);
+				fallbackAlpha, vertexFormat, this, FogMode.PER_VERTEX, isIntensity, isFullbright, creator);
 
 		loadedShaders.add(extendedShader);
 

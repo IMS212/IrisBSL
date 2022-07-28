@@ -2,19 +2,25 @@ package net.coderbot.iris.gl.program;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.shaders.ProgramManager;
+import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.GlResource;
 import net.coderbot.iris.gl.uniform.UBOCreator;
 import org.lwjgl.opengl.GL30C;
 import org.lwjgl.opengl.GL32C;
+import org.lwjgl.opengl.GL43C;
 
 public final class Program extends GlResource {
 	private final ProgramUniforms uniforms;
 	private final ProgramSamplers samplers;
 	private final ProgramImages images;
 
-	Program(int program, ProgramUniforms uniforms, ProgramSamplers samplers, ProgramImages images) {
-		super(program);
+	Program(int handle, ProgramUniforms uniforms, ProgramSamplers samplers, ProgramImages images) {
+		super(handle);
 
+		int index = GL43C.glGetUniformBlockIndex(handle, "CommonUniforms");
+		if (index != GL43C.GL_INVALID_INDEX) {
+			GL43C.glUniformBlockBinding(handle, index, 1);
+		}
 
 		this.uniforms = uniforms;
 		this.samplers = samplers;

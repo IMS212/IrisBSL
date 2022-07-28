@@ -5,18 +5,19 @@ import io.github.douira.glsl_transformer.ast.query.Root;
 import io.github.douira.glsl_transformer.ast.transform.ASTInjectionPoint;
 import io.github.douira.glsl_transformer.ast.transform.ASTTransformer;
 import net.coderbot.iris.gl.shader.ShaderType;
+import net.coderbot.iris.gl.uniform.UBOCreator;
 
 public class SodiumTransformer {
 	public static void transform(
-			ASTTransformer<?> t,
-			TranslationUnit tree,
-			Root root,
-			SodiumParameters parameters) {
+		ASTTransformer<?> t,
+		TranslationUnit tree,
+		Root root,
+		SodiumParameters parameters, UBOCreator creator) {
 		// this happens before common for patching gl_FragData
 		if (parameters.type == ShaderType.FRAGMENT) {
 			AlphaTestTransformer.transform(t, tree, root, parameters, parameters.alpha);
 		}
-		CommonTransformer.transform(t, tree, root, parameters);
+		CommonTransformer.transform(t, tree, root, parameters, creator);
 
 		root.replaceExpressionMatches(t, CommonTransformer.glTextureMatrix0, "mat4(1.0)");
 		root.rename("gl_ProjectionMatrix", "iris_ProjectionMatrix");

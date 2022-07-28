@@ -5,6 +5,7 @@ import io.github.douira.glsl_transformer.ast.node.Version;
 import io.github.douira.glsl_transformer.ast.node.VersionStatement;
 import io.github.douira.glsl_transformer.ast.node.Profile;
 import io.github.douira.glsl_transformer.ast.node.expression.Expression;
+import io.github.douira.glsl_transformer.ast.node.expression.ReferenceExpression;
 import io.github.douira.glsl_transformer.ast.node.expression.unary.FunctionCallExpression;
 import io.github.douira.glsl_transformer.ast.node.type.qualifier.StorageQualifier;
 import io.github.douira.glsl_transformer.ast.node.type.qualifier.StorageQualifier.StorageType;
@@ -15,6 +16,7 @@ import io.github.douira.glsl_transformer.ast.transform.ASTInjectionPoint;
 import io.github.douira.glsl_transformer.ast.transform.ASTTransformer;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.shader.ShaderType;
+import net.coderbot.iris.gl.uniform.UBOCreator;
 
 // Order fixed
 public class CommonTransformer {
@@ -24,12 +26,19 @@ public class CommonTransformer {
 			"gl_TextureMatrix[1]", Matcher.expressionPattern);
 
 	public static void transform(
-			ASTTransformer<?> t,
-			TranslationUnit tree,
-			Root root,
-			Parameters parameters) {
+		ASTTransformer<?> t,
+		TranslationUnit tree,
+		Root root,
+		Parameters parameters, UBOCreator creator) {
 		// fix version
 		fixVersion(tree);
+
+		tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
+			creator.getBufferStuff());
+
+		for (String name : creator.uniformNames) {
+			root.replaceReferenceExpressions(t, name, "uniformValues." + name);
+		}
 
 		// TODO: What if the shader does gl_PerVertex.gl_FogFragCoord ?
 

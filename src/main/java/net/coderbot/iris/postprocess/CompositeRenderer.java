@@ -23,10 +23,7 @@ import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.program.ProgramUniforms;
 import net.coderbot.iris.gl.sampler.SamplerLimits;
 import net.coderbot.iris.gl.shader.ShaderType;
-import net.coderbot.iris.gl.uniform.UniformUpdateFrequency;
-import net.coderbot.iris.pipeline.newshader.TriforcePatcher;
 import net.coderbot.iris.gl.uniform.UBOCreator;
-import net.coderbot.iris.pipeline.patcher.CompositeDepthTransformer;
 import net.coderbot.iris.pipeline.transform.TransformPatcher;
 import net.coderbot.iris.rendertarget.RenderTargets;
 import net.coderbot.iris.pipeline.newshader.FogMode;
@@ -222,41 +219,14 @@ public class CompositeRenderer {
 	// TODO: Don't just copy this from DeferredWorldRenderingPipeline
 	private Program createProgram(ProgramSource source, ImmutableSet<Integer> flipped, ImmutableSet<Integer> flippedAtLeastOnceSnapshot,
 														   Supplier<ShadowRenderTargets> shadowTargetsSupplier) {
-		String vertex = TransformPatcher.patchComposite(source.getVertexSource().orElseThrow(RuntimeException::new), ShaderType.VERTEX, uboCreator);
+		String vertex = TransformPatcher.patchComposite(source.getVertexSource().orElseThrow(RuntimeException::new), ShaderType.VERTEX);
 
 		String geometry = null;
 		if (source.getGeometrySource().isPresent()) {
-			geometry = TransformPatcher.patchComposite(source.getGeometrySource().orElseThrow(RuntimeException::new), ShaderType.GEOMETRY, uboCreator);
+			geometry = TransformPatcher.patchComposite(source.getGeometrySource().orElseThrow(RuntimeException::new), ShaderType.GEOMETRY);
 		}
 
-		String fragment = TransformPatcher.patchComposite(source.getFragmentSource().orElseThrow(RuntimeException::new), ShaderType.FRAGMENT, uboCreator);
-
-		ProgramBuilder builder;
-
-		try {
-			builder = ProgramBuilder.begin(source.getName(), vertex, geometry, fragment,
-					IrisSamplers.COMPOSITE_RESERVED_TEXTURE_UNITS);
-		} catch (RuntimeException e) {
-			// TODO: Better error handling
-			throw new RuntimeException("Shader compilation failed!", e);
-		}
-
-		ProgramSamplers.CustomTextureSamplerInterceptor customTextureSamplerInterceptor = ProgramSamplers.customTextureSamplerInterceptor(builder, customTextureIds, flippedAtLeastOnceSnapshot);
-
-		CommonUniforms.addCommonUniforms(builder, source.getParent().getPack().getIdMap(), source.getParent().getPackDirectives(), updateNotifier, FogMode.OFF);
-		IrisSamplers.addRenderTargetSamplers(customTextureSamplerInterceptor, () -> flipped, renderTargets, true);
-		IrisImages.addRenderTargetImages(builder, () -> flipped, renderTargets);
-
-		IrisSamplers.addNoiseSampler(customTextureSamplerInterceptor, noiseTexture);
-		IrisSamplers.addCompositeSamplers(customTextureSamplerInterceptor, renderTargets);
-
-		if (IrisSamplers.hasShadowSamplers(customTextureSamplerInterceptor)) {
-			IrisSamplers.addShadowSamplers(customTextureSamplerInterceptor, shadowTargetsSupplier.get());
-			IrisImages.addShadowColorImages(builder, shadowTargetsSupplier.get());
-		}
-
-		// TODO: Don't duplicate this with FinalPassRenderer
-		builder.addDynamicSampler(centerDepthSampler::getCenterDepthTexture, "iris_centerDepthSmooth");
+		String fragment = TransformPatcher.patchComposite(source.getFragmentSource().orElseThrow(RuntimeException::new), ShaderType.FRAGMENT);
 
 		if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
 			final Path debugOutDir = FabricLoader.getInstance().getGameDir().resolve("patched_shaders");
@@ -271,6 +241,32 @@ public class CompositeRenderer {
 				Iris.logger.warn("Failed to write debug patched shader source", e);
 			}
 		}
+		ProgramBuilder builder;
+
+		try {
+			builder = ProgramBuilder.begin(source.getName(), vertex, geometry, fragment,
+					IrisSamplers.COMPOSITE_RESERVED_TEXTURE_UNITS);
+		} catch (RuntimeException e) {
+			// TODO: Better error handling
+			throw new RuntimeException("Shader compilation failed!", e);
+		}
+
+		ProgramSamplers.CustomTextureSamplerInterceptor customTextureSamplerInterceptor = ProgramSamplers.customTextureSamplerInterceptor(builder, customTextureIds, flippedAtLeastOnceSnapshot);
+
+		CommonUniforms.addDynamicUniforms(builder, FogMode.OFF);
+		IrisSamplers.addRenderTargetSamplers(customTextureSamplerInterceptor, () -> flipped, renderTargets, true);
+		IrisImages.addRenderTargetImages(builder, () -> flipped, renderTargets);
+
+		IrisSamplers.addNoiseSampler(customTextureSamplerInterceptor, noiseTexture);
+		IrisSamplers.addCompositeSamplers(customTextureSamplerInterceptor, renderTargets);
+
+		if (IrisSamplers.hasShadowSamplers(customTextureSamplerInterceptor)) {
+			IrisSamplers.addShadowSamplers(customTextureSamplerInterceptor, shadowTargetsSupplier.get());
+			IrisImages.addShadowColorImages(builder, shadowTargetsSupplier.get());
+		}
+
+		// TODO: Don't duplicate this with FinalPassRenderer
+		builder.addDynamicSampler(centerDepthSampler::getCenterDepthTexture, "iris_centerDepthSmooth");
 
 		return builder.build();
 	}

@@ -7,6 +7,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.coderbot.iris.gl.uniform.UBOCreator;
 import org.antlr.v4.runtime.Token;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,6 +40,7 @@ public class TransformPatcher {
 	static Logger LOGGER = LogManager.getLogger(TransformPatcher.class);
 	private static ASTTransformer<Parameters> transformer;
 	private static Map<CacheKey, String> cache = new LRUCache<>(400);
+	private static UBOCreator uboCreator;
 
 	private static class CacheKey {
 		final Version version;
@@ -100,6 +102,10 @@ public class TransformPatcher {
 		}
 	};
 
+	public static void setUBOCreator(UBOCreator creator) {
+		uboCreator = creator;
+	}
+
 	static {
 		transformer = new ASTTransformer<>();
 		transformer.setTransformation((tree, root, parameters) -> {
@@ -123,13 +129,13 @@ public class TransformPatcher {
 						AttributeTransformer.transform(transformer, tree, root, (AttributeParameters) parameters);
 						break;
 					case COMPOSITE:
-						CompositeTransformer.transform(transformer, tree, root, parameters);
+						CompositeTransformer.transform(transformer, tree, root, parameters, uboCreator);
 						break;
 					case SODIUM:
-						SodiumTransformer.transform(transformer, tree, root, (SodiumParameters) parameters);
+						SodiumTransformer.transform(transformer, tree, root, (SodiumParameters) parameters, uboCreator);
 						break;
 					case VANILLA:
-						VanillaTransformer.transform(transformer, tree, root, (VanillaParameters) parameters);
+						VanillaTransformer.transform(transformer, tree, root, (VanillaParameters) parameters, uboCreator);
 						break;
 				}
 			});
@@ -181,7 +187,7 @@ public class TransformPatcher {
 			return cache.get(key);
 		}
 
-		String result = transformer.transform(PrintType.COMPACT, source, parameters);
+		String result = transformer.transform(PrintType.INDENTED, source, parameters);
 
 		cache.put(key, result);
 		return result;

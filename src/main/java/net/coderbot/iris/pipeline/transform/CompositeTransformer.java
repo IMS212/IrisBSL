@@ -10,6 +10,7 @@ import io.github.douira.glsl_transformer.ast.query.match.Matcher;
 import io.github.douira.glsl_transformer.ast.transform.ASTInjectionPoint;
 import io.github.douira.glsl_transformer.ast.transform.ASTTransformer;
 import net.coderbot.iris.gl.shader.ShaderType;
+import net.coderbot.iris.gl.uniform.UBOCreator;
 
 public class CompositeTransformer {
 	private static final AutoHintedMatcher<Expression> glTextureMatrix0To7 = new AutoHintedMatcher<Expression>(
@@ -29,11 +30,11 @@ public class CompositeTransformer {
 	};
 
 	public static void transform(
-			ASTTransformer<?> t,
-			TranslationUnit tree,
-			Root root,
-			Parameters parameters) {
-		CommonTransformer.transform(t, tree, root, parameters);
+		ASTTransformer<?> t,
+		TranslationUnit tree,
+		Root root,
+		Parameters parameters, UBOCreator creator) {
+		CommonTransformer.transform(t, tree, root, parameters, creator);
 		CompositeDepthTransformer.transform(t, tree, root);
 
 		// TODO: More solid way to handle texture matrices

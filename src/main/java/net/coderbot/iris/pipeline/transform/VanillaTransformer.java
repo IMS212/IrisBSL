@@ -5,15 +5,16 @@ import io.github.douira.glsl_transformer.ast.query.Root;
 import io.github.douira.glsl_transformer.ast.transform.ASTInjectionPoint;
 import io.github.douira.glsl_transformer.ast.transform.ASTTransformer;
 import net.coderbot.iris.gl.shader.ShaderType;
+import net.coderbot.iris.gl.uniform.UBOCreator;
 import net.coderbot.iris.pipeline.newshader.AlphaTests;
 
 // Order fixed
 public class VanillaTransformer {
 	public static void transform(
-			ASTTransformer<?> t,
-			TranslationUnit tree,
-			Root root,
-			VanillaParameters parameters) {
+		ASTTransformer<?> t,
+		TranslationUnit tree,
+		Root root,
+		VanillaParameters parameters, UBOCreator uboCreator) {
 		// this happens before common to make sure the renaming of attributes is done on
 		// attribute inserted by this
 		if (parameters.inputs.hasOverlay()) {
@@ -24,7 +25,7 @@ public class VanillaTransformer {
 			AlphaTestTransformer.transform(t, tree, root, parameters, parameters.alpha);
 		}
 
-		CommonTransformer.transform(t, tree, root, parameters);
+		CommonTransformer.transform(t, tree, root, parameters, uboCreator);
 
 		if (parameters.type == ShaderType.VERTEX) {
 			// Alias of gl_MultiTexCoord1 on 1.15+ for OptiFine
