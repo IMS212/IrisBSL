@@ -39,9 +39,19 @@ public class IrisRenderSystem {
 		GL30C.glBindAttribLocation(program, index, name);
 	}
 
+	public static void texImage1D(int target, int level, int internalformat, int width, int border, int format, int type, @Nullable ByteBuffer pixels) {
+		RenderSystem.assertThread(RenderSystem::isOnRenderThreadOrInit);
+		GL30C.glTexImage1D(target, level, internalformat, width, border, format, type, pixels);
+	}
+
 	public static void texImage2D(int target, int level, int internalformat, int width, int height, int border, int format, int type, @Nullable ByteBuffer pixels) {
 		RenderSystem.assertThread(RenderSystem::isOnRenderThreadOrInit);
 		GL30C.glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels);
+	}
+
+	public static void texImage3D(int target, int level, int internalformat, int width, int height, int depth, int border, int format, int type, @Nullable ByteBuffer pixels) {
+		RenderSystem.assertThread(RenderSystem::isOnRenderThreadOrInit);
+		GL30C.glTexImage3D(target, level, internalformat, width, height, depth, border, format, type, pixels);
 	}
 
 	public static void uniformMatrix4fv(int location, boolean transpose, FloatBuffer matrix) {
@@ -171,6 +181,11 @@ public class IrisRenderSystem {
 		} else {
 			return 0;
 		}
+	}
+
+	public static void bindTexture(int target, int id) {
+		RenderSystem.assertThread(RenderSystem::isOnRenderThreadOrInit);
+		GL11C.glBindTexture(target, id);
 	}
 
 	// These functions are deprecated and unavailable in the core profile.
