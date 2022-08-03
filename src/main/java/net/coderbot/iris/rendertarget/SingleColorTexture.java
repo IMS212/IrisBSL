@@ -29,7 +29,7 @@ public class SingleColorTexture extends GlResource {
 		RenderSystem.texParameter(GL11C.GL_TEXTURE_2D, GL11C.GL_TEXTURE_WRAP_T, GL13C.GL_REPEAT);
 
 		TextureUploadHelper.resetTextureUploadState();
-		IrisRenderSystem.texImage2D(GL11C.GL_TEXTURE_2D, 0, GL11C.GL_RGBA, 1, 1, 0, GL11C.GL_RGBA, GL11C.GL_UNSIGNED_BYTE, pixel);
+		IrisRenderSystem.texImage2D(getTextureId(), GL11C.GL_TEXTURE_2D, 0, GL11C.GL_RGBA, 1, 1, 0, GL11C.GL_RGBA, GL11C.GL_UNSIGNED_BYTE, pixel);
 
 		GlStateManager._bindTexture(0);
 	}

@@ -212,9 +212,7 @@ public class ShaderPack {
 			Object2ObjectMap<String, CustomTextureData> innerCustomTextureDataMap = new Object2ObjectOpenHashMap<>();
 			customTexturePropertiesMap.forEach((samplerName, path) -> {
 				try {
-					if (path instanceof TextureDefinition.PNGDefinition) {
-						innerCustomTextureDataMap.put(samplerName, readTexture(root, path));
-					}
+					innerCustomTextureDataMap.put(samplerName, readTexture(root, path));
 				} catch (IOException e) {
 					Iris.logger.error("Unable to read the custom texture at " + path, e);
 				}
@@ -306,13 +304,13 @@ public class ShaderPack {
 				TextureDefinition.RawDefinition rawDefinition = (TextureDefinition.RawDefinition) definition;
 				switch (rawDefinition.getTarget()) {
 					case TEXTURE_1D:
-						customTextureData = new CustomTextureData.RawData1D(content, rawDefinition.getInternalFormat(), rawDefinition.getFormat(), rawDefinition.getPixelType(), rawDefinition.getSizeX());
+						customTextureData = new CustomTextureData.RawData1D(content, new TextureFilteringData(blur, clamp), rawDefinition.getInternalFormat(), rawDefinition.getFormat(), rawDefinition.getPixelType(), rawDefinition.getSizeX());
 						break;
 					case TEXTURE_2D:
-						customTextureData = new CustomTextureData.RawData2D(content, rawDefinition.getInternalFormat(), rawDefinition.getFormat(), rawDefinition.getPixelType(), rawDefinition.getSizeX(), rawDefinition.getSizeY());
+						customTextureData = new CustomTextureData.RawData2D(content, new TextureFilteringData(blur, clamp), rawDefinition.getInternalFormat(), rawDefinition.getFormat(), rawDefinition.getPixelType(), rawDefinition.getSizeX(), rawDefinition.getSizeY());
 						break;
 					case TEXTURE_3D:
-						customTextureData = new CustomTextureData.RawData3D(content, rawDefinition.getInternalFormat(), rawDefinition.getFormat(), rawDefinition.getPixelType(), rawDefinition.getSizeX(), rawDefinition.getSizeY(), rawDefinition.getSizeZ());
+						customTextureData = new CustomTextureData.RawData3D(content, new TextureFilteringData(blur, clamp), rawDefinition.getInternalFormat(), rawDefinition.getFormat(), rawDefinition.getPixelType(), rawDefinition.getSizeX(), rawDefinition.getSizeY(), rawDefinition.getSizeZ());
 						break;
 					default:
 						throw new IllegalStateException("Unknown texture type: " + rawDefinition.getTarget());

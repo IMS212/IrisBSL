@@ -2,6 +2,10 @@ package net.coderbot.iris.gl;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.coderbot.iris.gl.texture.TextureType;
+import net.coderbot.iris.mixin.GlStateManagerAccessor;
+import net.coderbot.iris.texture.TextureInfoCache;
+import net.coderbot.iris.texture.TextureTracker;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.EXTShaderImageLoadStore;
 import org.lwjgl.opengl.GL;
@@ -39,19 +43,23 @@ public class IrisRenderSystem {
 		GL30C.glBindAttribLocation(program, index, name);
 	}
 
-	public static void texImage1D(int target, int level, int internalformat, int width, int border, int format, int type, @Nullable ByteBuffer pixels) {
+	public static void texImage1D(int id, int target, int level, int internalformat, int width, int border, int format, int type, @Nullable ByteBuffer pixels) {
 		RenderSystem.assertThread(RenderSystem::isOnRenderThreadOrInit);
 		GL30C.glTexImage1D(target, level, internalformat, width, border, format, type, pixels);
+		TextureInfoCache.INSTANCE.onTexImage(id, TextureType.TEXTURE_1D, level, internalformat, width, -1, -1, border, format, type, pixels);
 	}
 
-	public static void texImage2D(int target, int level, int internalformat, int width, int height, int border, int format, int type, @Nullable ByteBuffer pixels) {
+	public static void texImage2D(int id, int target, int level, int internalformat, int width, int height, int border, int format, int type, @Nullable ByteBuffer pixels) {
 		RenderSystem.assertThread(RenderSystem::isOnRenderThreadOrInit);
 		GL30C.glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels);
+		TextureInfoCache.INSTANCE.onTexImage(id, TextureType.TEXTURE_2D, level, internalformat, width, height, -1, border, format, type, pixels);
 	}
 
-	public static void texImage3D(int target, int level, int internalformat, int width, int height, int depth, int border, int format, int type, @Nullable ByteBuffer pixels) {
+	public static void texImage3D(int id, int target, int level, int internalformat, int width, int height, int depth, int border, int format, int type, @Nullable ByteBuffer pixels) {
 		RenderSystem.assertThread(RenderSystem::isOnRenderThreadOrInit);
+		GL30C.glBindTexture(GL30C.GL_TEXTURE_3D, id);
 		GL30C.glTexImage3D(target, level, internalformat, width, height, depth, border, format, type, pixels);
+		TextureInfoCache.INSTANCE.onTexImage(id, TextureType.TEXTURE_3D, level, internalformat, width, height, depth, border, format, type, pixels);
 	}
 
 	public static void uniformMatrix4fv(int location, boolean transpose, FloatBuffer matrix) {
@@ -185,7 +193,10 @@ public class IrisRenderSystem {
 
 	public static void bindTexture(int target, int id) {
 		RenderSystem.assertThread(RenderSystem::isOnRenderThreadOrInit);
+
 		GL11C.glBindTexture(target, id);
+		TextureTracker.INSTANCE.onBindTexture(id);
+
 	}
 
 	// These functions are deprecated and unavailable in the core profile.
