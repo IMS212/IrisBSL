@@ -8,6 +8,7 @@ import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMaps;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.blending.AlphaTest;
+import net.coderbot.iris.gl.blending.AlphaTestOverride;
 import net.coderbot.iris.gl.blending.BlendMode;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
 import org.jetbrains.annotations.Nullable;

@@ -1,11 +1,13 @@
 package net.coderbot.iris.compat.sodium.impl.vertex_format.entity_xhfp;
 
-import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferView;
-import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferWriterNio;
-import me.jellysquid.mods.sodium.client.model.vertex.formats.glyph.GlyphVertexSink;
-import me.jellysquid.mods.sodium.client.model.vertex.formats.quad.QuadVertexSink;
-import me.jellysquid.mods.sodium.client.util.Norm3b;
+import net.caffeinemc.sodium.interop.vanilla.vertex.VanillaVertexFormats;
+import net.caffeinemc.sodium.interop.vanilla.vertex.formats.glyph.GlyphVertexSink;
+import net.caffeinemc.sodium.interop.vanilla.vertex.formats.quad.QuadVertexSink;
+import net.caffeinemc.sodium.render.vertex.buffer.VertexBufferView;
+import net.caffeinemc.sodium.render.vertex.buffer.VertexBufferWriterNio;
+import net.caffeinemc.sodium.util.packed.Normal3b;
 import net.coderbot.iris.vendored.joml.Vector3f;
+import net.coderbot.iris.compat.sodium.impl.vertex_format.entity_xhfp.QuadViewEntity;
 import net.coderbot.iris.vertices.IrisVertexFormats;
 import net.coderbot.iris.vertices.NormalHelper;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -47,8 +49,6 @@ public class EntityVertexBufferWriterNio extends VertexBufferWriterNio implement
 		if (vertexCount == 4) {
 			this.endQuad(normal);
 		}
-
-		this.advance();
 	}
 
 	@Override
@@ -76,9 +76,9 @@ public class EntityVertexBufferWriterNio extends VertexBufferWriterNio implement
 			normalZ = saveNormal.z;
 			normal = NormalHelper.packNormal(saveNormal, 0.0F);
 		} else {
-			normalX = Norm3b.unpackX(normal);
-			normalY = Norm3b.unpackY(normal);
-			normalZ = Norm3b.unpackZ(normal);
+			normalX = Normal3b.unpackX(normal);
+			normalY = Normal3b.unpackY(normal);
+			normalZ = Normal3b.unpackZ(normal);
 		}
 
 		int tangent = NormalHelper.computeTangent(normalX, normalY, normalZ, quad);

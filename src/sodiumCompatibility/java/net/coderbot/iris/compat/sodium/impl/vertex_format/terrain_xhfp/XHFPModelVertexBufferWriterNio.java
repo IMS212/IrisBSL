@@ -1,11 +1,10 @@
 package net.coderbot.iris.compat.sodium.impl.vertex_format.terrain_xhfp;
 
-import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferView;
-import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferWriterNio;
-import me.jellysquid.mods.sodium.client.render.chunk.format.ModelVertexSink;
+import net.caffeinemc.sodium.render.terrain.format.TerrainVertexSink;
+import net.caffeinemc.sodium.render.vertex.buffer.VertexBufferView;
+import net.caffeinemc.sodium.render.vertex.buffer.VertexBufferWriterNio;
 import net.coderbot.iris.compat.sodium.impl.block_context.BlockContextHolder;
 import net.coderbot.iris.compat.sodium.impl.block_context.ContextAwareVertexWriter;
-import me.jellysquid.mods.sodium.client.util.Norm3b;
 import net.coderbot.iris.compat.sodium.impl.vertex_format.IrisModelVertexFormats;
 import net.coderbot.iris.vendored.joml.Vector3f;
 import net.coderbot.iris.vertices.ExtendedDataHelper;
@@ -15,7 +14,7 @@ import java.nio.ByteBuffer;
 
 import static net.coderbot.iris.compat.sodium.impl.vertex_format.terrain_xhfp.XHFPModelVertexType.STRIDE;
 
-public class XHFPModelVertexBufferWriterNio extends VertexBufferWriterNio implements ModelVertexSink, ContextAwareVertexWriter {
+public class XHFPModelVertexBufferWriterNio extends VertexBufferWriterNio implements TerrainVertexSink, ContextAwareVertexWriter {
 	private final QuadViewTerrain.QuadViewTerrainNio quad = new QuadViewTerrain.QuadViewTerrainNio();
 	private final Vector3f normal = new Vector3f();
 
@@ -30,51 +29,18 @@ public class XHFPModelVertexBufferWriterNio extends VertexBufferWriterNio implem
 	}
 
 	@Override
-	public void copyQuadAndFlipNormal() {
-		ensureCapacity(4);
-
-		ByteBuffer src = this.byteBuffer.duplicate();
-		ByteBuffer dst = this.byteBuffer.duplicate();
-
-		src.position(this.byteBuffer.position() + this.writeOffset - STRIDE * 4);
-		src.limit(src.position() + STRIDE * 4);
-
-		dst.position(this.byteBuffer.position() + this.writeOffset);
-		dst.limit(dst.position() + STRIDE * 4);
-
-		dst.put(src);
-
-		// Now flip vertex normals
-		int packedNormal = this.byteBuffer.getInt(this.writeOffset + 32);
-		int inverted = NormalHelper.invertPackedNormal(packedNormal);
-
-		this.byteBuffer.putInt(this.writeOffset + 32, inverted);
-		this.byteBuffer.putInt(this.writeOffset + 32 + STRIDE, inverted);
-		this.byteBuffer.putInt(this.writeOffset + 32 + STRIDE * 2, inverted);
-		this.byteBuffer.putInt(this.writeOffset + 32 + STRIDE * 3, inverted);
-
-		// We just wrote 4 vertices, advance by 4
-		for (int i = 0; i < 4; i++) {
-			this.advance();
-		}
-
-		// Ensure vertices are flushed
-		this.flush();
-	}
-
-	@Override
-	public void writeVertex(float posX, float posY, float posZ, int color, float u, float v, int light, int chunkId) {
+	public void writeVertex(float posX, float posY, float posZ, int color, float u, float v, int light) {
 		uSum += u;
 		vSum += v;
 
 		short materialId = contextHolder.blockId;
 		short renderType = contextHolder.renderType;
 
-		this.writeQuadInternal(posX, posY, posZ, color, u, v, light, materialId, renderType, chunkId, ExtendedDataHelper.computeMidBlock(posX, posY, posZ, contextHolder.localPosX, contextHolder.localPosY, contextHolder.localPosZ));
+		this.writeQuadInternal(posX, posY, posZ, color, u, v, light, materialId, renderType, ExtendedDataHelper.computeMidBlock(posX, posY, posZ, contextHolder.localPosX, contextHolder.localPosY, contextHolder.localPosZ));
 	}
 
 	private void writeQuadInternal(float posX, float posY, float posZ, int color,
-								   float u, float v, int light, short materialId, short renderType, int chunkId, int packedMidBlock) {
+								   float u, float v, int light, short materialId, short renderType, int packedMidBlock) {
 		int i = this.writeOffset;
 
 		vertexCount++;
@@ -85,7 +51,6 @@ public class XHFPModelVertexBufferWriterNio extends VertexBufferWriterNio implem
 		buffer.putShort(i + 0, XHFPModelVertexType.encodePosition(posX));
 		buffer.putShort(i + 2, XHFPModelVertexType.encodePosition(posY));
 		buffer.putShort(i + 4, XHFPModelVertexType.encodePosition(posZ));
-		buffer.putShort(i + 6, (short) chunkId);
 
 		buffer.putInt(i + 8, color);
 

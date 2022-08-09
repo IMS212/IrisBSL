@@ -1,8 +1,7 @@
 package net.coderbot.iris.pipeline;
 
 import com.google.common.collect.ImmutableSet;
-import me.jellysquid.mods.sodium.client.gl.shader.ShaderLoader;
-import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
+import net.caffeinemc.sodium.render.shader.ShaderLoader;
 import net.coderbot.iris.gl.blending.AlphaTest;
 import net.coderbot.iris.gl.blending.AlphaTestFunction;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
@@ -20,8 +19,13 @@ import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ProgramSource;
 import net.coderbot.iris.uniforms.CommonUniforms;
 import net.coderbot.iris.uniforms.builtin.BuiltinReplacementUniforms;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.ResourceLocation;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.IntFunction;
@@ -95,7 +99,7 @@ public class SodiumTerrainPipeline {
 		this.createShadowImages = createShadowImages;
 	}
 
-	public void patchShaders(ChunkVertexType vertexType) {
+	public void patchShaders(int maxBatchSize, float vertexRange, boolean baseInstanced) {
 		ShaderAttributeInputs inputs = new ShaderAttributeInputs(true, true, false, true, true);
 
 		Optional<ProgramSource> terrainSource = first(programSet.getGbuffersTerrain(), programSet.getGbuffersTexturedLit(), programSet.getGbuffersTextured(), programSet.getGbuffersBasic());
@@ -125,46 +129,77 @@ public class SodiumTerrainPipeline {
 			shadowAlpha = sources.getDirectives().getAlphaTestOverride().orElse(AlphaTests.NON_ZERO_ALPHA);
 		});
 
+
 		if (terrainVertex != null) {
-			terrainVertex = TriforcePatcher.patchSodium(terrainVertex, ShaderType.VERTEX, null, inputs, vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale());
+			terrainVertex = TriforcePatcher.patchSodium(terrainVertex, ShaderType.VERTEX, null, inputs, vertexRange, maxBatchSize, baseInstanced);
 		}
 
 		if (translucentVertex != null) {
-			translucentVertex = TriforcePatcher.patchSodium(translucentVertex, ShaderType.VERTEX, null, inputs, vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale());
+			translucentVertex = TriforcePatcher.patchSodium(translucentVertex, ShaderType.VERTEX, null, inputs, vertexRange, maxBatchSize, baseInstanced);
 		}
 
 		if (shadowVertex != null) {
-			shadowVertex = TriforcePatcher.patchSodium(shadowVertex, ShaderType.VERTEX, null, inputs, vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale());
+			shadowVertex = TriforcePatcher.patchSodium(shadowVertex, ShaderType.VERTEX, null, inputs, vertexRange, maxBatchSize, baseInstanced);
 		}
 
 		if (terrainGeometry != null) {
-			terrainGeometry = TriforcePatcher.patchSodium(terrainGeometry, ShaderType.GEOMETRY, null, inputs, vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale());
+			terrainGeometry = TriforcePatcher.patchSodium(terrainGeometry, ShaderType.GEOMETRY, null, inputs, vertexRange, maxBatchSize, baseInstanced);
 		}
 
 		if (translucentGeometry != null) {
-			translucentGeometry = TriforcePatcher.patchSodium(translucentGeometry, ShaderType.GEOMETRY, null, inputs, vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale());
+			translucentGeometry = TriforcePatcher.patchSodium(translucentGeometry, ShaderType.GEOMETRY, null, inputs, vertexRange, maxBatchSize, baseInstanced);
 		}
 
 		if (shadowGeometry != null) {
-			shadowGeometry = TriforcePatcher.patchSodium(shadowGeometry, ShaderType.GEOMETRY, null, inputs, vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale());
+			shadowGeometry = TriforcePatcher.patchSodium(shadowGeometry, ShaderType.GEOMETRY, null, inputs, vertexRange, maxBatchSize, baseInstanced);
 		}
 
 		if (terrainFragment != null) {
 			String fragment = terrainFragment;
 
-			terrainFragment = TriforcePatcher.patchSodium(fragment, ShaderType.FRAGMENT, AlphaTest.ALWAYS, inputs, vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale());
-			terrainCutoutFragment = TriforcePatcher.patchSodium(fragment, ShaderType.FRAGMENT, terrainCutoutAlpha, inputs, vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale());
+			terrainFragment = TriforcePatcher.patchSodium(fragment, ShaderType.FRAGMENT, AlphaTest.ALWAYS, inputs, vertexRange, maxBatchSize, baseInstanced);
+			terrainCutoutFragment = TriforcePatcher.patchSodium(fragment, ShaderType.FRAGMENT, AlphaTests.ONE_TENTH_ALPHA, inputs, vertexRange, maxBatchSize, baseInstanced);
 		}
 
 		if (translucentFragment != null) {
-			translucentFragment = TriforcePatcher.patchSodium(translucentFragment, ShaderType.FRAGMENT, translucentAlpha, inputs, vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale());
+			translucentFragment = TriforcePatcher.patchSodium(translucentFragment, ShaderType.FRAGMENT, AlphaTest.ALWAYS, inputs, vertexRange, maxBatchSize, baseInstanced);
 		}
 
 		if (shadowFragment != null) {
 			String fragment = shadowFragment;
 
-			shadowFragment = TriforcePatcher.patchSodium(fragment, ShaderType.FRAGMENT, AlphaTest.ALWAYS, inputs, vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale());
-			shadowCutoutFragment = TriforcePatcher.patchSodium(fragment, ShaderType.FRAGMENT, shadowAlpha, inputs, vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale());
+			shadowFragment = TriforcePatcher.patchSodium(fragment, ShaderType.FRAGMENT, AlphaTest.ALWAYS, inputs, vertexRange, maxBatchSize, baseInstanced);
+			shadowCutoutFragment = TriforcePatcher.patchSodium(fragment, ShaderType.FRAGMENT, AlphaTests.ONE_TENTH_ALPHA, inputs, vertexRange, maxBatchSize, baseInstanced);
+		}
+
+		if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
+			final Path debugOutDir = FabricLoader.getInstance().getGameDir().resolve("patched_shaders");
+			try {
+				if (hasShadowPass()) {
+					Files.write(debugOutDir.resolve("sodium_shadow.vsh"), shadowVertex.getBytes(StandardCharsets.UTF_8));
+					Files.write(debugOutDir.resolve("sodium_shadowCutout.fsh"), shadowCutoutFragment.getBytes(StandardCharsets.UTF_8));
+					Files.write(debugOutDir.resolve("sodium_shadow.fsh"), shadowFragment.getBytes(StandardCharsets.UTF_8));
+				}
+				Files.write(debugOutDir.resolve("sodium_terrain.vsh"), terrainVertex.getBytes(StandardCharsets.UTF_8));
+				Files.write(debugOutDir.resolve("sodium_terrainCutout.fsh"), terrainCutoutFragment.getBytes(StandardCharsets.UTF_8));
+				Files.write(debugOutDir.resolve("sodium_terrain.fsh"), terrainFragment.getBytes(StandardCharsets.UTF_8));
+				Files.write(debugOutDir.resolve("sodium_translucent.vsh"), translucentVertex.getBytes(StandardCharsets.UTF_8));
+				Files.write(debugOutDir.resolve("sodium_translucent.fsh"), translucentFragment.getBytes(StandardCharsets.UTF_8));
+
+				if (shadowGeometry != null) {
+					Files.write(debugOutDir.resolve("sodium_shadow.gsh"), shadowGeometry.getBytes(StandardCharsets.UTF_8));
+				}
+
+				if (terrainGeometry != null) {
+					Files.write(debugOutDir.resolve("sodium_terrain.gsh"), terrainGeometry.getBytes(StandardCharsets.UTF_8));
+				}
+
+				if (translucentGeometry != null) {
+					Files.write(debugOutDir.resolve("sodium_translucent.gsh"), translucentGeometry.getBytes(StandardCharsets.UTF_8));
+				}
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 		}
 	}
 
@@ -308,6 +343,6 @@ public class SodiumTerrainPipeline {
 		String path = matcher.group("path");
 
 		ResourceLocation identifier = new ResourceLocation(namespace, path);
-		return ShaderLoader.getShaderSource(identifier);
+		return ShaderLoader.MINECRAFT_ASSETS.getShaderSource(identifier);
 	}
 }

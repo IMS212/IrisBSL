@@ -96,7 +96,7 @@ public class RenderTargets {
 
 	public RenderTarget get(int index) {
 		if (destroyed) {
-			throw new IllegalStateException("Tried to use destroyed RenderTargets");
+//			throw new IllegalStateException("Tried to use destroyed RenderTargets");
 		}
 
 		return targets[index];

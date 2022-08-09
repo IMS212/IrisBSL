@@ -2,8 +2,8 @@ package net.coderbot.iris.compat.sodium.mixin.vertex_format.entity;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import me.jellysquid.mods.sodium.client.model.vertex.VanillaVertexTypes;
-import me.jellysquid.mods.sodium.client.model.vertex.type.VertexType;
+import net.caffeinemc.sodium.interop.vanilla.vertex.VanillaVertexFormats;
+import net.caffeinemc.sodium.render.vertex.type.VertexType;
 import net.coderbot.iris.compat.sodium.impl.vertex_format.entity_xhfp.ExtendedGlyphVertexType;
 import net.coderbot.iris.compat.sodium.impl.vertex_format.entity_xhfp.ExtendedQuadVertexType;
 import net.coderbot.iris.vertices.IrisVertexFormats;
@@ -23,15 +23,15 @@ public class MixinBufferBuilder_ExtendedVertexFormatCompat {
 	private VertexFormat format;
 
 	@SuppressWarnings("target")
-	@ModifyVariable(method = "createSink(Lme/jellysquid/mods/sodium/client/model/vertex/type/VertexType;)Lme/jellysquid/mods/sodium/client/model/vertex/VertexSink;",
+	@ModifyVariable(method = "createSink(Lnet/caffeinemc/sodium/render/vertex/type/VertexType;)Lnet/caffeinemc/sodium/render/vertex/VertexSink;",
 		at = @At("HEAD"), remap = false)
 	private VertexType<?> iris$createSink(VertexType<?> type) {
 		if (format == IrisVertexFormats.ENTITY) {
-			if (type == VanillaVertexTypes.QUADS) {
+			if (type == VanillaVertexFormats.QUADS) {
 				return ExtendedQuadVertexType.INSTANCE;
 			}
 		} else if (format == IrisVertexFormats.TERRAIN) {
-			if (type == VanillaVertexTypes.GLYPHS) {
+			if (type == VanillaVertexFormats.GLYPHS) {
 				return ExtendedGlyphVertexType.INSTANCE;
 			}
 		}

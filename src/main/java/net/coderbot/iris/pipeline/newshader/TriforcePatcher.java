@@ -11,7 +11,7 @@ import net.coderbot.iris.shaderpack.transform.StringTransformations;
 import net.coderbot.iris.shaderpack.transform.Transformations;
 
 public class TriforcePatcher {
-	public static void patchCommon(StringTransformations transformations, ShaderType type) {
+	public static void patchCommon(StringTransformations transformations, ShaderType type, boolean sodium) {
 		// TODO: Only do the NewLines patches if the source code isn't from gbuffers_lines
 
 		if (transformations.contains("moj_import")) {
@@ -22,7 +22,7 @@ public class TriforcePatcher {
 			throw new IllegalStateException("Detected a potential reference to unstable and internal Iris shader interfaces (iris_). This isn't currently supported.");
 		}
 
-		fixVersion(transformations);
+		fixVersion(sodium, transformations);
 
 		// This must be defined and valid in all shader passes, including composite passes.
 		//
@@ -114,7 +114,7 @@ public class TriforcePatcher {
 	public static String patchVanilla(String source, ShaderType type, AlphaTest alpha, boolean hasChunkOffset, ShaderAttributeInputs inputs, boolean hasGeometry) {
 		StringTransformations transformations = new StringTransformations(source);
 
-		patchCommon(transformations, type);
+		patchCommon(transformations, type, false);
 
 		if (inputs.hasOverlay()) {
 			AttributeShaderTransformer.patchOverlayColor(transformations, type, hasGeometry);
@@ -295,15 +295,15 @@ public class TriforcePatcher {
 		return transformations.toString();
 	}
 
-	public static String patchSodium(String source, ShaderType type, AlphaTest alpha, ShaderAttributeInputs inputs, float positionScale, float positionOffset, float textureScale) {
+	public static String patchSodium(String source, ShaderType type, AlphaTest alpha, ShaderAttributeInputs inputs, float vertexRange, int maxBatchSize, boolean baseInstanced) {
 		StringTransformations transformations = new StringTransformations(source);
 
-		patchCommon(transformations, type);
+		patchCommon(transformations, type, true);
 		addAlphaTest(transformations, type, alpha);
 
 		transformations.replaceExact("gl_TextureMatrix[0]", "mat4(1.0)");
 
-		transformations.define("gl_ProjectionMatrix", "iris_ProjectionMatrix");
+		transformations.define("gl_ProjectionMatrix", "mat_proj");
 
 		if (type == ShaderType.VERTEX) {
 			if (inputs.hasTex()) {
@@ -326,7 +326,7 @@ public class TriforcePatcher {
 
 		if (inputs.hasColor()) {
 			// TODO: Handle the fragment shader here
-			transformations.define("gl_Color", "_vert_color");
+			transformations.define("gl_Color", "_vert_color_shade");
 
 			if (type == ShaderType.VERTEX) {
 			}
@@ -336,45 +336,61 @@ public class TriforcePatcher {
 
 		if (type == ShaderType.VERTEX) {
 			if (inputs.hasNormal()) {
-				transformations.define("gl_Normal", "iris_Normal");
-				transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, "in vec3 iris_Normal;");
+				transformations.define("gl_Normal", "a_Normal");
+				transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, "layout(location = 7) in vec3 a_Normal;");
 			} else {
 				transformations.define("gl_Normal", "vec3(0.0, 0.0, 1.0)");
 			}
 		}
+		transformations.injectLine(Transformations.InjectionPoint.DEFINES, SodiumTerrainPipeline.parseSodiumImport("#import <sodium:include/terrain_view.vert>"));
+		// Packs such as SEUS have outputs on one stage with no input on the other, causing a link error on 450. We need to use 330 with extensions.
+		transformations.injectLine(Transformations.InjectionPoint.EXTENSIONS, "#extension GL_ARB_shading_language_420pack : enable");
+
+		if (type == ShaderType.VERTEX) {
+			transformations.injectLine(Transformations.InjectionPoint.DEFINES, "#define VERT_SCALE " + vertexRange);
+
+			transformations.injectLine(Transformations.InjectionPoint.EXTENSIONS, "#extension GL_ARB_shader_draw_parameters : enable");
+
+			transformations.injectLine(Transformations.InjectionPoint.DEFINES, SodiumTerrainPipeline.parseSodiumImport("#import <sodium:include/terrain_format.vert>"));
+			transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, """
+			const int MAX_BATCH_SIZE = """ + maxBatchSize + ";" + """
+
+			struct ModelTransform {
+			    // Translation of the model in world-space
+			    vec3 translation;
+			};
+
+			layout(std140, binding = 1) uniform ModelTransforms {
+			    ModelTransform transforms[MAX_BATCH_SIZE];
+			};
+
+			vec3 _apply_view_transform(vec3 position) {
+			    ModelTransform transform = transforms[""" + (baseInstanced ? "gl_BaseInstanceARB" : "gl_DrawIDARB") + "];" + """
+			    return transform.translation + position;
+			}""");
+		} else if (type == ShaderType.FRAGMENT) {
+			transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, """
+					        layout(std140, binding = 2) uniform ubo_FogParameters {
+						             vec4 u_FogColor; // The color of the shader fog
+						             float u_FogStart; // The starting position of the shader fog
+						             float u_FogEnd; // The ending position of the shader fog
+						    };
+				""");
+		}
+
 
 
 		// TODO: Should probably add the normal matrix as a proper uniform that's computed on the CPU-side of things
-		transformations.define("gl_NormalMatrix", "mat3(iris_NormalMatrix)");
-		transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, "uniform mat4 iris_NormalMatrix;");
-
+		transformations.define("gl_NormalMatrix", "mat3(transpose(inverse(mat_modelview)))");
 
 		// TODO: All of the transformed variants of the input matrices, preferably computed on the CPU side...
-		transformations.injectLine(Transformations.InjectionPoint.DEFINES, "#define gl_ModelViewMatrix iris_ModelViewMatrix");
-		transformations.injectLine(Transformations.InjectionPoint.DEFINES, "#define gl_ModelViewProjectionMatrix (iris_ProjectionMatrix * iris_ModelViewMatrix)");
+		transformations.injectLine(Transformations.InjectionPoint.DEFINES, "#define gl_ModelViewMatrix mat_modelview");
+		transformations.injectLine(Transformations.InjectionPoint.DEFINES, "#define gl_ModelViewProjectionMatrix mat_modelviewproj");
 
 		if (type == ShaderType.VERTEX) {
 			// TODO: Vaporwave-Shaderpack expects that vertex positions will be aligned to chunks.
 
-			transformations.injectLine(Transformations.InjectionPoint.DEFINES, "#define USE_VERTEX_COMPRESSION");
-			transformations.define("VERT_POS_SCALE", String.valueOf(positionScale));
-			transformations.define("VERT_POS_OFFSET", String.valueOf(positionOffset));
-			transformations.define("VERT_TEX_SCALE", String.valueOf(textureScale));
-			transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, "uniform vec3 u_RegionOffset;");
-
-			transformations.injectLine(Transformations.InjectionPoint.DEFINES, SodiumTerrainPipeline.parseSodiumImport("#import <sodium:include/chunk_vertex.glsl>"));
-			transformations.injectLine(Transformations.InjectionPoint.DEFINES, SodiumTerrainPipeline.parseSodiumImport("#import <sodium:include/chunk_parameters.glsl>"));
-
-			transformations.injectLine(Transformations.InjectionPoint.DEFINES, """
-				// The projection matrix
-				uniform mat4 iris_ProjectionMatrix;
-
-				// The model-view matrix
-				uniform mat4 iris_ModelViewMatrix;
-
-				// The model-view-projection matrix
-				#define iris_ModelViewProjectionMatrix iris_ProjectionMatrix * iris_ModelViewMatrix""");
-			transformations.define("gl_Vertex", "getVertexPosition()");
+			transformations.define("gl_Vertex", "vec4(_apply_view_transform(_vert_position), 1.0)");
 
 			if (transformations.contains("irisMain")) {
 				throw new IllegalStateException("Shader already contains \"irisMain\"???");
@@ -383,17 +399,17 @@ public class TriforcePatcher {
 			// Create our own main function to wrap the existing main function, so that we can run the alpha test at the
 			// end.
 			transformations.replaceExact("main", "irisMain");
-			transformations.injectLine(Transformations.InjectionPoint.END, "void main() {\n" +
-					"   _vert_init();\n" +
-					"\n" +
-					"	irisMain();\n" +
-					"}");
+			transformations.injectLine(Transformations.InjectionPoint.END, """
+				void main() {
+				   _vert_init();
 
-			transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, "vec4 getVertexPosition() { return vec4(u_RegionOffset + _draw_translation + _vert_position, 1.0); }");
-			transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, "vec4 ftransform() { return gl_ModelViewProjectionMatrix * gl_Vertex; }");
-		} else {
-			transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, "uniform mat4 iris_ModelViewMatrix;");
-			transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, "uniform mat4 iris_ProjectionMatrix;");
+					irisMain();
+				}""");
+
+			transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, """
+
+				""");
+			transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, "vec4 ftransform() { return mat_modelviewproj * gl_Vertex; }");
 		}
 
 		applyIntelHd4000Workaround(transformations);
@@ -403,7 +419,7 @@ public class TriforcePatcher {
 
 	public static String patchComposite(String source, ShaderType type) {
 		StringTransformations transformations = new StringTransformations(source);
-		patchCommon(transformations, type);
+		patchCommon(transformations, type, false);
 
 		transformations = CompositeDepthTransformer.patch(transformations);
 
@@ -495,7 +511,7 @@ public class TriforcePatcher {
 		}
 	}
 
-	private static void fixVersion(Transformations transformations) {
+	private static void fixVersion(boolean sodium, Transformations transformations) {
 		String prefix = transformations.getPrefix();
 		int split = prefix.indexOf("#version");
 		String beforeVersion = prefix.substring(0, split);
@@ -505,15 +521,7 @@ public class TriforcePatcher {
 			throw new IllegalStateException("Transforming a shader that is already built against the core profile???");
 		}
 
-		if (!actualVersion.startsWith("1")) {
-			if (actualVersion.endsWith("compatibility")) {
-				actualVersion = actualVersion.substring(0, actualVersion.length() - "compatibility".length()).trim() + " core";
-			} else {
-				throw new IllegalStateException("Expected \"compatibility\" after the GLSL version: #version " + actualVersion);
-			}
-		} else {
-			actualVersion = "330 core";
-		}
+		actualVersion = (sodium ? 330 : 330) + " core";
 
 		beforeVersion = beforeVersion.trim();
 

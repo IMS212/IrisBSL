@@ -1,8 +1,14 @@
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -29,8 +35,11 @@ import io.github.coolcrabs.brachyura.processing.ProcessorChain;
 import io.github.coolcrabs.brachyura.processing.sources.ProcessingSponge;
 import io.github.coolcrabs.brachyura.project.Task;
 import io.github.coolcrabs.brachyura.project.java.BuildModule;
+import io.github.coolcrabs.brachyura.util.AtomicFile;
+import io.github.coolcrabs.brachyura.util.FileSystemUtil;
 import io.github.coolcrabs.brachyura.util.JvmUtil;
 import io.github.coolcrabs.brachyura.util.Lazy;
+import io.github.coolcrabs.brachyura.util.PathUtil;
 import io.github.coolcrabs.brachyura.util.Util;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.format.MappingFormat;
@@ -43,9 +52,9 @@ import org.eclipse.jgit.lib.Constants;
 
 public class Buildscript extends SimpleFabricProject {
     static final boolean SODIUM = true;
-	static final boolean CUSTOM_SODIUM = false;
+	static final boolean CUSTOM_SODIUM = true;
 	static final String MC_VERSION = "1.19.1";
-	static final String customSodiumName = "";
+	static final String customSodiumName = "sodium-fabric-0.5.0+mc1.19-unstable.jar";
 
 	private static final String[] SOURCE_SETS = new String[] {
 		"main",
@@ -99,13 +108,51 @@ public class Buildscript extends SimpleFabricProject {
 		d.addMaven(FabricMaven.URL, new MavenId(FabricMaven.GROUP_ID + ".fabric-api", "fabric-rendering-fluids-v1", "3.0.0+56447d9ba7"), ModDependencyFlag.COMPILE, ModDependencyFlag.RUNTIME);
 
 		if (SODIUM) {
+			JavaJarDependency sodium;
 			if (CUSTOM_SODIUM) {
-				d.add(new JavaJarDependency(getProjectDir().resolve("custom_sodium").resolve(customSodiumName).toAbsolutePath(), null, new MavenId("me.jellysquid.mods", "sodium-fabric", customSodiumName.replace("sodium-fabric-", ""))), ModDependencyFlag.COMPILE, ModDependencyFlag.RUNTIME);
+				sodium = new JavaJarDependency(getProjectDir().resolve("custom_sodium").resolve(customSodiumName).toAbsolutePath(), null, new MavenId("net.caffeinemc", "sodium-fabric", customSodiumName.replace("sodium-fabric-", "").replace(".jar", "")));
 			} else {
-				d.addMaven("https://api.modrinth.com/maven", new MavenId("maven.modrinth", "sodium", "mc1.19-0.4.2"), ModDependencyFlag.COMPILE, ModDependencyFlag.RUNTIME);
+				sodium = Maven.getMavenJarDep("https://api.modrinth.com/maven", new MavenId("maven.modrinth", "sodium", "mc1.18.2-0.4.1"));
 			}
-		} else {
-			d.addMaven("https://api.modrinth.com/maven", new MavenId("maven.modrinth", "sodium", "mc1.19-0.4.2"), ModDependencyFlag.COMPILE);
+			d.add(sodium, ModDependencyFlag.COMPILE, ModDependencyFlag.RUNTIME);
+			try {
+				try (FileSystem sfs = FileSystemUtil.newJarFileSystem(sodium.jar)) {
+					Files.walkFileTree(sfs.getPath("META-INF/jars"), new SimpleFileVisitor<Path>(){
+						@Override
+						public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+							String fileName = file.getFileName().toString();
+							if (fileName.endsWith(".jar")) {
+								boolean shouldUse = false;
+								String name = null;
+								String version = null;
+								if (fileName.startsWith("sodium-gfx-opengl-")) {
+									shouldUse = true;
+									name = "sodium-gfx-opengl";
+									version = fileName.replace("sodium-gfx-opengl-", "").replace(".jar", "");
+								} else if (fileName.startsWith("sodium-gfx-")) {
+									shouldUse = true;
+									name = "sodium-gfx";
+									version = fileName.replace("sodium-gfx-", "").replace(".jar", "");
+								}
+								if (shouldUse) {
+									Path p = PathUtil.resolveAndCreateDir(getLocalBrachyuraPath(), "sodiumlibs").resolve(name + "-" + version + ".jar");
+									boolean unstable = version.endsWith("unstable");
+									if (unstable || !Files.exists(p)) {
+										try (AtomicFile f = new AtomicFile(p)) {
+											Files.copy(file, f.tempPath, StandardCopyOption.REPLACE_EXISTING);
+											f.commit();
+										}
+									}
+									d.add(new JavaJarDependency(p, null, unstable ? null : new MavenId("net.caffeinemc", name, version)), ModDependencyFlag.COMPILE, ModDependencyFlag.RUNTIME);
+								}
+							}
+							return super.visitFile(file, attrs);
+						}
+					});
+				}
+			} catch (IOException e) {
+				throw new UncheckedIOException(e);
+			}
 		}
 
 		d.addMaven(Maven.MAVEN_CENTRAL, new MavenId("org.joml:joml:1.10.2"), ModDependencyFlag.COMPILE, ModDependencyFlag.RUNTIME);

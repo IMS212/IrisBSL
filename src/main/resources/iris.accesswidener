@@ -12,3 +12,4 @@ accessible  class   net/minecraft/client/Options$FieldAccess
 accessible  class   net/minecraft/client/renderer/chunk/ChunkRenderDispatcher$RenderChunk$RebuildTask
 accessible  class   net/minecraft/client/renderer/chunk/ChunkRenderDispatcher$RenderChunk$RebuildTask$CompileResults
 mutable field net/minecraft/client/renderer/LevelRenderer renderBuffers Lnet/minecraft/client/renderer/RenderBuffers;
+accessible field com/mojang/blaze3d/platform/GlStateManager TEXTURES [Lcom/mojang/blaze3d/platform/GlStateManager$TextureState;

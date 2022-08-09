@@ -1,34 +1,26 @@
 package net.coderbot.iris.compat.sodium.mixin.shader_overrides;
 
 import com.mojang.blaze3d.platform.GlStateManager;
-import me.jellysquid.mods.sodium.client.gl.GlObject;
-import me.jellysquid.mods.sodium.client.gl.shader.GlProgram;
-import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniform;
-import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformBlock;
-import net.coderbot.iris.compat.sodium.impl.shader_overrides.ShaderBindingContextExt;
-import net.coderbot.iris.gl.IrisRenderSystem;
+import net.caffeinemc.gfx.api.shader.ShaderDescription;
+import net.caffeinemc.gfx.opengl.shader.GlProgram;
+import org.lwjgl.opengl.GL20C;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.function.IntFunction;
+import java.util.function.Function;
 
 @Mixin(GlProgram.class)
-public class MixinGlProgram extends GlObject implements ShaderBindingContextExt {
-	public <U extends GlUniform<?>> U bindUniformIfPresent(String name, IntFunction<U> factory) {
-		int index = GlStateManager._glGetUniformLocation(this.handle(), name);
-		if (index < 0) {
-			return null;
-		} else {
-			return factory.apply(index);
-		}
-	}
+public class MixinGlProgram {
+	@Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lorg/lwjgl/opengl/GL20C;glLinkProgram(I)V"))
+	private void link(int handle) {
+		GlStateManager._glBindAttribLocation(handle, 4, "mc_Entity");
+		GlStateManager._glBindAttribLocation(handle, 5, "mc_midTexCoord");
+		GlStateManager._glBindAttribLocation(handle, 6, "at_tangent");
+		GlStateManager._glBindAttribLocation(handle, 8, "at_midBlock");
 
-	public GlUniformBlock bindUniformBlockIfPresent(String name, int bindingPoint) {
-		int index = IrisRenderSystem.getUniformBlockIndex(this.handle(), name);
-		if (index < 0) {
-			return null;
-		} else {
-			IrisRenderSystem.uniformBlockBinding(this.handle(), index, bindingPoint);
-			return new GlUniformBlock(bindingPoint);
-		}
+		GL20C.glLinkProgram(handle);
 	}
 }

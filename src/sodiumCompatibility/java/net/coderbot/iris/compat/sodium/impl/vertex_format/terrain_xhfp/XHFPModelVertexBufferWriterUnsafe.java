@@ -1,8 +1,8 @@
 package net.coderbot.iris.compat.sodium.impl.vertex_format.terrain_xhfp;
 
-import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferView;
-import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferWriterUnsafe;
-import me.jellysquid.mods.sodium.client.render.chunk.format.ModelVertexSink;
+import net.caffeinemc.sodium.render.terrain.format.TerrainVertexSink;
+import net.caffeinemc.sodium.render.vertex.buffer.VertexBufferView;
+import net.caffeinemc.sodium.render.vertex.buffer.VertexBufferWriterUnsafe;
 import net.coderbot.iris.compat.sodium.impl.block_context.BlockContextHolder;
 import net.coderbot.iris.compat.sodium.impl.block_context.ContextAwareVertexWriter;
 import net.coderbot.iris.compat.sodium.impl.vertex_format.IrisModelVertexFormats;
@@ -13,7 +13,7 @@ import org.lwjgl.system.MemoryUtil;
 
 import static net.coderbot.iris.compat.sodium.impl.vertex_format.terrain_xhfp.XHFPModelVertexType.STRIDE;
 
-public class XHFPModelVertexBufferWriterUnsafe extends VertexBufferWriterUnsafe implements ModelVertexSink, ContextAwareVertexWriter {
+public class XHFPModelVertexBufferWriterUnsafe extends VertexBufferWriterUnsafe implements TerrainVertexSink, ContextAwareVertexWriter {
 	private final QuadViewTerrain.QuadViewTerrainUnsafe quad = new QuadViewTerrain.QuadViewTerrainUnsafe();
 	private final Vector3f normal = new Vector3f();
 
@@ -28,39 +28,17 @@ public class XHFPModelVertexBufferWriterUnsafe extends VertexBufferWriterUnsafe 
 	}
 
 	@Override
-	public void copyQuadAndFlipNormal() {
-		ensureCapacity(4);
-
-		MemoryUtil.memCopy(this.writePointer - STRIDE * 4, this.writePointer, STRIDE * 4);
-
-		// Now flip vertex normals
-		int packedNormal = MemoryUtil.memGetInt(this.writePointer + 32);
-		int inverted = NormalHelper.invertPackedNormal(packedNormal);
-
-		MemoryUtil.memPutInt(this.writePointer + 32, inverted);
-		MemoryUtil.memPutInt(this.writePointer + 32 + STRIDE, inverted);
-		MemoryUtil.memPutInt(this.writePointer + 32 + STRIDE * 2, inverted);
-		MemoryUtil.memPutInt(this.writePointer + 32 + STRIDE * 3, inverted);
-
-		// We just wrote 4 vertices, advance by 4
-		for (int i = 0; i < 4; i++) {
-			this.advance();
-		}
-
-		// Ensure vertices are flushed
-		this.flush();
-	}
-
-	@Override
-	public void writeVertex(float posX, float posY, float posZ, int color, float u, float v, int light, int chunkId) {
+	public void writeVertex(float posX, float posY, float posZ, int color, float u, float v, int light) {
 		uSum += u;
 		vSum += v;
 
-		this.writeQuadInternal(posX, posY, posZ, color, u, v, light, contextHolder.blockId, contextHolder.renderType, chunkId, ExtendedDataHelper.computeMidBlock(posX, posY, posZ, contextHolder.localPosX, contextHolder.localPosY, contextHolder.localPosZ));
+		short materialId = contextHolder.blockId;
+		short renderType = contextHolder.renderType;
+
+		this.writeQuadInternal(posX, posY, posZ, color, u, v, light, materialId, renderType, ExtendedDataHelper.computeMidBlock(posX, posY, posZ, contextHolder.localPosX, contextHolder.localPosY, contextHolder.localPosZ));
 	}
 
-	private void writeQuadInternal(float posX, float posY, float posZ, int color,
-								   float u, float v, int light, short materialId, short renderType, int chunkId, int packedMidBlock) {
+	private void writeQuadInternal(float posX, float posY, float posZ, int color, float u, float v, int light, short materialId, short renderType, int packedMidBlock) {
 		long i = this.writePointer;
 
 		vertexCount++;
@@ -69,7 +47,6 @@ public class XHFPModelVertexBufferWriterUnsafe extends VertexBufferWriterUnsafe 
 		MemoryUtil.memPutShort(i + 0, XHFPModelVertexType.encodePosition(posX));
 		MemoryUtil.memPutShort(i + 2, XHFPModelVertexType.encodePosition(posY));
 		MemoryUtil.memPutShort(i + 4, XHFPModelVertexType.encodePosition(posZ));
-		MemoryUtil.memPutShort(i + 6, (short) chunkId);
 
 		MemoryUtil.memPutInt(i + 8, color);
 

@@ -1,13 +1,13 @@
 package net.coderbot.iris.compat.sodium.mixin.shadow_map;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
-import me.jellysquid.mods.sodium.client.render.chunk.RenderSectionManager;
+import net.caffeinemc.sodium.interop.vanilla.math.frustum.Frustum;
+import net.caffeinemc.sodium.render.SodiumWorldRenderer;
+import net.caffeinemc.sodium.render.chunk.TerrainRenderManager;
 import net.coderbot.iris.shadows.ShadowRenderingState;
 import net.coderbot.iris.compat.sodium.impl.shadow_map.SwappableRenderSectionManager;
 import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.culling.Frustum;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -26,7 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(SodiumWorldRenderer.class)
 public class MixinSodiumWorldRenderer {
     @Shadow(remap = false)
-    private RenderSectionManager renderSectionManager;
+	private TerrainRenderManager terrainRenderManager;
 
     @Unique
     private boolean wasRenderingShadows = false;
@@ -66,15 +66,15 @@ public class MixinSodiumWorldRenderer {
     @Unique
     private void iris$ensureStateSwapped() {
         if (!wasRenderingShadows && ShadowRenderingState.areShadowsCurrentlyBeingRendered()) {
-			if (this.renderSectionManager instanceof SwappableRenderSectionManager) {
-				((SwappableRenderSectionManager) this.renderSectionManager).iris$swapVisibilityState();
+			if (this.terrainRenderManager instanceof SwappableRenderSectionManager) {
+				((SwappableRenderSectionManager) this.terrainRenderManager).iris$swapVisibilityState();
 				swapCachedCameraPositions();
 			}
 
             wasRenderingShadows = true;
         } else if (wasRenderingShadows && !ShadowRenderingState.areShadowsCurrentlyBeingRendered()) {
-			if (this.renderSectionManager instanceof SwappableRenderSectionManager) {
-				((SwappableRenderSectionManager) this.renderSectionManager).iris$swapVisibilityState();
+			if (this.terrainRenderManager instanceof SwappableRenderSectionManager) {
+				((SwappableRenderSectionManager) this.terrainRenderManager).iris$swapVisibilityState();
 				swapCachedCameraPositions();
 			}
 
@@ -84,7 +84,7 @@ public class MixinSodiumWorldRenderer {
 
     @Inject(method = "scheduleTerrainUpdate()V", remap = false,
             at = @At(value = "INVOKE",
-                    target = "me/jellysquid/mods/sodium/client/render/chunk/RenderSectionManager.markGraphDirty ()V",
+                    target = "Lnet/caffeinemc/sodium/render/chunk/TerrainRenderManager;markGraphDirty()V",
                     remap = false))
     private void iris$ensureStateSwappedBeforeMarkDirty(CallbackInfo ci) {
         iris$ensureStateSwapped();
@@ -94,16 +94,16 @@ public class MixinSodiumWorldRenderer {
     //       because it's relatively solid and is in between those two calls.
     @Inject(method = "updateChunks", remap = false,
             at = @At(value = "FIELD",
-                     target = "me/jellysquid/mods/sodium/client/render/SodiumWorldRenderer.lastCameraX : D",
+                     target = "net/caffeinemc/sodium/render/SodiumWorldRenderer.lastCameraX : D",
                      ordinal = 0,
                      remap = false))
-    private void iris$ensureStateSwappedInUpdateChunks(Camera camera, me.jellysquid.mods.sodium.client.util.frustum.Frustum frustum, int frame, boolean spectator, CallbackInfo ci) {
+    private void iris$ensureStateSwappedInUpdateChunks(Camera camera, Frustum frustum, int frame, boolean spectator, CallbackInfo ci) {
         iris$ensureStateSwapped();
     }
 
     @Redirect(method = "updateChunks", remap = false,
             at = @At(value = "FIELD",
-                    target = "me/jellysquid/mods/sodium/client/render/SodiumWorldRenderer.lastCameraX : D",
+                    target = "net/caffeinemc/sodium/render/SodiumWorldRenderer.lastCameraX : D",
                     ordinal = 0,
                     remap = false))
     private double iris$forceChunkGraphRebuildInShadowPass(SodiumWorldRenderer worldRenderer) {
@@ -120,8 +120,7 @@ public class MixinSodiumWorldRenderer {
     }
 
     @Inject(method = "drawChunkLayer",  remap = false, at = @At("HEAD"))
-    private void iris$beforeDrawChunkLayer(RenderType renderType, PoseStack poseStack, double x, double y,
-										   double z, CallbackInfo ci) {
-        iris$ensureStateSwapped();
+    private void iris$beforeDrawChunkLayer(RenderType renderLayer, PoseStack matrixStack, CallbackInfo ci) {
+		iris$ensureStateSwapped();
     }
 }
