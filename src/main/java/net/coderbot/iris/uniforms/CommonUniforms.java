@@ -134,7 +134,7 @@ public final class CommonUniforms {
 			return ZERO_VECTOR_3d;
 		}
 
-		return JomlConversions.fromVec3(client.level.getSkyColor(client.cameraEntity.blockPosition(),
+		return JomlConversions.fromVec3(client.level.getSkyColor(client.gameRenderer.getMainCamera().getBlockPosition(),
 				CapturedRenderingState.INSTANCE.getTickDelta()));
 	}
 
@@ -160,7 +160,7 @@ public final class CommonUniforms {
 		}
 
 		// This should always be 0 to 1 anyways but just making sure
-		return Math.clamp(0.0F, 1.0F, ((LocalPlayer) client.cameraEntity).getCurrentMood());
+		return 0;
 	}
 
 	static float getRainStrength() {

@@ -24,9 +24,9 @@ public class IrisExclusiveUniforms {
 
 	private static boolean isFirstPersonCamera() {
 		// If camera type is not explicitly third-person, assume it's first-person.
-		switch (Minecraft.getInstance().options.getCameraType()) {
-			case THIRD_PERSON_BACK:
-			case THIRD_PERSON_FRONT:
+		switch (Minecraft.getInstance().options.thirdPersonView) {
+			case 1:
+			case 2:
 				return false;
 			default: return true;
 		}

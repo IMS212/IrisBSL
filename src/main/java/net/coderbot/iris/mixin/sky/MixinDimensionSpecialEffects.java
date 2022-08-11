@@ -1,10 +1,10 @@
 package net.coderbot.iris.mixin.sky;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.DimensionSpecialEffects;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.dimension.Dimension;
 import net.minecraft.world.level.material.FluidState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * takes a far more conservative approach and only disables specific parts of sky rendering in high-fog
  * situations.
  */
-@Mixin(DimensionSpecialEffects.class)
+@Mixin(Dimension.class)
 public class MixinDimensionSpecialEffects {
 	@Inject(method = "getSunriseColor", at = @At("HEAD"), cancellable = true)
 	private void iris$getSunriseColor(float timeOfDay, float partialTicks, CallbackInfoReturnable<float[]> cir) {

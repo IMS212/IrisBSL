@@ -7,8 +7,8 @@ import net.coderbot.iris.gui.NavigationController;
 import net.coderbot.iris.gui.screen.ShaderPackScreen;
 import net.coderbot.iris.shaderpack.option.StringOption;
 import net.coderbot.iris.shaderpack.option.menu.OptionMenuStringOptionElement;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextColor;
 import net.minecraft.network.chat.TextComponent;
 
 import java.util.List;
@@ -46,11 +46,11 @@ public class StringElementWidget extends BaseOptionElementWidget<OptionMenuStrin
 	}
 
 	@Override
-	public void render(PoseStack poseStack, int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
+	public void render(int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
 		this.updateRenderParams(width, 0);
 
-		this.renderOptionWithValue(poseStack, x, y, width, height, hovered);
-		this.tryRenderTooltip(poseStack, mouseX, mouseY, hovered);
+		this.renderOptionWithValue( x, y, width, height, hovered);
+		this.tryRenderTooltip(mouseX, mouseY, hovered);
 	}
 
 	private void increment(int amount) {
@@ -62,7 +62,7 @@ public class StringElementWidget extends BaseOptionElementWidget<OptionMenuStrin
 	@Override
 	protected Component createValueLabel() {
 		return GuiUtil.translateOrDefault(
-				new TextComponent(getValue()).withStyle(style -> style.withColor(TextColor.fromRgb(0x6688ff))),
+				new TextComponent(getValue()).withStyle(style -> style.setColor(ChatFormatting.WHITE)),
 				"value." + this.option.getName() + "." + getValue());
 	}
 

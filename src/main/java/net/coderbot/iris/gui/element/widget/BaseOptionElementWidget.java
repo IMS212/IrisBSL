@@ -11,8 +11,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextColor;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.Nullable;
@@ -24,10 +23,10 @@ public abstract class BaseOptionElementWidget<T extends OptionMenuElement> exten
 	protected static final Component SET_TO_DEFAULT = new TranslatableComponent("options.iris.setToDefault").withStyle(ChatFormatting.GREEN);
 	protected static final Component DIVIDER = new TextComponent(": ");
 
-	protected MutableComponent unmodifiedLabel;
+	protected Component unmodifiedLabel;
 	protected ShaderPackScreen screen;
 	protected NavigationController navigation;
-	private MutableComponent label;
+	private Component label;
 
 	protected Component trimmedLabel;
 	protected Component valueLabel;
@@ -48,7 +47,7 @@ public abstract class BaseOptionElementWidget<T extends OptionMenuElement> exten
 		this.trimmedLabel = null;
 	}
 
-	protected final void setLabel(MutableComponent label) {
+	protected final void setLabel(Component label) {
 		this.label = label.copy().append(DIVIDER);
 		this.unmodifiedLabel = label;
 	}
@@ -61,28 +60,28 @@ public abstract class BaseOptionElementWidget<T extends OptionMenuElement> exten
 
 		// Determine the width of the value box
 		Font font = Minecraft.getInstance().font;
-		this.valueSectionWidth = Math.max(minValueSectionWidth, font.width(this.valueLabel) + 8);
+		this.valueSectionWidth = Math.max(minValueSectionWidth, font.width(this.valueLabel.getString()) + 8);
 
 		// Determine maximum width of trimmed label
 		this.maxLabelWidth = (width - 8) - this.valueSectionWidth;
 
 		// Lazy init of trimmed label, and make sure it is only trimmed when necessary
-		if (this.trimmedLabel == null || font.width(this.label) > this.maxLabelWidth != isLabelTrimmed) {
+		if (this.trimmedLabel == null || font.width(this.label.getString()) > this.maxLabelWidth != isLabelTrimmed) {
 			updateLabels();
 		}
 
 		// Set whether the label has been trimmed (used when updating label and determining whether to render tooltips)
-		this.isLabelTrimmed = font.width(this.label) > this.maxLabelWidth;
+		this.isLabelTrimmed = font.width(this.label.getString()) > this.maxLabelWidth;
 	}
 
-	protected final void renderOptionWithValue(PoseStack poseStack, int x, int y, int width, int height, boolean hovered, float sliderPosition, int sliderWidth) {
+	protected final void renderOptionWithValue(int x, int y, int width, int height, boolean hovered, float sliderPosition, int sliderWidth) {
 		GuiUtil.bindIrisWidgetsTexture();
 
 		// Draw button background
-		GuiUtil.drawButton(poseStack, x, y, width, height, hovered, false);
+		GuiUtil.drawButton( x, y, width, height, hovered, false);
 
 		// Draw the value box
-		GuiUtil.drawButton(poseStack, (x + width) - (this.valueSectionWidth + 2), y + 2, this.valueSectionWidth, height - 4, false, true);
+		GuiUtil.drawButton( (x + width) - (this.valueSectionWidth + 2), y + 2, this.valueSectionWidth, height - 4, false, true);
 
 		// Draw the preview slider
 		if (sliderPosition >= 0) {
@@ -92,32 +91,32 @@ public abstract class BaseOptionElementWidget<T extends OptionMenuElement> exten
 			// Position of slider
 			int sliderPos = ((x + width) - this.valueSectionWidth) + (int)(sliderPosition * sliderSpace);
 
-			GuiUtil.drawButton(poseStack, sliderPos, y + 4, sliderWidth, height - 8, false, false);
+			GuiUtil.drawButton( sliderPos, y + 4, sliderWidth, height - 8, false, false);
 		}
 
 		Font font = Minecraft.getInstance().font;
 
 		// Draw the label
-		font.drawShadow(poseStack, this.trimmedLabel, x + 6, y + 7, 0xFFFFFF);
+		font.drawShadow(this.trimmedLabel.getString(), x + 6, y + 7, 0xFFFFFF);
 		// Draw the value label
-		font.drawShadow(poseStack, this.valueLabel, (x + (width - 2)) - (int)(this.valueSectionWidth * 0.5) - (int)(font.width(this.valueLabel) * 0.5), y + 7, 0xFFFFFF);
+		font.drawShadow( this.valueLabel.getString(), (x + (width - 2)) - (int)(this.valueSectionWidth * 0.5) - (int)(font.width(this.valueLabel.getString()) * 0.5), y + 7, 0xFFFFFF);
 	}
 
-	protected final void renderOptionWithValue(PoseStack poseStack, int x, int y, int width, int height, boolean hovered) {
-		this.renderOptionWithValue(poseStack, x, y, width, height, hovered, -1, 0);
+	protected final void renderOptionWithValue(int x, int y, int width, int height, boolean hovered) {
+		this.renderOptionWithValue( x, y, width, height, hovered, -1, 0);
 	}
 
-	protected final void tryRenderTooltip(PoseStack poseStack, int mouseX, int mouseY, boolean hovered) {
+	protected final void tryRenderTooltip(int mouseX, int mouseY, boolean hovered) {
 		if (Screen.hasShiftDown()) {
-			renderTooltip(poseStack, SET_TO_DEFAULT, mouseX, mouseY, hovered);
+			renderTooltip(SET_TO_DEFAULT, mouseX, mouseY, hovered);
 		} else if (this.isLabelTrimmed && !this.screen.isDisplayingComment()) {
-			renderTooltip(poseStack, this.unmodifiedLabel, mouseX, mouseY, hovered);
+			renderTooltip(this.unmodifiedLabel, mouseX, mouseY, hovered);
 		}
 	}
 
-	protected final void renderTooltip(PoseStack poseStack, Component text, int mouseX, int mouseY, boolean hovered) {
+	protected final void renderTooltip(Component text, int mouseX, int mouseY, boolean hovered) {
 		if (hovered) {
-			ShaderPackScreen.TOP_LAYER_RENDER_QUEUE.add(() -> GuiUtil.drawTextPanel(Minecraft.getInstance().font, poseStack, text, mouseX + 2, mouseY - 16));
+			ShaderPackScreen.TOP_LAYER_RENDER_QUEUE.add(() -> GuiUtil.drawTextPanel(Minecraft.getInstance().font, text, mouseX + 2, mouseY - 16));
 		}
 	}
 
@@ -127,13 +126,13 @@ public abstract class BaseOptionElementWidget<T extends OptionMenuElement> exten
 	}
 
 	protected final Component createTrimmedLabel() {
-		MutableComponent label = GuiUtil.shortenText(
+		Component label = GuiUtil.shortenText(
 				Minecraft.getInstance().font,
 				this.label.copy(),
 				this.maxLabelWidth);
 
 		if (this.isValueModified()) {
-			label = label.withStyle(style -> style.withColor(TextColor.fromRgb(0xffc94a)));
+			label = label.withStyle(style -> style.setColor(ChatFormatting.YELLOW));
 		}
 
 		return label;

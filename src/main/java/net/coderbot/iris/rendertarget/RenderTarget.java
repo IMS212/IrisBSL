@@ -29,7 +29,8 @@ public class RenderTarget {
 		this.type = builder.type;
 
 		int[] textures = new int[2];
-		GlStateManager._genTextures(textures);
+		textures[0] = GlStateManager._genTexture();
+		textures[1] = GlStateManager._genTexture();
 
 		this.mainTexture = textures[0];
 		this.altTexture = textures[1];
@@ -89,7 +90,8 @@ public class RenderTarget {
 		requireValid();
 		isValid = false;
 
-		GlStateManager._deleteTextures(new int[]{mainTexture, altTexture});
+		GlStateManager._deleteTexture(mainTexture);
+		GlStateManager._deleteTexture(altTexture);
 	}
 
 	private void requireValid() {

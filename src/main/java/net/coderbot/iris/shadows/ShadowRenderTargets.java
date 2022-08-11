@@ -16,6 +16,7 @@ import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL13C;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL30C;
+import org.lwjgl.opengl.GL43;
 
 import java.nio.IntBuffer;
 import java.util.Arrays;
@@ -62,7 +63,9 @@ public class ShadowRenderTargets {
 		int[] drawBuffers = new int[formats.length];
 
 		targets = new int[formats.length];
-		GlStateManager._genTextures(targets);
+		for (int i = 0; i < targets.length; i++) {
+			targets[i] = GlStateManager._genTexture();
+		}
 
 		depthTexture = new DepthTexture(resolution, resolution, DepthBufferFormat.DEPTH);
 		noTranslucents = new DepthTexture(resolution, resolution, DepthBufferFormat.DEPTH);
@@ -110,7 +113,7 @@ public class ShadowRenderTargets {
 			firstTranslucentCopy = false;
 			framebuffer.bindAsReadBuffer();
 			noTranslucentFB.bindAsDrawBuffer();
-			GlStateManager._glBlitFrameBuffer(0, 0, resolution, resolution,
+			GL43.glBlitFramebuffer(0, 0, resolution, resolution,
 				0, 0, resolution, resolution,
 				GL30C.GL_DEPTH_BUFFER_BIT,
 				GL30C.GL_NEAREST);
@@ -168,7 +171,9 @@ public class ShadowRenderTargets {
 	public void destroy() {
 		framebuffer.destroy();
 
-		GlStateManager._deleteTextures(targets);
+		for (int i : targets) {
+			GlStateManager._deleteTexture(i);
+		}
 		depthTexture.destroy();
 		noTranslucents.destroy();
 	}

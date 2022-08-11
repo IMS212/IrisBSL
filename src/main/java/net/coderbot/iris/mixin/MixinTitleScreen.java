@@ -55,7 +55,7 @@ public class MixinTitleScreen {
 				},
 				new TranslatableComponent("iris.sodium.failure.title").withStyle(ChatFormatting.RED),
 				new TranslatableComponent(reason),
-				new TranslatableComponent("iris.sodium.failure.download"),
-				new TranslatableComponent("menu.quit")));
+				new TranslatableComponent("iris.sodium.failure.download").getString(),
+				new TranslatableComponent("menu.quit").getString()));
 	}
 }

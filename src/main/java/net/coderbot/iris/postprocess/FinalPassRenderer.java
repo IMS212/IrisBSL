@@ -32,6 +32,7 @@ import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL30C;
+import org.lwjgl.opengl.GL43C;
 
 import java.util.Map;
 import java.util.Objects;
@@ -89,7 +90,7 @@ public class FinalPassRenderer {
 		// passes that write to framebuffers).
 		this.baseline = renderTargets.createGbufferFramebuffer(flippedBuffers, new int[] {0});
 		this.colorHolder = new GlFramebuffer();
-		this.lastColorTextureId = Minecraft.getInstance().getMainRenderTarget().getColorTextureId();
+		this.lastColorTextureId = Minecraft.getInstance().getMainRenderTarget().colorTextureId;
 		this.lastColorTextureVersion = ((Blaze3dRenderTargetExt) Minecraft.getInstance().getMainRenderTarget()).iris$getColorBufferVersion();
 		this.colorHolder.addColorAttachment(0, lastColorTextureId);
 
@@ -156,9 +157,9 @@ public class FinalPassRenderer {
 		//
 		// This is not a concern for depthtex1 / depthtex2 since the copy call extracts the depth values, and the
 		// shader pack only ever uses them to read the depth values.
-		if (((Blaze3dRenderTargetExt) main).iris$getColorBufferVersion() != lastColorTextureVersion || main.getColorTextureId() != lastColorTextureId) {
+		if (((Blaze3dRenderTargetExt) main).iris$getColorBufferVersion() != lastColorTextureVersion || main.colorTextureId != lastColorTextureId) {
 			lastColorTextureVersion = ((Blaze3dRenderTargetExt) main).iris$getColorBufferVersion();
-			this.lastColorTextureId = main.getColorTextureId();
+			this.lastColorTextureId = main.colorTextureId;
 			colorHolder.addColorAttachment(0, lastColorTextureId);
 		}
 
@@ -195,8 +196,8 @@ public class FinalPassRenderer {
 			// https://stackoverflow.com/a/23994979/18166885
 			this.baseline.bindAsReadBuffer();
 
-			RenderSystem.bindTexture(main.getColorTextureId());
-			GlStateManager._glCopyTexSubImage2D(GL11C.GL_TEXTURE_2D, 0, 0, 0, 0, 0, baseWidth, baseHeight);
+			RenderSystem.bindTexture(main.colorTextureId);
+			GL43C.glCopyTexSubImage2D(GL11C.GL_TEXTURE_2D, 0, 0, 0, 0, 0, baseWidth, baseHeight);
 		}
 
 		RenderSystem.activeTexture(GL15C.GL_TEXTURE0);
@@ -218,7 +219,7 @@ public class FinalPassRenderer {
 			swapPass.from.bind();
 
 			RenderSystem.bindTexture(swapPass.targetTexture);
-			GlStateManager._glCopyTexSubImage2D(GL20C.GL_TEXTURE_2D, 0, 0, 0, 0, 0, baseWidth, baseHeight);
+			GL43C.glCopyTexSubImage2D(GL20C.GL_TEXTURE_2D, 0, 0, 0, 0, 0, baseWidth, baseHeight);
 		}
 
 		// Make sure to reset the viewport to how it was before... Otherwise weird issues could occur.

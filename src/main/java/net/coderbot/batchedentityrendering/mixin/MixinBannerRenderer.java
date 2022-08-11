@@ -32,7 +32,7 @@ public class MixinBannerRenderer {
     private static Groupable groupableToEnd;
     private static int index;
 
-    @ModifyVariable(method = RENDER_PATTERNS, at = @At("HEAD"), argsOnly = true)
+    @ModifyVariable(method = "renderPatterns", at = @At("HEAD"), argsOnly = true)
     private static MultiBufferSource iris$wrapBufferSource(MultiBufferSource multiBufferSource) {
         if (multiBufferSource instanceof Groupable) {
             Groupable groupable = (Groupable) multiBufferSource;
@@ -50,8 +50,8 @@ public class MixinBannerRenderer {
         return multiBufferSource;
     }
 
-    @Inject(method = RENDER_PATTERNS, at = @At("RETURN"))
-    private static void iris$endRenderingCanvas(PoseStack poseStack, MultiBufferSource multiBufferSource, int i, int j, ModelPart modelPart, Material material, boolean bl, List<Pair<BannerPattern, DyeColor>> list, boolean bl2, CallbackInfo ci) {
+    @Inject(method = "renderPatterns", at = @At("RETURN"))
+    private static void iris$endRenderingCanvas(PoseStack arg, MultiBufferSource arg2, int i, int j, ModelPart arg3, Material arg4, boolean bl, List<Pair<BannerPattern, DyeColor>> list, CallbackInfo ci) {
         if (groupableToEnd != null) {
             groupableToEnd.endGroup();
             groupableToEnd = null;

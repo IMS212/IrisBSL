@@ -13,15 +13,15 @@ import net.coderbot.iris.shaderpack.option.values.OptionValues;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 
 import java.util.Optional;
 
 public class ProfileElementWidget extends BaseOptionElementWidget<OptionMenuProfileElement> {
-	private static final MutableComponent PROFILE_LABEL = new TranslatableComponent("options.iris.profile");
-	private static final MutableComponent PROFILE_CUSTOM = new TranslatableComponent("options.iris.profile.custom").withStyle(ChatFormatting.YELLOW);
+	private static final Component PROFILE_LABEL = new TranslatableComponent("options.iris.profile");
+	private static final Component PROFILE_CUSTOM = new TranslatableComponent("options.iris.profile.custom").withStyle(ChatFormatting.YELLOW);
 
 	private Profile next;
 	private Profile previous;
@@ -50,10 +50,10 @@ public class ProfileElementWidget extends BaseOptionElementWidget<OptionMenuProf
 	}
 
 	@Override
-	public void render(PoseStack poseStack, int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
-		this.updateRenderParams(width, width - (Minecraft.getInstance().font.width(PROFILE_LABEL) + 16));
+	public void render(int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
+		this.updateRenderParams(width, width - (Minecraft.getInstance().font.width(PROFILE_LABEL.getString()) + 16));
 
-		this.renderOptionWithValue(poseStack, x, y, width, height, hovered);
+		this.renderOptionWithValue( x, y, width, height, hovered);
 	}
 
 	@Override

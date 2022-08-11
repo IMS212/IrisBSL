@@ -18,15 +18,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(Minecraft.class)
 public class MixinMinecraft_Keybinds {
-	@Shadow
-	private ProfilerFiller profiler;
-
 	@Inject(method = "tick()V", at = @At("RETURN"))
 	private void iris$onTick(CallbackInfo ci) {
-		this.profiler.push("iris_keybinds");
 
 		Iris.handleKeybinds((Minecraft) (Object) this);
 
-		this.profiler.pop();
 	}
 }

@@ -117,7 +117,7 @@ public class MixinLevelRenderer {
 		pipeline.setPhase(WorldRenderingPhase.SUN);
 	}
 
-	@Inject(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/DimensionSpecialEffects;getSunriseColor(FF)[F"))
+	@Inject(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/dimension/Dimension;getSunriseColor(FF)[F"))
 	private void iris$setSunsetRenderStage(PoseStack poseStack, float f, CallbackInfo ci) {
 		pipeline.setPhase(WorldRenderingPhase.SUNSET);
 	}
@@ -174,7 +174,7 @@ public class MixinLevelRenderer {
 		pipeline.setPhase(WorldRenderingPhase.RAIN_SNOW);
 	}
 
-	@ModifyArg(method = RENDER_WEATHER, at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;depthMask(Z)V", ordinal = 0))
+	@ModifyArg(method = "renderLevel", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;depthMask(Z)V", ordinal = 0))
 	private boolean iris$writeRainAndSnowToDepthBuffer(boolean depthMaskEnabled) {
 		if (pipeline.shouldWriteRainAndSnowToDepthBuffer()) {
 			return true;

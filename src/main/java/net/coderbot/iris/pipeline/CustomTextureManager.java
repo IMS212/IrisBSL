@@ -14,6 +14,7 @@ import net.coderbot.iris.shaderpack.texture.TextureStage;
 import net.minecraft.ResourceLocationException;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
@@ -36,7 +37,7 @@ public class CustomTextureManager {
 	 * leaks.
 	 * Make sure any textures added to this list call releaseId from the close method.
 	 */
-	private final List<AbstractTexture> ownedTextures = new ArrayList<>();
+	private final List<DynamicTexture> ownedTextures = new ArrayList<>();
 
 	public CustomTextureManager(PackDirectives packDirectives,
 								EnumMap<TextureStage, Object2ObjectMap<String, CustomTextureData>> customTextureDataMap,
@@ -67,7 +68,7 @@ public class CustomTextureManager {
 		}).orElseGet(() -> {
 			final int noiseTextureResolution = packDirectives.getNoiseTextureResolution();
 
-			AbstractTexture texture = new NativeImageBackedNoiseTexture(noiseTextureResolution);
+			DynamicTexture texture = new NativeImageBackedNoiseTexture(noiseTextureResolution);
 			ownedTextures.add(texture);
 
 			return texture::getId;
@@ -83,7 +84,7 @@ public class CustomTextureManager {
 
 	private IntSupplier createCustomTexture(CustomTextureData textureData) throws IOException, ResourceLocationException {
 		if (textureData instanceof CustomTextureData.PngData) {
-			AbstractTexture texture = new NativeImageBackedCustomTexture((CustomTextureData.PngData) textureData);
+			DynamicTexture texture = new NativeImageBackedCustomTexture((CustomTextureData.PngData) textureData);
 			ownedTextures.add(texture);
 
 			return texture::getId;
@@ -138,6 +139,6 @@ public class CustomTextureManager {
 	}
 
 	public void destroy() {
-		ownedTextures.forEach(AbstractTexture::close);
+		ownedTextures.forEach(DynamicTexture::close);
 	}
 }

@@ -9,7 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import org.lwjgl.glfw.GLFW;
@@ -20,10 +20,10 @@ public class LinkElementWidget extends CommentedElementWidget<OptionMenuLinkElem
 	private static final Component ARROW = new TextComponent(">");
 
 	private final String targetScreenId;
-	private final MutableComponent label;
+	private final Component label;
 
 	private NavigationController navigation;
-	private MutableComponent trimmedLabel = null;
+	private Component trimmedLabel = null;
 	private boolean isLabelTrimmed = false;
 
 	public LinkElementWidget(OptionMenuLinkElement element) {
@@ -39,15 +39,15 @@ public class LinkElementWidget extends CommentedElementWidget<OptionMenuLinkElem
 	}
 
 	@Override
-	public void render(PoseStack poseStack, int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
+	public void render(int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
 		GuiUtil.bindIrisWidgetsTexture();
-		GuiUtil.drawButton(poseStack, x, y, width, height, hovered, false);
+		GuiUtil.drawButton( x, y, width, height, hovered, false);
 
 		Font font = Minecraft.getInstance().font;
 
 		int maxLabelWidth = width - 9;
 
-		if (font.width(this.label) > maxLabelWidth) {
+		if (font.width(this.label.getString()) > maxLabelWidth) {
 			this.isLabelTrimmed = true;
 		}
 
@@ -55,14 +55,14 @@ public class LinkElementWidget extends CommentedElementWidget<OptionMenuLinkElem
 			this.trimmedLabel = GuiUtil.shortenText(font, this.label, maxLabelWidth);
 		}
 
-		int labelWidth = font.width(this.trimmedLabel);
+		int labelWidth = font.width(this.trimmedLabel.getString());
 
-		font.drawShadow(poseStack, this.trimmedLabel, x + (int)(width * 0.5) - (int)(labelWidth * 0.5) - (int)(0.5 * Math.max(labelWidth - (width - 18), 0)), y + 7, 0xFFFFFF);
-		font.draw(poseStack, ARROW, (x + width) - 9, y + 7, 0xFFFFFF);
+		font.drawShadow(this.trimmedLabel.getString(), x + (int)(width * 0.5) - (int)(labelWidth * 0.5) - (int)(0.5 * Math.max(labelWidth - (width - 18), 0)), y + 7, 0xFFFFFF);
+		font.draw(ARROW.getString(), (x + width) - 9, y + 7, 0xFFFFFF);
 
 		if (hovered && this.isLabelTrimmed) {
 			// To prevent other elements from being drawn on top of the tooltip
-			ShaderPackScreen.TOP_LAYER_RENDER_QUEUE.add(() -> GuiUtil.drawTextPanel(font, poseStack, this.label, mouseX + 2, mouseY - 16));
+			ShaderPackScreen.TOP_LAYER_RENDER_QUEUE.add(() -> GuiUtil.drawTextPanel(font, this.label, mouseX + 2, mouseY - 16));
 		}
 	}
 

@@ -9,8 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextColor;
+
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 
@@ -57,10 +56,10 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 			// We're just trying to get more information on a seemingly untraceable bug:
 			// - https://github.com/IrisShaders/Iris/issues/785
 			this.addLabelEntries(
-					TextComponent.EMPTY,
+					new TextComponent(""),
 					new TextComponent("There was an error reading your shaderpacks directory")
 							.withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
-					TextComponent.EMPTY,
+					new TextComponent(""),
 					new TextComponent("Check your logs for more information."),
 					new TextComponent("Please file an issue report including a log file."),
 					new TextComponent("If you are able to identify the file causing this, " +
@@ -135,7 +134,7 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 		protected BaseEntry() {}
 	}
 
-	public static class ShaderPackEntry extends BaseEntry {
+	public class ShaderPackEntry extends BaseEntry {
 		private final String packName;
 		private final ShaderPackSelectionList list;
 		private final int index;
@@ -159,18 +158,18 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 		}
 
 		@Override
-		public void render(PoseStack poseStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+		public void render(int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
 			Font font = Minecraft.getInstance().font;
 			int color = 0xFFFFFF;
 			String name = packName;
 
 			boolean shadersEnabled = list.getTopButtonRow().shadersEnabled;
 
-			if (font.width(new TextComponent(name).withStyle(ChatFormatting.BOLD)) > this.list.getRowWidth() - 3) {
-				name = font.plainSubstrByWidth(name, this.list.getRowWidth() - 8) + "...";
+			if (font.width(new TextComponent(name).withStyle(ChatFormatting.BOLD).getString()) > this.list.getRowWidth() - 3) {
+				name = font.substrByWidth(name, this.list.getRowWidth() - 8) + "...";
 			}
 
-			MutableComponent text = new TextComponent(name);
+			Component text = new TextComponent(name);
 
 			if (this.isMouseOver(mouseX, mouseY)) {
 				text = text.withStyle(ChatFormatting.BOLD);
@@ -184,7 +183,7 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 				color = 0xA2A2A2;
 			}
 
-			drawCenteredString(poseStack, font, text, (x + entryWidth / 2) - 2, y + (entryHeight - 11) / 2, color);
+			drawCenteredString(font, text.getString(), (x + entryWidth / 2) - 2, y + (entryHeight - 11) / 2, color);
 		}
 
 		@Override
@@ -215,7 +214,7 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 		}
 	}
 
-	public static class LabelEntry extends BaseEntry {
+	public class LabelEntry extends BaseEntry {
 		private final Component label;
 
 		public LabelEntry(Component label) {
@@ -223,13 +222,13 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 		}
 
 		@Override
-		public void render(PoseStack poseStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-			drawCenteredString(poseStack, Minecraft.getInstance().font, label, (x + entryWidth / 2) - 2, y + (entryHeight - 11) / 2, 0xC2C2C2);
+		public void render(int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+			drawCenteredString(Minecraft.getInstance().font, label.getString(), (x + entryWidth / 2) - 2, y + (entryHeight - 11) / 2, 0xC2C2C2);
 		}
 	}
 
 	public static class TopButtonRowEntry extends BaseEntry {
-		private static final Component REFRESH_SHADER_PACKS_LABEL = new TranslatableComponent("options.iris.refreshShaderPacks").withStyle(style -> style.withColor(TextColor.fromRgb(0x99ceff)));
+		private static final Component REFRESH_SHADER_PACKS_LABEL = new TranslatableComponent("options.iris.refreshShaderPacks").withStyle(style -> style.setColor(ChatFormatting.GRAY));
 		private static final Component NONE_PRESENT_LABEL = new TranslatableComponent("options.iris.shaders.nonePresent").withStyle(ChatFormatting.GRAY);
 		private static final Component SHADERS_DISABLED_LABEL = new TranslatableComponent("options.iris.shaders.disabled");
 		private static final Component SHADERS_ENABLED_LABEL = new TranslatableComponent("options.iris.shaders.enabled");
@@ -275,16 +274,16 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 		}
 
 		@Override
-		public void render(PoseStack poseStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+		public void render(int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
 			this.buttons.setWidth(this.enableDisableButton, (entryWidth - 1) - REFRESH_BUTTON_WIDTH);
 			this.enableDisableButton.centerX = x + (int)(entryWidth * 0.5);
 
-			this.buttons.render(poseStack, x - 2, y - 3, 18, mouseX, mouseY, tickDelta, hovered);
+			this.buttons.render(x - 2, y - 3, 18, mouseX, mouseY, tickDelta, hovered);
 
 			if (this.refreshPacksButton.isHovered()) {
 				ShaderPackScreen.TOP_LAYER_RENDER_QUEUE.add(() ->
-						GuiUtil.drawTextPanel(Minecraft.getInstance().font, poseStack, REFRESH_SHADER_PACKS_LABEL,
-								(mouseX - 8) - Minecraft.getInstance().font.width(REFRESH_SHADER_PACKS_LABEL), mouseY - 16));
+						GuiUtil.drawTextPanel(Minecraft.getInstance().font, REFRESH_SHADER_PACKS_LABEL,
+								(mouseX - 8) - Minecraft.getInstance().font.width(REFRESH_SHADER_PACKS_LABEL.getString()), mouseY - 16));
 			}
 		}
 
@@ -306,11 +305,11 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 			}
 
 			@Override
-			public void renderLabel(PoseStack poseStack, int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
-				int textX = this.centerX - (int)(this.font.width(this.text) * 0.5);
+			public void renderLabel( int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
+				int textX = this.centerX - (int)(this.font.width(this.text.getString()) * 0.5);
 				int textY = y + (int)((height - 8) * 0.5);
 
-				this.font.drawShadow(poseStack, this.text, textX, textY, 0xFFFFFF);
+				this.font.drawShadow(this.text.getString(), textX, textY, 0xFFFFFF);
 			}
 		}
 	}

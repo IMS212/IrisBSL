@@ -1,7 +1,5 @@
 package net.coderbot.iris.mixin;
 
-import com.mojang.authlib.minecraft.OfflineSocialInteractions;
-import com.mojang.authlib.minecraft.SocialInteractionsService;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
@@ -24,14 +22,4 @@ public class MixinMinecraft_NoAuthInDev {
 	@Shadow
 	@Final
 	private static Logger LOGGER;
-
-	@Inject(method = "createSocialInteractions", at = @At("HEAD"), cancellable = true)
-	private void iris$noSocialInteractionsInDevelopment(YggdrasilAuthenticationService yggdrasilAuthenticationService,
-														GameConfig arg, CallbackInfoReturnable<SocialInteractionsService> cir) {
-		if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
-
-			LOGGER.info("[Iris] Suppressing Yggdrasil authentication check because this is a development environment");
-			cir.setReturnValue(new OfflineSocialInteractions());
-		}
-	}
 }
