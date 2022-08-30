@@ -16,6 +16,8 @@ import net.coderbot.iris.gl.sampler.SamplerHolder;
 import net.coderbot.iris.gl.texture.InternalTextureFormat;
 import net.coderbot.iris.gl.uniform.DynamicUniformHolder;
 import net.coderbot.iris.uniforms.CapturedRenderingState;
+import net.coderbot.iris.vendored.joml.Matrix3f;
+import net.coderbot.iris.vendored.joml.Matrix4f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
@@ -31,6 +33,12 @@ import java.util.function.IntSupplier;
 public class ExtendedShader extends ShaderInstance implements SamplerHolder, ImageHolder, ShaderInstanceInterface {
 	private final boolean intensitySwizzle;
 	private final ProgramImages.Builder imageBuilder;
+	private final Uniform projectionInverseUniform;
+	private final Uniform modelViewInverseUniform;
+	private final Uniform normalMatrixInverseUniform;
+	private final Matrix4f projectionInverse;
+	private final Matrix4f modelViewInverse;
+	private final Matrix3f normalMatrixInverse;
 	NewWorldRenderingPipeline parent;
 	ProgramUniforms uniforms;
 	GlFramebuffer writingToBeforeTranslucent;
@@ -66,6 +74,12 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 		this.imageBuilder = ProgramImages.builder(programId);
 		this.currentImages = null;
 		this.inputs = inputs;
+		this.projectionInverse = new Matrix4f();
+		this.modelViewInverse = new Matrix4f();
+		this.normalMatrixInverse = new Matrix3f();
+		this.projectionInverseUniform = this.getUniform("ProjMatInverse");
+		this.modelViewInverseUniform = this.getUniform("ModelViewMatInverse");
+		this.normalMatrixInverseUniform = this.getUniform("NormalMat");
 
 		this.intensitySwizzle = isIntensity;
 	}
@@ -86,6 +100,9 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 		Minecraft.getInstance().getMainRenderTarget().bindWrite(false);
 	}
 
+	private static float[] tempBuffer = new float[16];
+	private static float[] tempBufferNormal = new float[12];
+
 	@Override
 	public void apply() {
 		dynamicSamplers.forEach((name, supplier) -> this.addIrisSampler(name, supplier.getAsInt()));
@@ -98,6 +115,30 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 
 		if (!inputs.hasLight()) {
 			setSampler("Sampler2", parent.getWhitePixel().getId());
+		}
+
+		if (projectionInverseUniform != null) {
+			projectionInverse.set(PROJECTION_MATRIX.getFloatBuffer());
+			projectionInverse.invert();
+			projectionInverseUniform.set(projectionInverse.get(tempBuffer));
+		}
+
+		if (modelViewInverseUniform != null) {
+			modelViewInverse.set(MODEL_VIEW_MATRIX.getFloatBuffer());
+			modelViewInverse.invert();
+			modelViewInverseUniform.set(modelViewInverse.get(tempBuffer));
+
+			if (normalMatrixInverseUniform != null) {
+				modelViewInverse.transpose3x3(normalMatrixInverse);
+
+				normalMatrixInverseUniform.set(normalMatrixInverse.get(tempBufferNormal));
+			}
+		} else if (normalMatrixInverseUniform != null) {
+			modelViewInverse.set(MODEL_VIEW_MATRIX.getFloatBuffer());
+			modelViewInverse.invert();
+			modelViewInverse.transpose3x3(normalMatrixInverse);
+
+			normalMatrixInverseUniform.set(normalMatrixInverse.get(tempBufferNormal));
 		}
 
 		super.apply();

@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.github.douira.glsl_transformer.ast.node.Profile;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 import org.apache.logging.log4j.LogManager;
@@ -30,7 +31,7 @@ import net.coderbot.iris.pipeline.newshader.ShaderAttributeInputs;
 /**
  * The transform patcher (triforce 2) uses glsl-transformer's ASTTransformer to
  * do shader transformation.
- * 
+ *
  * The TransformPatcher does caching on the source string and associated
  * parameters. For this to work, all objects contained in a parameter must have
  * an equals method and they must never be changed after having been used for
@@ -161,21 +162,40 @@ public class TransformPatcher {
 									+ id.getName());
 				});
 
+				boolean isCore = false;
+				if (tree.getVersionStatement().profile == Profile.CORE || tree.getVersionStatement().version.number >= 150) {
+					isCore = true;
+				}
+
+				boolean finalIsCore = isCore;
+
 				Root.indexBuildSession(tree, () -> {
 					switch (parameters.patch) {
 						case ATTRIBUTES:
 							AttributeTransformer.transform(transformer, tree, root, (AttributeParameters) parameters);
 							break;
 						case COMPOSITE:
-							CompositeTransformer.transform(transformer, tree, root, parameters);
+							if (finalIsCore) {
+								CompositeCoreTransformer.transform(transformer, tree, root);
+							} else {
+								CompositeTransformer.transform(transformer, tree, root, parameters);
+							}
 							break;
 						case SODIUM:
 							SodiumParameters sodiumParameters = (SodiumParameters) parameters;
 							sodiumParameters.setAlphaFor(type);
-							SodiumTransformer.transform(transformer, tree, root, sodiumParameters);
+							if (finalIsCore) {
+								SodiumCoreTransformer.transform(transformer, tree, root, sodiumParameters);
+							} else {
+								SodiumTransformer.transform(transformer, tree, root, sodiumParameters);
+							}
 							break;
 						case VANILLA:
-							VanillaTransformer.transform(transformer, tree, root, (VanillaParameters) parameters);
+							if (finalIsCore) {
+								VanillaCoreTransformer.transform(transformer, tree, root, (VanillaParameters) parameters);
+							} else {
+								VanillaTransformer.transform(transformer, tree, root, (VanillaParameters) parameters);
+							}
 							break;
 					}
 					CompatibilityTransformer.transformEach(transformer, tree, root, parameters);
