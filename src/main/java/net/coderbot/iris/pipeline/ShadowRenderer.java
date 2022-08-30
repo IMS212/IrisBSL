@@ -306,7 +306,7 @@ public class ShadowRenderer {
 
 			cullingInfo = "Advanced Frustum Culling enabled";
 
-			Vector4f shadowLightPosition = new CelestialUniforms(sunPathRotation).getShadowLightPositionInWorldSpace();
+			Vector4f shadowLightPosition = new CelestialUniforms(sunPathRotation).getShadowLightPosition();
 
 			Vector3f shadowLightVectorFromOrigin =
 				new Vector3f(shadowLightPosition.x(), shadowLightPosition.y(), shadowLightPosition.z());

@@ -52,7 +52,7 @@ public final class CelestialUniforms {
 		return shadowAngle;
 	}
 
-	private Vector4f getSunPosition() {
+	public Vector4f getSunPosition() {
 		return getCelestialPosition(100.0F);
 	}
 
@@ -102,7 +102,7 @@ public final class CelestialUniforms {
 		return JomlConversions.toJoml(position);
 	}
 
-	private static Vector4f getUpPosition() {
+	static Vector4f getUpPosition() {
 		com.mojang.math.Vector4f upVector = new com.mojang.math.Vector4f(0.0F, 100.0F, 0.0F, 0.0F);
 
 		// Get the current GBuffer model view matrix, since that is the basis of the celestial model view matrix

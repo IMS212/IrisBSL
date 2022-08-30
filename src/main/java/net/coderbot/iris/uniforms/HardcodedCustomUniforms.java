@@ -1,10 +1,15 @@
 package net.coderbot.iris.uniforms;
 
+import net.coderbot.iris.gl.uniform.MatrixUniform;
 import net.coderbot.iris.gl.uniform.UniformHolder;
 import net.coderbot.iris.gl.uniform.UniformUpdateFrequency;
 import net.coderbot.iris.mixin.DimensionTypeAccessor;
 import net.coderbot.iris.uniforms.transforms.SmoothedFloat;
 import net.coderbot.iris.vendored.joml.Math;
+import net.coderbot.iris.vendored.joml.Vector2f;
+import net.coderbot.iris.vendored.joml.Vector2i;
+import net.coderbot.iris.vendored.joml.Vector3f;
+import net.coderbot.iris.vendored.joml.Vector4f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
@@ -20,7 +25,7 @@ import net.minecraft.world.phys.Vec3;
 public class HardcodedCustomUniforms {
 	private static final Minecraft client = Minecraft.getInstance();
 
-	public static void addHardcodedCustomUniforms(UniformHolder holder, FrameUpdateNotifier updateNotifier) {
+	public static void addHardcodedCustomUniforms(UniformHolder holder, FrameUpdateNotifier updateNotifier, CelestialUniforms celestialUniforms) {
 		CameraUniforms.CameraPositionTracker tracker = new CameraUniforms.CameraPositionTracker(updateNotifier);
 
 		SmoothedFloat eyeInCave = new SmoothedFloat(6, 12, HardcodedCustomUniforms::getEyeInCave, updateNotifier);
@@ -61,6 +66,55 @@ public class HardcodedCustomUniforms {
 		holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "burningSmooth", new SmoothedFloat(1.0f, 2.0f, HardcodedCustomUniforms::getBurnFactor, updateNotifier));
 		SmoothedFloat smoothSpeed = new SmoothedFloat(1.0f, 1.5f, () -> getVelocity(tracker) / SystemTimeUniforms.TIMER.getLastFrameTime(), updateNotifier);
 		holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "effectStrength", () -> getHyperSpeedStrength(smoothSpeed));
+
+		// Chocapic13!
+		holder.uniform2f(UniformUpdateFrequency.PER_FRAME, "texelSize", HardcodedCustomUniforms::getTexSize);
+		holder.uniform3f(UniformUpdateFrequency.PER_FRAME, "sunVec", () -> getSunPos(celestialUniforms));
+		holder.uniform3f(UniformUpdateFrequency.PER_FRAME, "upVec", HardcodedCustomUniforms::getUpPos);
+		holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "sunElevation", HardcodedCustomUniforms::getSunElevation);
+		holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "cosFov", HardcodedCustomUniforms::getCosFov);
+		holder.uniform3f(UniformUpdateFrequency.PER_FRAME, "shadowLightVec", () -> getShadowPos(celestialUniforms));
+		holder.uniformTruncated3f(UniformUpdateFrequency.PER_FRAME, "shadowCamera", celestialUniforms::getShadowLightPosition);
+		holder.uniformTruncated3f(UniformUpdateFrequency.PER_FRAME, "shadowViewDir", () -> celestialUniforms.getShadowLightPosition().normalize());
+	}
+
+	private static final Vector2f texSize = new Vector2f();
+	private static final Vector3f sunVec = new Vector3f();
+	private static final Vector3f upVec = new Vector3f();
+	private static final Vector3f shadowViewDir = new Vector3f();
+
+	public static Vector3f getShadowPos(CelestialUniforms celestialUniforms) {
+		Vector4f shadowLightVectorFromOrigin = celestialUniforms.getShadowLightPosition().normalize();
+		return shadowViewDir.set(shadowLightVectorFromOrigin.x, shadowLightVectorFromOrigin.y, shadowLightVectorFromOrigin.z);
+	}
+
+	public static Vector2f getTexSize() {
+		texSize.set(1.0 / Minecraft.getInstance().getMainRenderTarget().width, 1.0 / Minecraft.getInstance().getMainRenderTarget().height);
+		return texSize;
+	}
+
+	public static Vector3f getSunPos(CelestialUniforms celestialUniforms) {
+		Vector4f sunPosition = celestialUniforms.getSunPosition();
+		float normSunVec = Math.sqrt(sunPosition.x*sunPosition.x+sunPosition.y*sunPosition.y+sunPosition.z*sunPosition.z);
+		return sunVec.set(sunPosition.x / normSunVec, sunPosition.y / normSunVec, sunPosition.z / normSunVec);
+	}
+
+	public static Vector3f getUpPos() {
+		Vector4f upPosition = CelestialUniforms.getUpPosition();
+		float normUpVec = Math.sqrt(upPosition.x*upPosition.x+upPosition.y*upPosition.y+upPosition.z*upPosition.z);
+		return upVec.set(upPosition.x / normUpVec, upPosition.y / normUpVec, upPosition.z / normUpVec);
+	}
+
+	public static float getSunElevation() {
+		return sunVec.x*upVec.x+sunVec.y*upVec.y+sunVec.z*upVec.z;
+	}
+
+	public static float getLightSign() {
+		return Math.clamp(getSunElevation() * 1000000000000000000f, 0.0f, 1.0f) * 2.0f - 1.0f;
+	}
+
+	public static float getCosFov() {
+		return (float) Math.cos(Minecraft.getInstance().options.fov);
 	}
 
 	private static float getHyperSpeedStrength(SmoothedFloat smoothSpeed) {

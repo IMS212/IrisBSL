@@ -62,11 +62,12 @@ public final class CommonUniforms {
 		ViewportUniforms.addViewportUniforms(uniforms);
 		WorldTimeUniforms.addWorldTimeUniforms(uniforms);
 		SystemTimeUniforms.addSystemTimeUniforms(uniforms);
-		new CelestialUniforms(directives.getSunPathRotation()).addCelestialUniforms(uniforms);
+		CelestialUniforms celestialUniforms = new CelestialUniforms(directives.getSunPathRotation());
+		celestialUniforms.addCelestialUniforms(uniforms);
 		IdMapUniforms.addIdMapUniforms(uniforms, idMap);
 		IrisExclusiveUniforms.addIrisExclusiveUniforms(uniforms);
 		MatrixUniforms.addMatrixUniforms(uniforms, directives);
-		HardcodedCustomUniforms.addHardcodedCustomUniforms(uniforms, updateNotifier);
+		HardcodedCustomUniforms.addHardcodedCustomUniforms(uniforms, updateNotifier, celestialUniforms);
 		FogUniforms.addFogUniforms(uniforms);
 
 		// TODO: OptiFine doesn't think that atlasSize is a "dynamic" uniform,

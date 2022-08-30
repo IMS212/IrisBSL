@@ -32,7 +32,7 @@ public final class ViewportUniforms {
 	/**
 	 * @return the current viewport aspect ratio, calculated from the current Minecraft window size
 	 */
-	private static float getAspectRatio() {
+	static float getAspectRatio() {
 		return ((float) Minecraft.getInstance().getMainRenderTarget().width) / ((float) Minecraft.getInstance().getMainRenderTarget().height);
 	}
 }
