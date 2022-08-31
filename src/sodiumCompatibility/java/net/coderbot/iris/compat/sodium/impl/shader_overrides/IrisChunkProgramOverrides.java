@@ -164,7 +164,7 @@ public class IrisChunkProgramOverrides {
 						ShaderBindingContextExt contextExt = (ShaderBindingContextExt) shader;
 
 						return new IrisChunkShaderInterface(handle, contextExt, pipeline,
-								pass == IrisTerrainPass.SHADOW || pass == IrisTerrainPass.SHADOW_CUTOUT, blendOverride, alpha, pipeline.getCustomUniforms());
+								pass == IrisTerrainPass.SHADOW || pass == IrisTerrainPass.SHADOW_CUTOUT, blendOverride, alpha);
 					});
         } finally {
             vertShader.delete();

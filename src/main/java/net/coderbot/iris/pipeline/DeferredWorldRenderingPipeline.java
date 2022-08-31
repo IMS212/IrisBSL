@@ -24,6 +24,7 @@ import net.coderbot.iris.gl.program.Program;
 import net.coderbot.iris.gl.program.ProgramBuilder;
 import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramSamplers;
+import net.coderbot.iris.pipeline.newshader.FogMode;
 import net.coderbot.iris.pipeline.transform.PatchShaderType;
 import net.coderbot.iris.gl.texture.DepthBufferFormat;
 import net.coderbot.iris.layer.GbufferPrograms;
@@ -596,7 +597,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 	private Pass createPassInner(ProgramBuilder builder, IdMap map, ProgramDirectives programDirectives,
 								 PackDirectives packDirectives, InputAvailability availability, boolean shadow) {
 
-		CommonUniforms.addDynamicUniforms(builder);
+		CommonUniforms.addDynamicUniforms(builder, FogMode.PER_VERTEX);
 		this.customUniforms.assignTo(builder);
 
 		Supplier<ImmutableSet<Integer>> flipped;

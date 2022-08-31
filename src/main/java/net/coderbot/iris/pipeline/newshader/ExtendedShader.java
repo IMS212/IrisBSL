@@ -14,8 +14,11 @@ import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramUniforms;
 import net.coderbot.iris.gl.sampler.SamplerHolder;
 import net.coderbot.iris.gl.texture.InternalTextureFormat;
+import net.coderbot.iris.gl.uniform.DynamicLocationalUniformHolder;
 import net.coderbot.iris.gl.uniform.DynamicUniformHolder;
+import net.coderbot.iris.pipeline.DeferredWorldRenderingPipeline;
 import net.coderbot.iris.uniforms.CapturedRenderingState;
+import net.coderbot.iris.uniforms.custom.CustomUniforms;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
@@ -42,11 +45,12 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 	private ProgramImages currentImages;
 	private Program geometry;
 	private final ShaderAttributeInputs inputs;
+	private CustomUniforms customUniforms;
 
 	public ExtendedShader(ResourceProvider resourceFactory, String string, VertexFormat vertexFormat,
 						  GlFramebuffer writingToBeforeTranslucent, GlFramebuffer writingToAfterTranslucent,
 						  GlFramebuffer baseline, BlendModeOverride blendModeOverride, AlphaTest alphaTest,
-						  Consumer<DynamicUniformHolder> uniformCreator, boolean isIntensity,
+						  Consumer<DynamicLocationalUniformHolder> uniformCreator, boolean isIntensity,
 						  NewWorldRenderingPipeline parent, ShaderAttributeInputs inputs) throws IOException {
 		super(resourceFactory, string, vertexFormat);
 
@@ -54,6 +58,9 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 
 		ProgramUniforms.Builder uniformBuilder = ProgramUniforms.builder(string, programId);
 		uniformCreator.accept(uniformBuilder);
+
+		// tell the customUniforms that those locations belong to this pass
+		parent.customUniforms.mapholderToPass(uniformBuilder, this);
 
 		uniforms = uniformBuilder.buildUniforms();
 		this.writingToBeforeTranslucent = writingToBeforeTranslucent;
@@ -66,6 +73,7 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 		this.imageBuilder = ProgramImages.builder(programId);
 		this.currentImages = null;
 		this.inputs = inputs;
+		this.customUniforms = parent.customUniforms;
 
 		this.intensitySwizzle = isIntensity;
 	}
@@ -102,6 +110,7 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 
 		super.apply();
 		uniforms.update();
+		customUniforms.push(this);
 
 		if (currentImages == null) {
 			// rebuild if needed
@@ -119,6 +128,7 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 		} else {
 			writingToAfterTranslucent.bind();
 		}
+
 	}
 
 	public void addIrisSampler(String name, int id) {

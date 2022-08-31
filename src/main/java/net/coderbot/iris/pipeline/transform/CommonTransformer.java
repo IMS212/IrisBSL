@@ -162,6 +162,9 @@ public class CommonTransformer {
 			replaceIndexes.clear();
 			Set<Long> replaceIndexesSet = new HashSet<>();
 			for (Identifier id : root.identifierIndex.get("gl_FragData")) {
+				if (root.identifierIndex.has("sceneAlbedo")) {
+					break;
+				}
 				ArrayAccessExpression accessExpression = id.getAncestor(ArrayAccessExpression.class);
 				if (accessExpression == null || !glFragDataI.matchesExtract(accessExpression)) {
 					continue;
@@ -183,7 +186,8 @@ public class CommonTransformer {
 			}
 			replaceExpressions.clear();
 			replaceIndexes.clear();
-
+			tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_FUNCTIONS,
+				"uniform float iris_currentAlphaTest;");
 			// insert alpha test for vec4 outs in the fragment shader
 			if (parameters.getAlphaTest() != AlphaTest.ALWAYS) {
 				CompoundStatement mainBody = tree.getMainDefinitionBody();
