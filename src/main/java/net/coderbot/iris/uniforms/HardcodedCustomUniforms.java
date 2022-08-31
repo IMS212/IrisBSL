@@ -1,5 +1,6 @@
 package net.coderbot.iris.uniforms;
 
+import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.uniform.MatrixUniform;
 import net.coderbot.iris.gl.uniform.UniformHolder;
 import net.coderbot.iris.gl.uniform.UniformUpdateFrequency;
@@ -71,8 +72,10 @@ public class HardcodedCustomUniforms {
 		holder.uniform2f(UniformUpdateFrequency.PER_FRAME, "texelSize", HardcodedCustomUniforms::getTexSize);
 		holder.uniform3f(UniformUpdateFrequency.PER_FRAME, "sunVec", () -> getSunPos(celestialUniforms));
 		holder.uniform3f(UniformUpdateFrequency.PER_FRAME, "upVec", HardcodedCustomUniforms::getUpPos);
-		holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "sunElevation", HardcodedCustomUniforms::getSunElevation);
+		holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "sunElevation", () -> getSunElevation(celestialUniforms));
 		holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "cosFov", HardcodedCustomUniforms::getCosFov);
+		holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "shadowMaxProj", () -> 150.0/Math.abs(sunVec.y));
+		holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "lightSign",() -> getLightSign(celestialUniforms));
 		holder.uniform3f(UniformUpdateFrequency.PER_FRAME, "shadowLightVec", () -> getShadowPos(celestialUniforms));
 		holder.uniformTruncated3f(UniformUpdateFrequency.PER_FRAME, "shadowCamera", celestialUniforms::getShadowLightPosition);
 		holder.uniformTruncated3f(UniformUpdateFrequency.PER_FRAME, "shadowViewDir", () -> celestialUniforms.getShadowLightPosition().normalize());
@@ -85,7 +88,7 @@ public class HardcodedCustomUniforms {
 
 	public static Vector3f getShadowPos(CelestialUniforms celestialUniforms) {
 		Vector4f shadowLightVectorFromOrigin = celestialUniforms.getShadowLightPosition().normalize();
-		return shadowViewDir.set(shadowLightVectorFromOrigin.x, shadowLightVectorFromOrigin.y, shadowLightVectorFromOrigin.z);
+		return new Vector3f(shadowLightVectorFromOrigin.x, shadowLightVectorFromOrigin.y, shadowLightVectorFromOrigin.z);
 	}
 
 	public static Vector2f getTexSize() {
@@ -96,21 +99,23 @@ public class HardcodedCustomUniforms {
 	public static Vector3f getSunPos(CelestialUniforms celestialUniforms) {
 		Vector4f sunPosition = celestialUniforms.getSunPosition();
 		float normSunVec = Math.sqrt(sunPosition.x*sunPosition.x+sunPosition.y*sunPosition.y+sunPosition.z*sunPosition.z);
-		return sunVec.set(sunPosition.x / normSunVec, sunPosition.y / normSunVec, sunPosition.z / normSunVec);
+		return new Vector3f(sunPosition.x / normSunVec, sunPosition.y / normSunVec, sunPosition.z / normSunVec);
 	}
 
 	public static Vector3f getUpPos() {
 		Vector4f upPosition = CelestialUniforms.getUpPosition();
 		float normUpVec = Math.sqrt(upPosition.x*upPosition.x+upPosition.y*upPosition.y+upPosition.z*upPosition.z);
-		return upVec.set(upPosition.x / normUpVec, upPosition.y / normUpVec, upPosition.z / normUpVec);
+		return new Vector3f(upPosition.x / normUpVec, upPosition.y / normUpVec, upPosition.z / normUpVec);
 	}
 
-	public static float getSunElevation() {
-		return sunVec.x*upVec.x+sunVec.y*upVec.y+sunVec.z*upVec.z;
+	public static float getSunElevation(CelestialUniforms uniforms) {
+		Vector4f sunPos = uniforms.getSunPosition();
+		Vector4f upPos = CelestialUniforms.getUpPosition();
+		return sunPos.x*upPos.x+sunPos.y*upPos.y+sunPos.z*upPos.z;
 	}
 
-	public static float getLightSign() {
-		return Math.clamp(getSunElevation() * 1000000000000000000f, 0.0f, 1.0f) * 2.0f - 1.0f;
+	public static float getLightSign(CelestialUniforms uniforms) {
+		return Math.clamp(getSunElevation(uniforms) * 1000000000000000000f, 0.0f, 1.0f) * 2.0f - 1.0f;
 	}
 
 	public static float getCosFov() {
