@@ -58,17 +58,8 @@ public final class CommonUniforms {
 	}
 
 	// Needs to use a LocationalUniformHolder as we need it for the common uniforms
-	public static void addCommonUniforms(DynamicUniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier, FogMode fogMode) {
-		CameraUniforms.addCameraUniforms(uniforms, updateNotifier);
-		ViewportUniforms.addViewportUniforms(uniforms);
-		WorldTimeUniforms.addWorldTimeUniforms(uniforms);
-		SystemTimeUniforms.addSystemTimeUniforms(uniforms);
-		new CelestialUniforms(directives.getSunPathRotation()).addCelestialUniforms(uniforms);
-		IdMapUniforms.addIdMapUniforms(uniforms, idMap);
-		IrisExclusiveUniforms.addIrisExclusiveUniforms(uniforms);
-		MatrixUniforms.addMatrixUniforms(uniforms, directives);
-		HardcodedCustomUniforms.addHardcodedCustomUniforms(uniforms, updateNotifier);
-		FogUniforms.addFogUniforms(uniforms, fogMode);
+	public static void addDynamicUniforms(DynamicUniformHolder uniforms) {
+		FogUniforms.addFogUniforms(uniforms);
 		IrisInternalUniforms.addFogUniforms(uniforms);
 
 		// TODO: OptiFine doesn't think that atlasSize is a "dynamic" uniform,
@@ -89,6 +80,12 @@ public final class CommonUniforms {
 			return ZERO_VECTOR_2i;
 		}, listener -> {});
 
+		uniforms.uniform1i("entityId", CapturedRenderingState.INSTANCE::getCurrentRenderedEntity,
+				CapturedRenderingState.INSTANCE.getEntityIdNotifier());
+
+		uniforms.uniform1i("blockEntityId", CapturedRenderingState.INSTANCE::getCurrentRenderedBlockEntity,
+				CapturedRenderingState.INSTANCE.getBlockEntityIdNotifier());
+
 		uniforms.uniform4i("blendFunc", () -> {
 			GlStateManager.BlendState blend = GlStateManagerAccessor.getBLEND();
 
@@ -100,7 +97,23 @@ public final class CommonUniforms {
 		}, StateUpdateNotifiers.blendFuncNotifier);
 
 		uniforms.uniform1i("renderStage", () -> GbufferPrograms.getCurrentPhase().ordinal(), StateUpdateNotifiers.phaseChangeNotifier);
+	}
 
+	public static void addCommonUniforms(DynamicUniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier) {
+		CommonUniforms.addNonDynamicUniforms(uniforms, idMap, directives, updateNotifier);
+		CommonUniforms.addDynamicUniforms(uniforms);
+	}
+
+	public static void addNonDynamicUniforms(UniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier) {
+		CameraUniforms.addCameraUniforms(uniforms, updateNotifier);
+		ViewportUniforms.addViewportUniforms(uniforms);
+		WorldTimeUniforms.addWorldTimeUniforms(uniforms);
+		SystemTimeUniforms.addSystemTimeUniforms(uniforms);
+		BiomeParameters.addBiomeUniforms(uniforms);
+		new CelestialUniforms(directives.getSunPathRotation()).addCelestialUniforms(uniforms);
+		IrisExclusiveUniforms.addIrisExclusiveUniforms(uniforms);
+		MatrixUniforms.addMatrixUniforms(uniforms, directives);
+		IdMapUniforms.addIdMapUniforms(uniforms, idMap);
 		CommonUniforms.generalCommonUniforms(uniforms, updateNotifier, directives);
 	}
 

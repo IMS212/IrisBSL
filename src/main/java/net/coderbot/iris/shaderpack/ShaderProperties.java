@@ -17,6 +17,7 @@ import net.coderbot.iris.gl.blending.BlendModeOverride;
 import net.coderbot.iris.shaderpack.option.ShaderPackOptions;
 import net.coderbot.iris.shaderpack.preprocessor.PropertiesPreprocessor;
 import net.coderbot.iris.shaderpack.texture.TextureStage;
+import net.coderbot.iris.uniforms.custom.CustomUniforms;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -76,6 +77,7 @@ public class ShaderProperties {
 	private final EnumMap<TextureStage, Object2ObjectMap<String, String>> customTextures = new EnumMap<>(TextureStage.class);
 	private final Object2ObjectMap<String, Object2BooleanMap<String>> explicitFlips = new Object2ObjectOpenHashMap<>();
 	private String noiseTexturePath = null;
+	CustomUniforms.Builder customUniforms = new CustomUniforms.Builder();
 	private Object2ObjectMap<String, String> conditionallyEnabledPrograms = new Object2ObjectOpenHashMap<>();
 
 	private ShaderProperties() {
@@ -245,6 +247,26 @@ public class ShaderProperties {
 					explicitFlips.computeIfAbsent(pass, _pass -> new Object2BooleanOpenHashMap<>())
 							.put(buffer, shouldFlip);
 				});
+			});
+
+			handlePassDirective("variable.", key, value, pass -> {
+				String[] parts = pass.split("\\.");
+				if(parts.length != 2){
+					Iris.logger.warn("Custom variables should take the form of `variable.<type>.<name> = <expression>. Ignoring " + key);
+					return;
+				}
+
+				customUniforms.addVariable(parts[0], parts[1], value, false);
+			});
+
+			handlePassDirective("uniform.", key, value, pass -> {
+				String[] parts = pass.split("\\.");
+				if(parts.length != 2){
+					Iris.logger.warn("Custom uniforms should take the form of `uniform.<type>.<name> = <expression>. Ignoring " + key);
+					return;
+				}
+
+				customUniforms.addVariable(parts[0], parts[1], value, true);
 			});
 
 			// TODO: Buffer size directives

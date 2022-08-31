@@ -1,7 +1,9 @@
 package net.coderbot.iris.uniforms;
 
+import net.coderbot.iris.gl.uniform.UniformHolder;
+import java.util.function.IntSupplier;
+
 import it.unimi.dsi.fastutil.objects.Object2IntFunction;
-import net.coderbot.iris.gl.uniform.DynamicUniformHolder;
 import net.coderbot.iris.gl.uniform.UniformUpdateFrequency;
 import net.coderbot.iris.shaderpack.IdMap;
 import net.coderbot.iris.shaderpack.materialmap.NamespacedId;
@@ -11,6 +13,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.Map;
 import java.util.function.IntSupplier;
 
 public final class IdMapUniforms {
@@ -18,18 +21,13 @@ public final class IdMapUniforms {
 	private IdMapUniforms() {
 	}
 
-	public static void addIdMapUniforms(DynamicUniformHolder uniforms, IdMap idMap) {
+	public static void addIdMapUniforms(UniformHolder uniforms, IdMap idMap) {
 		uniforms
-			.uniform1i(UniformUpdateFrequency.PER_FRAME, "heldItemId",
-				new HeldItemSupplier(InteractionHand.MAIN_HAND, idMap.getItemIdMap()))
-			.uniform1i(UniformUpdateFrequency.PER_FRAME, "heldItemId2",
-				new HeldItemSupplier(InteractionHand.OFF_HAND, idMap.getItemIdMap()));
+				.uniform1i(UniformUpdateFrequency.PER_FRAME, "heldItemId",
+						new HeldItemSupplier(InteractionHand.MAIN_HAND, idMap.getItemIdMap()))
+				.uniform1i(UniformUpdateFrequency.PER_FRAME, "heldItemId2",
+						new HeldItemSupplier(InteractionHand.OFF_HAND, idMap.getItemIdMap()));
 
-		uniforms.uniform1i("entityId", CapturedRenderingState.INSTANCE::getCurrentRenderedEntity,
-				CapturedRenderingState.INSTANCE.getEntityIdNotifier());
-
-		uniforms.uniform1i("blockEntityId", CapturedRenderingState.INSTANCE::getCurrentRenderedBlockEntity,
-				CapturedRenderingState.INSTANCE.getBlockEntityIdNotifier());
 	}
 
 	/**
