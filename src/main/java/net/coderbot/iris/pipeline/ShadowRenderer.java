@@ -1,6 +1,7 @@
 package net.coderbot.iris.pipeline;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Matrix4f;
@@ -21,6 +22,7 @@ import net.coderbot.iris.shaderpack.ProgramSource;
 import net.coderbot.iris.shadow.ShadowMatrices;
 import net.coderbot.iris.shadows.CullingDataCache;
 import net.coderbot.iris.shadows.Matrix4fAccess;
+import net.coderbot.iris.shadows.ShadowCompositeRenderer;
 import net.coderbot.iris.shadows.ShadowRenderTargets;
 import net.coderbot.iris.shadows.frustum.BoxCuller;
 import net.coderbot.iris.shadows.frustum.CullEverythingFrustum;
@@ -69,7 +71,8 @@ public class ShadowRenderer {
 
 	private final ShadowRenderTargets targets;
 	private final OptionalBoolean packCullingState;
-	private final boolean packHasVoxelization;
+	private final ShadowCompositeRenderer compositeRenderer;
+	private boolean packHasVoxelization;
 	private final boolean shouldRenderTerrain;
 	private final boolean shouldRenderTranslucent;
 	private final boolean shouldRenderEntities;
@@ -87,9 +90,12 @@ public class ShadowRenderer {
 	private int renderedShadowBlockEntities = 0;
 
 	private final CustomUniforms customUniforms;
+	private final ImmutableSet<Integer> flipped;
 
 	public ShadowRenderer(ProgramSource shadow, PackDirectives directives,
-						  ShadowRenderTargets shadowRenderTargets, boolean shadowUsesImages, CustomUniforms customUniforms) {
+						  ShadowRenderTargets shadowRenderTargets, boolean shadowUsesImages, CustomUniforms customUniforms, ShadowCompositeRenderer compositeRenderer) {
+
+		this.flipped = ImmutableSet.of();
 
 		this.customUniforms = customUniforms;
 
@@ -106,6 +112,8 @@ public class ShadowRenderer {
 		this.shouldRenderPlayer = shadowDirectives.shouldRenderPlayer();
 		this.shouldRenderBlockEntities = shadowDirectives.shouldRenderBlockEntities();
 
+		this.compositeRenderer = compositeRenderer;
+
 		debugStringOverall = "half plane = " + halfPlaneLength + " meters @ " + resolution + "x" + resolution;
 
 		this.terrainFrustumHolder = new FrustumHolder();
@@ -117,7 +125,7 @@ public class ShadowRenderer {
 		if (shadow != null) {
 			// Assume that the shader pack is doing voxelization if a geometry shader is detected.
 			// Also assume voxelization if image load / store is detected.
-			this.packHasVoxelization = shadow.getGeometrySource().isPresent() || shadowUsesImages;
+			this.packHasVoxelization = shadow.getGeometrySource().isPresent();
 			this.packCullingState = shadowDirectives.getCullingState();
 		} else {
 			this.packHasVoxelization = false;
@@ -135,6 +143,10 @@ public class ShadowRenderer {
 		}
 
 		configureSamplingSettings(shadowDirectives);
+	}
+
+	public void setUsesImages(boolean usesImages) {
+		this.packHasVoxelization = packHasVoxelization || usesImages;
 	}
 
 	public static PoseStack createShadowModelView(float sunPathRotation, float intervalSize) {
@@ -196,7 +208,7 @@ public class ShadowRenderer {
 		configureDepthSampler(targets.getDepthTextureNoTranslucents().getTextureId(), depthSamplingSettings.get(1));
 
 		for (int i = 0; i < colorSamplingSettings.size(); i++) {
-			int glTextureId = targets.getColorTextureId(i);
+			int glTextureId = targets.get(i).getMainTexture();
 
 			RenderSystem.bindTexture(glTextureId);
 			configureSampler(glTextureId, colorSamplingSettings.get(i));
@@ -525,6 +537,8 @@ public class ShadowRenderer {
 			((CullingDataCache) levelRenderer).restoreState();
 		}
 
+		compositeRenderer.renderAll();
+
 		levelRenderer.setRenderBuffers(playerBuffers);
 
 		visibleBlockEntities = null;
@@ -660,6 +674,10 @@ public class ShadowRenderer {
 	public void destroy() {
 		targets.destroy();
 		((MemoryTrackingRenderBuffers) buffers).freeAndDeleteBuffers();
+	}
+
+	public ImmutableSet<Integer> flipped() {
+		return flipped;
 	}
 
 	private static class MipmapPass {
