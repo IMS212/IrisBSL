@@ -10,6 +10,5 @@ public class StateUpdateNotifiers {
 	public static ValueUpdateNotifier fogStartNotifier;
 	public static ValueUpdateNotifier fogEndNotifier;
 	public static ValueUpdateNotifier blendFuncNotifier;
-	public static ValueUpdateNotifier bindTextureNotifier;
 	public static ValueUpdateNotifier phaseChangeNotifier;
 }

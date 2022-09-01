@@ -156,6 +156,10 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 			name = "iris_overlay";
 		} else if (name.equals("Sampler2")) {
 			name = "lightmap";
+		} else if (name.equals("Sampler3")) {
+			name = "normals";
+		} else if (name.equals("Sampler4")) {
+			name = "specular";
 		} else if (name.startsWith("Sampler")) {
 			// We only care about the texture, lightmap, and overlay for now from vanilla.
 			// All other samplers will be coming from Iris.
@@ -178,7 +182,9 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 	// TODO: This is kind of a mess. The interface might need some cleanup here.
 	@Override
 	public void addExternalSampler(int textureUnit, String... names) {
-		throw new UnsupportedOperationException("not yet implemented");
+		for (String name : names) {
+			addIrisSampler(name, textureUnit);
+		}
 	}
 
 	@Override

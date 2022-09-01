@@ -18,6 +18,16 @@ import java.nio.IntBuffer;
 public class IrisRenderSystem {
 	private static Matrix4f backupProjection;
 
+	private static boolean lockParameters;
+
+	public static void lockParameters(boolean locked) {
+		lockParameters = locked;
+	}
+
+	public static boolean areParametersLocked() {
+		return lockParameters;
+	}
+
 	public static void getIntegerv(int pname, int[] params) {
 		RenderSystem.assertOnRenderThreadOrInit();
 		GL32C.glGetIntegerv(pname, params);

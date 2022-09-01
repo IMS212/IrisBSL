@@ -3,10 +3,8 @@ package net.coderbot.iris.compat.sodium.impl.shader_overrides;
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.jellysquid.mods.sodium.client.gl.buffer.GlMutableBuffer;
 import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformBlock;
-import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformFloat;
 import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformFloat3v;
 import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformMatrix4f;
-import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
 import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramSamplers;
@@ -71,6 +69,10 @@ public class IrisChunkShaderInterface {
 		RenderSystem.bindTexture(RenderSystem.getShaderTexture(0));
 		RenderSystem.activeTexture(GL32C.GL_TEXTURE0 + IrisSamplers.LIGHTMAP_TEXTURE_UNIT);
 		RenderSystem.bindTexture(RenderSystem.getShaderTexture(2));
+		RenderSystem.activeTexture(GL32C.GL_TEXTURE0 + IrisSamplers.NORMALS_TEXTURE_UNIT);
+		RenderSystem.bindTexture(RenderSystem.getShaderTexture(3));
+		RenderSystem.activeTexture(GL32C.GL_TEXTURE0 + IrisSamplers.SPECULAR_TEXTURE_UNIT);
+		RenderSystem.bindTexture(RenderSystem.getShaderTexture(4));
 
 		if (blendModeOverride != null) {
 			blendModeOverride.apply();
