@@ -108,6 +108,10 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 			setSampler("Sampler2", parent.getWhitePixel().getId());
 		}
 
+		if (!inputs.hasOverlay()) {
+			setSampler("Sampler1", parent.getWhitePixel().getId());
+		}
+
 		super.apply();
 		uniforms.update();
 		customUniforms.push(this);

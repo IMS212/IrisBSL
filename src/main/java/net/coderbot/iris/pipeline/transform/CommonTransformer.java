@@ -186,21 +186,12 @@ public class CommonTransformer {
 			}
 			replaceExpressions.clear();
 			replaceIndexes.clear();
-			tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_FUNCTIONS,
-				"uniform float iris_currentAlphaTest;");
 			// insert alpha test for vec4 outs in the fragment shader
 			if (parameters.getAlphaTest() != AlphaTest.ALWAYS) {
-				CompoundStatement mainBody = tree.getMainDefinitionBody();
-				for (DeclarationExternalDeclaration declaration : root.nodeIndex.get(DeclarationExternalDeclaration.class)) {
-					if (out4VectorDeclaration.matchesExtract(declaration)) {
-						for (DeclarationMember member : out4VectorDeclaration
-								.getNodeMatch("name*", DeclarationMember.class)
-								.getAncestor(TypeAndInitDeclaration.class)
-								.getMembers()) {
-							mainBody.getChildren().add(alphaTestStatement.getInstanceFor(tree,
-									member.getName().cloneInto(root)));
-						}
-					}
+				if (root.identifierIndex.has("iris_FragData0")) {
+					tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_FUNCTIONS,
+						"uniform float iris_currentAlphaTest;");
+					tree.appendMain(t, parameters.getAlphaTest().toExpression("iris_FragData0.a", "iris_currentAlphaTest", "	"));
 				}
 			}
 		}
@@ -217,9 +208,13 @@ public class CommonTransformer {
 			}
 		}
 
-		// addition: rename all uses of texture to gtexture if it's *not* used as a
+		// addition: rename all uses of texture or gcolor to gtexture if it's *not* used as a
 		// function call
 		root.process(root.identifierIndex.getStream("texture")
+				.filter(id -> !(id.getParent() instanceof FunctionCallExpression)),
+				id -> id.setName("gtexture"));
+
+		root.process(root.identifierIndex.getStream("gcolor")
 				.filter(id -> !(id.getParent() instanceof FunctionCallExpression)),
 				id -> id.setName("gtexture"));
 
