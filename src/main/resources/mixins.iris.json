@@ -45,6 +45,7 @@
     "MixinTheEndPortalRenderer",
     "MixinTitleScreen",
     "MixinTweakFarPlane",
+    "MixinLightTexture",
     "MixinWindow",
     "MixinSystemReport",
     "MixinUniform",

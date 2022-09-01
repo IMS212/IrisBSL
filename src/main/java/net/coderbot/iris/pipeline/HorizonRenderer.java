@@ -63,9 +63,12 @@ public class HorizonRenderer {
 		// Build the horizon quads into a buffer
 		builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
 		buildHorizon(builder);
-		builder.end();
+		BufferBuilder.RenderedBuffer renderedBuffer = builder.end();
 
-		buffer.upload(builder);
+		buffer.bind();
+		buffer.upload(renderedBuffer);
+		VertexBuffer.unbind();
+
 	}
 
 	private void buildQuad(VertexConsumer consumer, double x1, double z1, double x2, double z2) {
@@ -177,6 +180,8 @@ public class HorizonRenderer {
 		}
 
 		// Despite the name, this actually dispatches the draw call using the specified shader.
+		buffer.bind();
 		buffer.drawWithShader(modelView, projection, shader);
+		VertexBuffer.unbind();
 	}
 }

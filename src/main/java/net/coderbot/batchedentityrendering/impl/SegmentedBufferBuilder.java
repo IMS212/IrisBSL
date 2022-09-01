@@ -10,19 +10,20 @@ import net.minecraft.client.renderer.RenderType;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class SegmentedBufferBuilder implements MultiBufferSource, MemoryTrackingBuffer {
     private final BufferBuilder buffer;
-    private final List<RenderType> usedTypes;
     private RenderType currentType;
+	private List<BufferSegment> buffers;
 
     public SegmentedBufferBuilder() {
         // 2 MB initial allocation
         this.buffer = new BufferBuilder(512 * 1024);
-        this.usedTypes = new ArrayList<>(256);
-
+		this.buffers = new ArrayList<>();
         this.currentType = null;
     }
 
@@ -34,8 +35,7 @@ public class SegmentedBufferBuilder implements MultiBufferSource, MemoryTracking
                     buffer.setQuadSortOrigin(0, 0, 0);
                 }
 
-                buffer.end();
-                usedTypes.add(currentType);
+                buffers.add(new BufferSegment(buffer.end(), currentType));
             }
 
             buffer.begin(renderType.mode(), renderType.format());
@@ -59,29 +59,19 @@ public class SegmentedBufferBuilder implements MultiBufferSource, MemoryTracking
             return Collections.emptyList();
         }
 
-        usedTypes.add(currentType);
-
         if (shouldSortOnUpload(currentType)) {
             buffer.setQuadSortOrigin(0, 0, 0);
         }
 
-        buffer.end();
-        currentType = null;
+		buffers.add(new BufferSegment(buffer.end(), currentType));
 
-        List<BufferSegment> segments = new ArrayList<>(usedTypes.size());
+		currentType = null;
 
-        for (RenderType type : usedTypes) {
-            Pair<BufferBuilder.DrawState, ByteBuffer> pair = buffer.popNextBuffer();
+		List<BufferSegment> finalSegments = new ArrayList<>(buffers);
 
-            BufferBuilder.DrawState parameters = pair.getFirst();
-            ByteBuffer slice = pair.getSecond();
+		buffers.clear();
 
-            segments.add(new BufferSegment(slice, parameters, type));
-        }
-
-        usedTypes.clear();
-
-        return segments;
+        return finalSegments;
     }
 
     private static boolean shouldSortOnUpload(RenderType type) {

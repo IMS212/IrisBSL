@@ -30,7 +30,10 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.network.chat.TranslatableComponent;
+
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.level.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
@@ -170,7 +173,7 @@ public class Iris {
 				reload();
 
 				if (instance.player != null) {
-					instance.player.displayClientMessage(new TranslatableComponent("iris.shaders.reloaded"), false);
+					instance.player.displayClientMessage(Component.translatable("iris.shaders.reloaded"), false);
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -220,14 +223,14 @@ public class Iris {
 				reload();
 
 				if (minecraft.player != null) {
-					minecraft.player.displayClientMessage(new TranslatableComponent("iris.shaders.reloaded"), false);
+					minecraft.player.displayClientMessage(Component.translatable("iris.shaders.reloaded"), false);
 				}
 
 			} catch (Exception e) {
 				logger.error("Error while reloading Shaders for Iris!", e);
 
 				if (minecraft.player != null) {
-					minecraft.player.displayClientMessage(new TranslatableComponent("iris.shaders.reloaded.failure", Throwables.getRootCause(e).getMessage()).withStyle(ChatFormatting.RED), false);
+					minecraft.player.displayClientMessage(Component.translatable("iris.shaders.reloaded.failure", Throwables.getRootCause(e).getMessage()).withStyle(ChatFormatting.RED), false);
 				}
 			}
 		} else if (toggleShadersKeybind.consumeClick()) {
@@ -237,7 +240,7 @@ public class Iris {
 				logger.error("Error while toggling shaders!", e);
 
 				if (minecraft.player != null) {
-					minecraft.player.displayClientMessage(new TranslatableComponent("iris.shaders.toggled.failure", Throwables.getRootCause(e).getMessage()).withStyle(ChatFormatting.RED), false);
+					minecraft.player.displayClientMessage(Component.translatable("iris.shaders.toggled.failure", Throwables.getRootCause(e).getMessage()).withStyle(ChatFormatting.RED), false);
 				}
 				setShadersDisabled();
 				currentPackName = "(off) [fallback, check your logs for errors]";
@@ -253,7 +256,7 @@ public class Iris {
 
 		reload();
 		if (minecraft.player != null) {
-			minecraft.player.displayClientMessage(enabled ? new TranslatableComponent("iris.shaders.toggled", currentPackName) : new TranslatableComponent("iris.shaders.disabled"), false);
+			minecraft.player.displayClientMessage(enabled ? Component.translatable("iris.shaders.toggled", currentPackName) : Component.translatable("iris.shaders.disabled"), false);
 		}
 	}
 
@@ -429,9 +432,9 @@ public class Iris {
 
 		logger.info("Debug functionality is " + (enable ? "enabled, logging will be more verbose!" : "disabled."));
 		if (Minecraft.getInstance().player != null) {
-			Minecraft.getInstance().player.displayClientMessage(new TranslatableComponent(success != 0 ? (enable ? "iris.shaders.debug.enabled" : "iris.shaders.debug.disabled") : "iris.shaders.debug.failure"), false);
+			Minecraft.getInstance().player.displayClientMessage(Component.translatable(success != 0 ? (enable ? "iris.shaders.debug.enabled" : "iris.shaders.debug.disabled") : "iris.shaders.debug.failure"), false);
 			if (success == 2) {
-				Minecraft.getInstance().player.displayClientMessage(new TranslatableComponent("iris.shaders.debug.restart"), false);
+				Minecraft.getInstance().player.displayClientMessage(Component.translatable("iris.shaders.debug.restart"), false);
 			}
 		}
 
@@ -611,9 +614,9 @@ public class Iris {
 		ClientLevel level = Minecraft.getInstance().level;
 
 		if (level != null) {
-			if (level.dimensionType().effectsLocation().equals(DimensionType.END_EFFECTS) || level.dimension().equals(net.minecraft.world.level.Level.END)) {
+			if (level.dimensionType().effectsLocation().equals(BuiltinDimensionTypes.END_EFFECTS) || level.dimension().equals(net.minecraft.world.level.Level.END)) {
 				return DimensionId.END;
-			} else if (level.dimensionType().effectsLocation().equals(DimensionType.NETHER_EFFECTS) || level.dimension().equals(net.minecraft.world.level.Level.NETHER)) {
+			} else if (level.dimensionType().effectsLocation().equals(BuiltinDimensionTypes.NETHER_EFFECTS) || level.dimension().equals(net.minecraft.world.level.Level.NETHER)) {
 				return DimensionId.NETHER;
 			} else {
 				return DimensionId.OVERWORLD;
