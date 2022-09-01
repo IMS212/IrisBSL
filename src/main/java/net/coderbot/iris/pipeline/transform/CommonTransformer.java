@@ -54,44 +54,9 @@ public class CommonTransformer {
 		}
 	};
 
-	private static final AutoHintedMatcher<ExternalDeclaration> out4VectorDeclaration = new AutoHintedMatcher<ExternalDeclaration>(
-			"out float name;", Matcher.externalDeclarationPattern) {
-		{
-			markClassWildcard("qualifier", pattern.getRoot().nodeIndex.getOne(TypeQualifier.class));
-			markClassedPredicateWildcard("type",
-					pattern.getRoot().nodeIndex.getOne(BuiltinNumericTypeSpecifier.class),
-					BuiltinNumericTypeSpecifier.class, specifier -> {
-						Type type = specifier.type;
-						return type.isVector() && type.getDimensions()[0] == 4;
-					});
-			markClassWildcard("name*", pattern.getRoot().identifierIndex.getOne("name").getAncestor(DeclarationMember.class));
-		}
-
-		@Override
-		public boolean matches(ExternalDeclaration tree) {
-			boolean result = super.matches(tree);
-			if (!result) {
-				return false;
-			}
-			TypeQualifier qualifier = getNodeMatch("qualifier", TypeQualifier.class);
-			for (TypeQualifierPart part : qualifier.getParts()) {
-				if (part instanceof StorageQualifier) {
-					StorageQualifier storageQualifier = (StorageQualifier) part;
-					if (storageQualifier.storageType == StorageType.OUT) {
-						return true;
-					}
-				}
-			}
-			return false;
-		}
-	};
-
-	private static final Template<Statement> alphaTestStatement = Template
-			.withStatement("if (__output.a < iris_currentAlphaTest) discard;");
 	private static final Template<ExternalDeclaration> fragDataDeclaration = Template
 			.withExternalDeclaration("layout (location = __index) out vec4 __name;");
 	static {
-		alphaTestStatement.markIdentifierReplacement("__output");
 		fragDataDeclaration.markLocalReplacement("__index", ReferenceExpression.class);
 		fragDataDeclaration.markIdentifierReplacement("__name");
 	}
@@ -187,12 +152,9 @@ public class CommonTransformer {
 			replaceExpressions.clear();
 			replaceIndexes.clear();
 			// insert alpha test for vec4 outs in the fragment shader
-			if (parameters.getAlphaTest() != AlphaTest.ALWAYS) {
-				if (root.identifierIndex.has("iris_FragData0")) {
-					tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_FUNCTIONS,
-						"uniform float iris_currentAlphaTest;");
-					tree.appendMain(t, parameters.getAlphaTest().toExpression("iris_FragData0.a", "iris_currentAlphaTest", "	"));
-				}
+			if (parameters.getAlphaTest() != AlphaTest.ALWAYS && root.identifierIndex.has("iris_FragData0")) {
+				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "uniform float iris_currentAlphaTest;");
+				tree.appendMain(t, parameters.getAlphaTest().toExpression("iris_FragData0.a", "iris_currentAlphaTest", "	"));
 			}
 		}
 

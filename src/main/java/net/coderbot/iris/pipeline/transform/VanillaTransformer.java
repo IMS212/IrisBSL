@@ -19,8 +19,6 @@ public class VanillaTransformer {
 		if (parameters.inputs.hasOverlay()) {
 			AttributeTransformer.patchOverlayColor(t, tree, root, parameters);
 		}
-		// this happens before common for patching gl_FragData
-
 
 		CommonTransformer.transform(t, tree, root, parameters);
 
