@@ -5,10 +5,12 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.coderbot.iris.mixin.GlStateManagerAccessor;
+import net.coderbot.iris.gl.IrisRenderSystem;
+import net.coderbot.iris.gl.texture.TextureType;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL20C;
 
-import java.nio.IntBuffer;
+import java.nio.Buffer;
 
 public class TextureInfoCache {
 	public static final TextureInfoCache INSTANCE = new TextureInfoCache();
@@ -21,20 +23,21 @@ public class TextureInfoCache {
 	public TextureInfo getInfo(int id) {
 		TextureInfo info = cache.get(id);
 		if (info == null) {
-			info = new TextureInfo(id);
+			info = new TextureInfo(TextureType.TEXTURE_2D, id);
 			cache.put(id, info);
 		}
 		return info;
 	}
 
-	public void onTexImage2D(int target, int level, int internalformat, int width, int height, int border,
-							 int format, int type, @Nullable IntBuffer pixels) {
+	public void onTexImage(int id, TextureType target, int level, int internalformat, int width, int height, int depth, int border,
+						   int format, int type, @Nullable Buffer pixels) {
 		if (level == 0) {
-			int id = RenderSystem.getTextureId(GlStateManagerAccessor.getActiveTexture());
 			TextureInfo info = getInfo(id);
+			info.type = target;
 			info.internalFormat = internalformat;
 			info.width = width;
 			info.height = height;
+			info.depth = depth;
 		}
 	}
 
@@ -44,11 +47,14 @@ public class TextureInfoCache {
 
 	public static class TextureInfo {
 		private final int id;
+		private TextureType type;
 		private int internalFormat = -1;
 		private int width = -1;
 		private int height = -1;
+		private int depth = -1;
 
-		private TextureInfo(int id) {
+		private TextureInfo(TextureType type, int id) {
+			this.type = type;
 			this.id = id;
 		}
 
@@ -71,24 +77,48 @@ public class TextureInfoCache {
 		}
 
 		public int getHeight() {
-			if (height == -1) {
+			if (height == -1 && type != TextureType.TEXTURE_1D) {
 				height = fetchLevelParameter(GL20C.GL_TEXTURE_HEIGHT);
 			}
 			return height;
 		}
 
+		public int getDepth() {
+			if (depth == -1 && type == TextureType.TEXTURE_3D) {
+				depth = fetchLevelParameter(GL20C.GL_TEXTURE_DEPTH);
+			}
+			return depth;
+		}
+
 		private int fetchLevelParameter(int pname) {
 			// Keep track of what texture was bound before
-			int previousTextureBinding = GlStateManager._getInteger(GL20C.GL_TEXTURE_BINDING_2D);
+			int previousTextureBinding = GlStateManager._getInteger(getBinding());
 
 			// Bind this texture and grab the parameter from it.
-			GlStateManager._bindTexture(id);
-			int parameter = GlStateManager._getTexLevelParameter(GL20C.GL_TEXTURE_2D, 0, pname);
+			IrisRenderSystem.bindTexture(getType().getGlType(), id);
+			int parameter = GlStateManager._getTexLevelParameter(getType().getGlType(), 0, pname);
 
 			// Make sure to re-bind the previous texture to avoid issues.
-			GlStateManager._bindTexture(previousTextureBinding);
+			IrisRenderSystem.bindTexture(getType().getGlType(), previousTextureBinding);
 
 			return parameter;
+		}
+
+		public int getBinding() {
+			switch (getType()) {
+				case TEXTURE_1D:
+					return GL20C.GL_TEXTURE_BINDING_1D;
+				case TEXTURE_2D:
+					return GL20C.GL_TEXTURE_BINDING_2D;
+				case TEXTURE_3D:
+					return GL20C.GL_TEXTURE_BINDING_3D;
+				default:
+					throw new IllegalStateException("Unsupported texture type: " + getType());
+			}
+		}
+
+		public TextureType getType() {
+			return type;
 		}
 	}
 }

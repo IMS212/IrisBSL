@@ -4,6 +4,9 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.coderbot.iris.Iris;
+import net.coderbot.iris.gl.texture.GlTexture;
+import net.coderbot.iris.gl.texture.TextureType;
+import net.coderbot.iris.gl.texture.TextureUploadHelper;
 import net.coderbot.iris.mixin.LightTextureAccessor;
 import net.coderbot.iris.rendertarget.NativeImageBackedCustomTexture;
 import net.coderbot.iris.rendertarget.NativeImageBackedNoiseTexture;
@@ -38,10 +41,13 @@ public class CustomTextureManager {
 	 * Make sure any textures added to this list call releaseId from the close method.
 	 */
 	private final List<AbstractTexture> ownedTextures = new ArrayList<>();
+	private final List<GlTexture> ownedRawTextures = new ArrayList<>();
 
 	public CustomTextureManager(PackDirectives packDirectives,
 								EnumMap<TextureStage, Object2ObjectMap<String, CustomTextureData>> customTextureDataMap,
 								Optional<CustomTextureData> customNoiseTextureData) {
+		TextureUploadHelper.resetTextureUploadState();
+
 		customTextureDataMap.forEach((textureStage, customTextureStageDataMap) -> {
 			Object2ObjectMap<String, IntSupplier> customTextureIds = new Object2ObjectOpenHashMap<>();
 
@@ -87,6 +93,24 @@ public class CustomTextureManager {
 			return () ->
 				((LightTextureAccessor) Minecraft.getInstance().gameRenderer.lightTexture())
 					.getLightTexture().getId();
+		} else if (textureData instanceof CustomTextureData.RawData1D) {
+			CustomTextureData.RawData1D rawData1D = (CustomTextureData.RawData1D) textureData;
+			GlTexture texture = new GlTexture(TextureType.TEXTURE_1D, rawData1D.getFilteringData().shouldBlur(), rawData1D.getFilteringData().shouldClamp(), rawData1D.getSizeX(), 0, 0, rawData1D.getInternalFormat(), rawData1D.getPixelFormat(), rawData1D.getPixelType(), rawData1D.getContent());
+			ownedRawTextures.add(texture);
+
+			return texture::getId;
+		} else if (textureData instanceof CustomTextureData.RawData2D) {
+			CustomTextureData.RawData2D rawData2D = (CustomTextureData.RawData2D) textureData;
+			GlTexture texture = new GlTexture(TextureType.TEXTURE_2D, rawData2D.getFilteringData().shouldBlur(), rawData2D.getFilteringData().shouldClamp(), rawData2D.getSizeX(), rawData2D.getSizeY(), 0, rawData2D.getInternalFormat(), rawData2D.getPixelFormat(), rawData2D.getPixelType(), rawData2D.getContent());
+			ownedRawTextures.add(texture);
+
+			return texture::getId;
+		} else if (textureData instanceof CustomTextureData.RawData3D) {
+			CustomTextureData.RawData3D rawData3D = (CustomTextureData.RawData3D) textureData;
+			GlTexture texture = new GlTexture(TextureType.TEXTURE_3D, rawData3D.getFilteringData().shouldBlur(), rawData3D.getFilteringData().shouldClamp(), rawData3D.getSizeX(), rawData3D.getSizeY(), rawData3D.getSizeZ(), rawData3D.getInternalFormat(), rawData3D.getPixelFormat(), rawData3D.getPixelType(), rawData3D.getContent());
+			ownedRawTextures.add(texture);
+
+			return texture::getId;
 		} else if (textureData instanceof CustomTextureData.ResourceData) {
 			CustomTextureData.ResourceData resourceData = (CustomTextureData.ResourceData) textureData;
 			String namespace = resourceData.getNamespace();
@@ -156,5 +180,6 @@ public class CustomTextureManager {
 
 	public void destroy() {
 		ownedTextures.forEach(AbstractTexture::close);
+		ownedRawTextures.forEach(GlTexture::destroy);
 	}
 }

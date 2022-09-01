@@ -5,11 +5,16 @@ import com.google.common.collect.ImmutableSet;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import net.coderbot.iris.Iris;
+import net.coderbot.iris.gl.IrisRenderSystem;
 import net.coderbot.iris.gl.sampler.SamplerBinding;
 import net.coderbot.iris.gl.sampler.SamplerHolder;
 import net.coderbot.iris.gl.sampler.SamplerLimits;
+import net.coderbot.iris.gl.texture.TextureType;
 import net.coderbot.iris.mixin.GlStateManagerAccessor;
 import net.coderbot.iris.shaderpack.PackRenderTargetDirectives;
+import net.coderbot.iris.texture.TextureInfoCache;
+import net.coderbot.iris.texture.TextureTracker;
 import org.lwjgl.opengl.GL20C;
 
 import java.util.ArrayList;
@@ -126,7 +131,7 @@ public class ProgramSamplers {
 				throw new IllegalStateException("Texture unit 0 is already used.");
 			}
 
-			return addDynamicSampler(sampler, true, names);
+			return addDynamicSampler(TextureType.TEXTURE_2D, sampler, true, names);
 		}
 
 		/**
@@ -135,10 +140,15 @@ public class ProgramSamplers {
 		 */
 		@Override
 		public boolean addDynamicSampler(IntSupplier sampler, String... names) {
-			return addDynamicSampler(sampler, false, names);
+			return addDynamicSampler(TextureType.TEXTURE_2D, sampler, false, names);
 		}
 
-		private boolean addDynamicSampler(IntSupplier sampler, boolean used, String... names) {
+		@Override
+		public boolean addDynamicSampler(TextureType type, IntSupplier sampler, String... names) {
+			return addDynamicSampler(type, sampler, false, names);
+		}
+
+		private boolean addDynamicSampler(TextureType type, IntSupplier sampler, boolean used, String... names) {
 			for (String name : names) {
 				int location = GlStateManager._glGetUniformLocation(program, name);
 
@@ -165,7 +175,7 @@ public class ProgramSamplers {
 				return false;
 			}
 
-			samplers.add(new SamplerBinding(nextUnit, sampler));
+			samplers.add(new SamplerBinding(nextUnit, type, sampler));
 
 			remainingUnits -= 1;
 			nextUnit += 1;
@@ -247,7 +257,18 @@ public class ProgramSamplers {
 		public boolean addDynamicSampler(IntSupplier sampler, String... names) {
 			sampler = getOverride(sampler, names);
 
-			return samplerHolder.addDynamicSampler(sampler, names);
+			TextureType type = TextureInfoCache.INSTANCE.getInfo(sampler.getAsInt()).getType();
+
+			return samplerHolder.addDynamicSampler(type, sampler, names);
+		}
+
+		@Override
+		public boolean addDynamicSampler(TextureType type, IntSupplier sampler, String... names) {
+			sampler = getOverride(sampler, names);
+
+			type = TextureInfoCache.INSTANCE.getInfo(sampler.getAsInt()).getType();
+
+			return samplerHolder.addDynamicSampler(type, sampler, names);
 		}
 	}
 }

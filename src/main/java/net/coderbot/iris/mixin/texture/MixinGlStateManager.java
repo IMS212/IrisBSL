@@ -1,6 +1,7 @@
 package net.coderbot.iris.mixin.texture;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import net.coderbot.iris.gl.texture.TextureType;
 import net.coderbot.iris.texture.TextureInfoCache;
 import net.coderbot.iris.texture.TextureTracker;
 import net.coderbot.iris.texture.pbr.PBRTextureManager;
@@ -18,7 +19,7 @@ public class MixinGlStateManager {
 	@Inject(method = "_texImage2D(IIIIIIIILjava/nio/IntBuffer;)V", at = @At("TAIL"), remap = false)
 	private static void iris$onTexImage2D(int target, int level, int internalformat, int width, int height, int border,
 										  int format, int type, @Nullable IntBuffer pixels, CallbackInfo ci) {
-		TextureInfoCache.INSTANCE.onTexImage2D(target, level, internalformat, width, height, border, format, type, pixels);
+		TextureInfoCache.INSTANCE.onTexImage(GlStateManager.getActiveTextureName(), TextureType.TEXTURE_2D, level, internalformat, width, height, 0, border, format, type, pixels);
 	}
 
 	@Inject(method = "_deleteTexture(I)V", at = @At("TAIL"), remap = false)
