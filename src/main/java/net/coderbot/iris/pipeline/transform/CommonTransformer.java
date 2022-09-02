@@ -228,11 +228,6 @@ public class CommonTransformer {
 					"Transforming a shader that is already built against the core profile???");
 		}
 		if (versionStatement.version.number >= 200) {
-			if (profile != Profile.COMPATIBILITY) {
-				throw new IllegalStateException(
-						"Expected \"compatibility\" after the GLSL version: #version " + versionStatement.version + " "
-								+ profile);
-			}
 			versionStatement.profile = Profile.CORE;
 		} else {
 			versionStatement.version = Version.GL33;

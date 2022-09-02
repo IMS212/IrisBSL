@@ -87,7 +87,6 @@ public class ShadowRenderer {
 	private final RenderBuffersExt renderBuffersExt;
 	private final List<MipmapPass> mipmapPasses = new ArrayList<>();
 	private final String debugStringOverall;
-	private final ComputeProgram[] computePrograms;
 	private FrustumHolder terrainFrustumHolder;
 	private FrustumHolder entityFrustumHolder;
 	private String debugStringTerrain = "(unavailable)";
@@ -97,13 +96,12 @@ public class ShadowRenderer {
 	private final CustomUniforms customUniforms;
 	private final ImmutableSet<Integer> flipped;
 
-	public ShadowRenderer(ProgramSource shadow, ComputeProgram[] compute, PackDirectives directives,
+	public ShadowRenderer(ProgramSource shadow, PackDirectives directives,
 						  ShadowRenderTargets shadowRenderTargets, boolean shadowUsesImages, CustomUniforms customUniforms, ShadowCompositeRenderer compositeRenderer) {
 
 		this.flipped = ImmutableSet.of();
 
 		this.customUniforms = customUniforms;
-		this.computePrograms = compute;
 
 		final PackShadowDirectives shadowDirectives = directives.getShadowDirectives();
 

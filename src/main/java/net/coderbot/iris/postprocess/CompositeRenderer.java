@@ -158,6 +158,9 @@ public class CompositeRenderer {
 
 	public void recalculateSizes() {
 		for (Pass pass : passes) {
+			if (pass instanceof ComputeOnlyPass) {
+				continue;
+			}
 			int passWidth = 0, passHeight = 0;
 			for (int buffer : pass.drawBuffers) {
 				RenderTarget target = renderTargets.get(buffer);
@@ -211,19 +214,22 @@ public class CompositeRenderer {
 		FullScreenQuadRenderer.INSTANCE.begin();
 
 		for (Pass renderPass : passes) {
+			float scaledWidth = renderPass.viewWidth * renderPass.viewportScale;
+			float scaledHeight = renderPass.viewHeight * renderPass.viewportScale;
+
 			for (ComputeProgram computeProgram : renderPass.computes) {
 				if (computeProgram != null) {
-					computeProgram.dispatch(baseWidth, baseHeight);
+						computeProgram.dispatch(Minecraft.getInstance().getMainRenderTarget().width, Minecraft.getInstance().getMainRenderTarget().height);
+
 				}
 			}
-
 			IrisRenderSystem.memoryBarrier(40);
-
 			Program.unbind();
-
 			if (renderPass instanceof ComputeOnlyPass) {
 				continue;
 			}
+
+			RenderSystem.viewport(0, 0, (int) scaledWidth, (int) scaledHeight);
 
 			if (!renderPass.mipmappedBuffers.isEmpty()) {
 				RenderSystem.activeTexture(GL15C.GL_TEXTURE0);
@@ -232,10 +238,6 @@ public class CompositeRenderer {
 					setupMipmapping(CompositeRenderer.this.renderTargets.get(index), renderPass.stageReadsFromAlt.contains(index));
 				}
 			}
-
-			float scaledWidth = renderPass.viewWidth * renderPass.viewportScale;
-			float scaledHeight = renderPass.viewHeight * renderPass.viewportScale;
-			RenderSystem.viewport(0, 0, (int) scaledWidth, (int) scaledHeight);
 
 			renderPass.framebuffer.bind();
 			renderPass.program.use();
@@ -343,12 +345,14 @@ public class CompositeRenderer {
 			if (source == null || !source.getSource().isPresent()) {
 				continue;
 			} else {
+				Map<PatchShaderType, String> transformed = TransformPatcher.patchCompositeCompute(source.getSource().get());
+				String compute2 = transformed.get(PatchShaderType.COMPUTE);
 				// TODO: Properly handle empty shaders
 				Objects.requireNonNull(flipped);
 				ProgramBuilder builder;
 
 				try {
-					builder = ProgramBuilder.beginCompute(source.getName(), source.getSource().orElse(null), IrisSamplers.COMPOSITE_RESERVED_TEXTURE_UNITS);
+					builder = ProgramBuilder.beginCompute(source.getName(), compute2, IrisSamplers.COMPOSITE_RESERVED_TEXTURE_UNITS);
 				} catch (RuntimeException e) {
 					// TODO: Better error handling
 					throw new RuntimeException("Shader compilation failed!", e);
@@ -356,7 +360,7 @@ public class CompositeRenderer {
 
 				ProgramSamplers.CustomTextureSamplerInterceptor customTextureSamplerInterceptor = ProgramSamplers.customTextureSamplerInterceptor(builder, customTextureIds, flippedAtLeastOnceSnapshot);
 
-				CommonUniforms.addCommonUniforms(builder, source.getParent().getPack().getIdMap(), source.getParent().getPackDirectives(), updateNotifier);
+				CommonUniforms.addCommonUniforms(builder, source.getParent().getPack().getIdMap(), source.getParent().getPackDirectives(), updateNotifier, FogMode.OFF);
 				IrisSamplers.addRenderTargetSamplers(customTextureSamplerInterceptor, () -> flipped, renderTargets, true);
 				IrisImages.addRenderTargetImages(builder, () -> flipped, renderTargets);
 
@@ -364,8 +368,8 @@ public class CompositeRenderer {
 				IrisSamplers.addCompositeSamplers(customTextureSamplerInterceptor, renderTargets);
 
 				if (IrisSamplers.hasShadowSamplers(customTextureSamplerInterceptor)) {
-					IrisSamplers.addShadowSamplers(customTextureSamplerInterceptor, shadowTargetsSupplier.get());
-					IrisImages.addShadowColorImages(builder, shadowTargetsSupplier.get());
+					IrisSamplers.addShadowSamplers(customTextureSamplerInterceptor, shadowTargetsSupplier.get(), null);
+					IrisImages.addShadowColorImages(builder, shadowTargetsSupplier.get(), null);
 				}
 
 				// TODO: Don't duplicate this with FinalPassRenderer

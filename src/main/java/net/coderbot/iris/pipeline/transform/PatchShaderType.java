@@ -6,7 +6,8 @@ public enum PatchShaderType {
 	VERTEX(ShaderType.VERTEX),
 	GEOMETRY(ShaderType.GEOMETRY),
 	FRAGMENT(ShaderType.FRAGMENT),
-	FRAGMENT_CUTOUT(ShaderType.FRAGMENT);
+	FRAGMENT_CUTOUT(ShaderType.FRAGMENT),
+	COMPUTE(ShaderType.COMPUTE);
 
 	public final ShaderType glShaderType;
 
@@ -22,6 +23,8 @@ public enum PatchShaderType {
 			return new PatchShaderType[] { GEOMETRY };
 		case FRAGMENT:
 			return new PatchShaderType[] { FRAGMENT, FRAGMENT_CUTOUT };
+			case COMPUTE:
+				return new PatchShaderType[] { COMPUTE};
 		default:
 			throw new IllegalArgumentException("Unknown shader type: " + glShaderType);
 		}

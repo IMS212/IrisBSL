@@ -6,8 +6,10 @@ import com.google.common.collect.ImmutableSet;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import kroppeb.stareval.function.Type;
 import net.coderbot.iris.gl.IrisRenderSystem;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
+import net.coderbot.iris.gl.program.ComputeProgram;
 import net.coderbot.iris.gl.program.Program;
 import net.coderbot.iris.gl.program.ProgramBuilder;
 import net.coderbot.iris.gl.program.ProgramSamplers;
@@ -19,11 +21,13 @@ import net.coderbot.iris.pipeline.transform.PatchShaderType;
 import net.coderbot.iris.pipeline.transform.TransformPatcher;
 import net.coderbot.iris.postprocess.BufferFlipper;
 import net.coderbot.iris.postprocess.CenterDepthSampler;
+import net.coderbot.iris.postprocess.CompositeRenderer;
 import net.coderbot.iris.postprocess.FullScreenQuadRenderer;
 import net.coderbot.iris.rendertarget.RenderTarget;
 import net.coderbot.iris.rendertarget.RenderTargets;
 import net.coderbot.iris.samplers.IrisImages;
 import net.coderbot.iris.samplers.IrisSamplers;
+import net.coderbot.iris.shaderpack.ComputeSource;
 import net.coderbot.iris.shaderpack.PackDirectives;
 import net.coderbot.iris.shaderpack.PackRenderTargetDirectives;
 import net.coderbot.iris.shaderpack.ProgramDirectives;
@@ -51,14 +55,16 @@ public class ShadowCompositeRenderer {
 	private final ImmutableSet<Integer> flippedAtLeastOnceFinal;
 	private final GlFramebuffer baseline;
 	private ImmutableList<SwapPass> swapPasses;
+	private RenderTargets gbufferTargets;
 
-	public ShadowCompositeRenderer(PackDirectives packDirectives, ProgramSource[] sources, ShadowRenderTargets renderTargets,
-								   IntSupplier noiseTexture, FrameUpdateNotifier updateNotifier,
+	public ShadowCompositeRenderer(PackDirectives packDirectives, ProgramSource[] sources, ImmutableSet<Integer> flippedBeforeShadow, ComputeSource[][] computePrograms, ShadowRenderTargets renderTargets,
+								   IntSupplier noiseTexture, FrameUpdateNotifier updateNotifier, RenderTargets gbufferTargets,
 								   Object2ObjectMap<String, IntSupplier> customTextureIds, ImmutableMap<Integer, Boolean> explicitPreFlips) {
 		this.noiseTexture = noiseTexture;
 		this.updateNotifier = updateNotifier;
 		this.renderTargets = renderTargets;
 		this.customTextureIds = customTextureIds;
+		this.gbufferTargets = gbufferTargets;
 
 		final PackRenderTargetDirectives renderTargetDirectives = packDirectives.getRenderTargetDirectives();
 		final Map<Integer, PackRenderTargetDirectives.RenderTargetSettings> renderTargetSettings =
@@ -74,18 +80,28 @@ public class ShadowCompositeRenderer {
 			}
 		});
 
-		for (ProgramSource source : sources) {
+		for (int i = 0; i < sources.length; i++) {
+
+
+			ImmutableSet<Integer> flipped = renderTargets.snapshot();
+			ImmutableSet<Integer> flippedAtLeastOnceSnapshot = flippedAtLeastOnce.build();
+
+			ProgramSource source = sources[i];
 			if (source == null || !source.isValid()) {
+				if (computePrograms[i] != null) {
+					ComputeOnlyPass pass = new ComputeOnlyPass();
+					pass.computes = createComputes(computePrograms[i], flippedBeforeShadow, flipped, flippedAtLeastOnceSnapshot, renderTargets);
+					passes.add(pass);
+				}
 				continue;
 			}
 
 			Pass pass = new Pass();
 			ProgramDirectives directives = source.getDirectives();
 
-			ImmutableSet<Integer> flipped = renderTargets.snapshot();
-			ImmutableSet<Integer> flippedAtLeastOnceSnapshot = flippedAtLeastOnce.build();
+			pass.program = createProgram(source, flippedBeforeShadow, flipped, flippedAtLeastOnceSnapshot, renderTargets);
+			pass.computes = createComputes(computePrograms[i], flippedBeforeShadow, flipped, flippedAtLeastOnceSnapshot, renderTargets);
 
-			pass.program = createProgram(source, flipped, flippedAtLeastOnceSnapshot, renderTargets);
 			int[] drawBuffers = directives.getDrawBuffers();
 
 			GlFramebuffer framebuffer = renderTargets.createColorFramebuffer(flipped, drawBuffers);
@@ -147,20 +163,79 @@ public class ShadowCompositeRenderer {
 		GlStateManager._glBindFramebuffer(GL30C.GL_READ_FRAMEBUFFER, 0);
 	}
 
+	private ComputeProgram[] createComputes(ComputeSource[] compute, ImmutableSet<Integer> flipped, ImmutableSet<Integer> shadowFlipped, ImmutableSet<Integer> flippedAtLeastOnceSnapshot, ShadowRenderTargets shadowTargetsSupplier) {
+		ComputeProgram[] programs = new ComputeProgram[compute.length];
+		for (int i = 0; i < programs.length; i++) {
+			ComputeSource source = compute[i];
+			if (source == null || !source.getSource().isPresent()) {
+				continue;
+			} else {
+				Map<PatchShaderType, String> transformed = TransformPatcher.patchCompositeCompute(source.getSource().get());
+				String compute2 = transformed.get(PatchShaderType.COMPUTE);
+				// TODO: Properly handle empty shaders
+				Objects.requireNonNull(flipped);
+				ProgramBuilder builder;
+
+				try {
+					builder = ProgramBuilder.beginCompute(source.getName(), compute2, IrisSamplers.COMPOSITE_RESERVED_TEXTURE_UNITS);
+				} catch (RuntimeException e) {
+					// TODO: Better error handling
+					throw new RuntimeException("Shader compilation failed!", e);
+				}
+
+				ProgramSamplers.CustomTextureSamplerInterceptor customTextureSamplerInterceptor = ProgramSamplers.customTextureSamplerInterceptor(builder, customTextureIds, flippedAtLeastOnceSnapshot);
+
+				CommonUniforms.addCommonUniforms(builder, source.getParent().getPack().getIdMap(), source.getParent().getPackDirectives(), updateNotifier, FogMode.OFF);
+				IrisSamplers.addRenderTargetSamplers(customTextureSamplerInterceptor, () -> flipped, gbufferTargets, true);
+				IrisImages.addRenderTargetImages(builder, () -> flipped, gbufferTargets);
+
+				IrisSamplers.addNoiseSampler(customTextureSamplerInterceptor, noiseTexture);
+				IrisSamplers.addCompositeSamplers(customTextureSamplerInterceptor, gbufferTargets);
+
+					IrisSamplers.addShadowSamplers(customTextureSamplerInterceptor, shadowTargetsSupplier, shadowFlipped);
+					IrisImages.addShadowColorImages(builder, shadowTargetsSupplier, shadowFlipped);
+
+				programs[i] = builder.buildCompute();
+
+				programs[i].setWorkGroupInfo(source.getWorkGroupRelative(), source.getWorkGroups());
+			}
+		}
+
+
+		return programs;
+	}
+
 	public ImmutableSet<Integer> getFlippedAtLeastOnceFinal() {
 		return this.flippedAtLeastOnceFinal;
 	}
 
-	private static final class Pass {
+	private class Pass {
 		Program program;
 		GlFramebuffer framebuffer;
+		ComputeProgram[] computes;
 		ImmutableSet<Integer> flippedAtLeastOnce;
 		ImmutableSet<Integer> stageReadsFromAlt;
 		ImmutableSet<Integer> mipmappedBuffers;
 		float viewportScale;
 
-		private void destroy() {
+		protected void destroy() {
 			this.program.destroy();
+			for (ComputeProgram compute : this.computes) {
+				if (compute != null) {
+					compute.destroy();
+				}
+			}
+		}
+	}
+
+	private class ComputeOnlyPass extends Pass {
+		@Override
+		protected void destroy() {
+			for (ComputeProgram compute : this.computes) {
+				if (compute != null) {
+					compute.destroy();
+				}
+			}
 		}
 	}
 
@@ -175,6 +250,25 @@ public class ShadowCompositeRenderer {
 		FullScreenQuadRenderer.INSTANCE.begin();
 
 		for (Pass renderPass : passes) {
+
+
+			float scaledWidth = renderTargets.getResolution() * renderPass.viewportScale;
+			float scaledHeight = renderTargets.getResolution() * renderPass.viewportScale;
+			RenderSystem.viewport(0, 0, (int) scaledWidth, (int) scaledHeight);
+			for (ComputeProgram computeProgram : renderPass.computes) {
+				if (computeProgram != null) {
+					computeProgram.dispatch(scaledWidth, scaledHeight);
+				}
+			}
+
+			IrisRenderSystem.memoryBarrier(40);
+
+			Program.unbind();
+
+			if (renderPass instanceof ComputeOnlyPass) {
+				continue;
+			}
+
 			if (!renderPass.mipmappedBuffers.isEmpty()) {
 				RenderSystem.activeTexture(GL15C.GL_TEXTURE0);
 
@@ -182,11 +276,6 @@ public class ShadowCompositeRenderer {
 					setupMipmapping(renderTargets.get(index), renderPass.stageReadsFromAlt.contains(index));
 				}
 			}
-
-			float scaledWidth = renderTargets.getResolution() * renderPass.viewportScale;
-			float scaledHeight = renderTargets.getResolution() * renderPass.viewportScale;
-			RenderSystem.viewport(0, 0, (int) scaledWidth, (int) scaledHeight);
-
 			renderPass.framebuffer.bind();
 			renderPass.program.use();
 
@@ -253,7 +342,7 @@ public class ShadowCompositeRenderer {
 	}
 
 	// TODO: Don't just copy this from DeferredWorldRenderingPipeline
-	private Program createProgram(ProgramSource source, ImmutableSet<Integer> flipped, ImmutableSet<Integer> flippedAtLeastOnceSnapshot,
+	private Program createProgram(ProgramSource source, ImmutableSet<Integer> flipped, ImmutableSet<Integer> shadowFlipped, ImmutableSet<Integer> flippedAtLeastOnceSnapshot,
 														   ShadowRenderTargets targets) {
 		// TODO: Properly handle empty shaders
 		Map<PatchShaderType, String> transformed = TransformPatcher.patchComposite(
@@ -279,11 +368,15 @@ public class ShadowCompositeRenderer {
 		ProgramSamplers.CustomTextureSamplerInterceptor customTextureSamplerInterceptor = ProgramSamplers.customTextureSamplerInterceptor(builder, customTextureIds, flippedAtLeastOnceSnapshot);
 
 		CommonUniforms.addCommonUniforms(builder, source.getParent().getPack().getIdMap(), source.getParent().getPackDirectives(), updateNotifier, FogMode.OFF);
+		IrisSamplers.addRenderTargetSamplers(customTextureSamplerInterceptor, () -> flipped, gbufferTargets, true);
+		IrisImages.addRenderTargetImages(builder, () -> flipped, gbufferTargets);
 
 		IrisSamplers.addNoiseSampler(customTextureSamplerInterceptor, noiseTexture);
+		IrisSamplers.addCompositeSamplers(customTextureSamplerInterceptor, gbufferTargets);
 
-		IrisSamplers.addShadowSamplers(customTextureSamplerInterceptor, targets, flipped);
-		IrisImages.addShadowColorImages(builder, targets, flipped);
+		IrisSamplers.addShadowSamplers(customTextureSamplerInterceptor, renderTargets, shadowFlipped);
+		IrisImages.addShadowColorImages(builder, renderTargets, shadowFlipped);
+
 
 		return builder.build();
 	}
