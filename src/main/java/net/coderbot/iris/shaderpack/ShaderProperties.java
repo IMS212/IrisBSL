@@ -69,6 +69,7 @@ public class ShaderProperties {
 	private OptionalBoolean backFaceCutoutMipped = OptionalBoolean.DEFAULT;
 	private OptionalBoolean backFaceTranslucent = OptionalBoolean.DEFAULT;
 	private OptionalBoolean rainDepth = OptionalBoolean.DEFAULT;
+	private OptionalBoolean concurrentCompute = OptionalBoolean.DEFAULT;
 	private OptionalBoolean beaconBeamDepth = OptionalBoolean.DEFAULT;
 	private OptionalBoolean separateAo = OptionalBoolean.DEFAULT;
 	private OptionalBoolean frustumCulling = OptionalBoolean.DEFAULT;
@@ -149,6 +150,7 @@ public class ShaderProperties {
 			handleBooleanDirective(key, value, "backFace.cutoutMipped", bool -> backFaceCutoutMipped = bool);
 			handleBooleanDirective(key, value, "backFace.translucent", bool -> backFaceTranslucent = bool);
 			handleBooleanDirective(key, value, "rain.depth", bool -> rainDepth = bool);
+			handleBooleanDirective(key, value, "allowConcurrentCompute", bool -> concurrentCompute = bool);
 			handleBooleanDirective(key, value, "beacon.beam.depth", bool -> beaconBeamDepth = bool);
 			handleBooleanDirective(key, value, "separateAo", bool -> separateAo = bool);
 			handleBooleanDirective(key, value, "frustum.culling", bool -> frustumCulling = bool);
@@ -587,6 +589,9 @@ public class ShaderProperties {
 		return prepareBeforeShadow;
 	}
 
+	public OptionalBoolean getConcurrentCompute() {
+		return concurrentCompute;
+	}
 	public Object2FloatMap<String> getViewportScaleOverrides() {
 		return viewportScaleOverrides;
 	}

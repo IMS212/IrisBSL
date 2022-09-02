@@ -14,6 +14,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.coderbot.iris.gl.IrisRenderSystem;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
+import net.coderbot.iris.gl.program.ComputeProgram;
 import net.coderbot.iris.gl.program.Program;
 import net.coderbot.iris.gl.program.ProgramBuilder;
 import net.coderbot.iris.gl.program.ProgramSamplers;
@@ -27,6 +28,7 @@ import net.coderbot.iris.pipeline.PatchedShaderPrinter;
 import net.coderbot.iris.pipeline.newshader.FogMode;
 import net.coderbot.iris.samplers.IrisImages;
 import net.coderbot.iris.samplers.IrisSamplers;
+import net.coderbot.iris.shaderpack.ComputeSource;
 import net.coderbot.iris.shaderpack.PackDirectives;
 import net.coderbot.iris.shaderpack.PackRenderTargetDirectives;
 import net.coderbot.iris.shaderpack.ProgramDirectives;
@@ -35,10 +37,12 @@ import net.coderbot.iris.shadows.ShadowRenderTargets;
 import net.coderbot.iris.uniforms.CommonUniforms;
 import net.coderbot.iris.uniforms.FrameUpdateNotifier;
 import net.coderbot.iris.uniforms.custom.CustomUniforms;
+import net.coderbot.iris.vendored.joml.Vector3i;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL30C;
+import org.lwjgl.opengl.GL43C;
 
 public class CompositeRenderer {
 	private final RenderTargets renderTargets;
@@ -51,7 +55,7 @@ public class CompositeRenderer {
 	private final ImmutableSet<Integer> flippedAtLeastOnceFinal;
 	private final CustomUniforms customUniforms;
 
-	public CompositeRenderer(PackDirectives packDirectives, ProgramSource[] sources, RenderTargets renderTargets,
+	public CompositeRenderer(PackDirectives packDirectives, ProgramSource[] sources, ComputeSource[][] computes, RenderTargets renderTargets,
 							 IntSupplier noiseTexture, FrameUpdateNotifier updateNotifier,
 							 CenterDepthSampler centerDepthSampler, BufferFlipper bufferFlipper,
 							 Supplier<ShadowRenderTargets> shadowTargetsSupplier,
@@ -78,18 +82,26 @@ public class CompositeRenderer {
 			}
 		});
 
-		for (ProgramSource source : sources) {
+		for (int i = 0; i < sources.length; i++) {
+			ProgramSource source = sources[i];
+
+			ImmutableSet<Integer> flipped = bufferFlipper.snapshot();
+			ImmutableSet<Integer> flippedAtLeastOnceSnapshot = flippedAtLeastOnce.build();
+
 			if (source == null || !source.isValid()) {
+				if (computes[i] != null) {
+					ComputeOnlyPass pass = new ComputeOnlyPass();
+					pass.computes = createComputes(computes[i], flipped, flippedAtLeastOnceSnapshot, shadowTargetsSupplier);
+					passes.add(pass);
+				}
 				continue;
 			}
 
 			Pass pass = new Pass();
 			ProgramDirectives directives = source.getDirectives();
 
-			ImmutableSet<Integer> flipped = bufferFlipper.snapshot();
-			ImmutableSet<Integer> flippedAtLeastOnceSnapshot = flippedAtLeastOnce.build();
-
 			pass.program = createProgram(source, flipped, flippedAtLeastOnceSnapshot, shadowTargetsSupplier);
+			pass.computes = createComputes(computes[i], flipped, flippedAtLeastOnceSnapshot, shadowTargetsSupplier);
 			int[] drawBuffers = directives.getDrawBuffers();
 
 			GlFramebuffer framebuffer = renderTargets.createColorFramebuffer(flipped, drawBuffers);
@@ -160,19 +172,36 @@ public class CompositeRenderer {
 		}
 	}
 
-	private static final class Pass {
+	private class Pass {
 		int[] drawBuffers;
 		int viewWidth;
 		int viewHeight;
 		Program program;
+		ComputeProgram[] computes;
 		GlFramebuffer framebuffer;
 		ImmutableSet<Integer> flippedAtLeastOnce;
 		ImmutableSet<Integer> stageReadsFromAlt;
 		ImmutableSet<Integer> mipmappedBuffers;
 		float viewportScale;
 
-		private void destroy() {
+		protected void destroy() {
 			this.program.destroy();
+			for (ComputeProgram compute : this.computes) {
+				if (compute != null) {
+					compute.destroy();
+				}
+			}
+		}
+	}
+
+	private class ComputeOnlyPass extends Pass {
+		@Override
+		protected void destroy() {
+			for (ComputeProgram compute : this.computes) {
+				if (compute != null) {
+					compute.destroy();
+				}
+			}
 		}
 	}
 
@@ -182,11 +211,25 @@ public class CompositeRenderer {
 		FullScreenQuadRenderer.INSTANCE.begin();
 
 		for (Pass renderPass : passes) {
+			for (ComputeProgram computeProgram : renderPass.computes) {
+				if (computeProgram != null) {
+					computeProgram.dispatch(baseWidth, baseHeight);
+				}
+			}
+
+			IrisRenderSystem.memoryBarrier(40);
+
+			Program.unbind();
+
+			if (renderPass instanceof ComputeOnlyPass) {
+				continue;
+			}
+
 			if (!renderPass.mipmappedBuffers.isEmpty()) {
 				RenderSystem.activeTexture(GL15C.GL_TEXTURE0);
 
 				for (int index : renderPass.mipmappedBuffers) {
-					setupMipmapping(renderTargets.get(index), renderPass.stageReadsFromAlt.contains(index));
+					setupMipmapping(CompositeRenderer.this.renderTargets.get(index), renderPass.stageReadsFromAlt.contains(index));
 				}
 			}
 
@@ -291,6 +334,51 @@ public class CompositeRenderer {
 		this.customUniforms.mapholderToPass(builder, build);
 
 		return build;
+	}
+
+	private ComputeProgram[] createComputes(ComputeSource[] compute, ImmutableSet<Integer> flipped, ImmutableSet<Integer> flippedAtLeastOnceSnapshot, Supplier<ShadowRenderTargets> shadowTargetsSupplier) {
+		ComputeProgram[] programs = new ComputeProgram[compute.length];
+		for (int i = 0; i < programs.length; i++) {
+			ComputeSource source = compute[i];
+			if (source == null || !source.getSource().isPresent()) {
+				continue;
+			} else {
+				// TODO: Properly handle empty shaders
+				Objects.requireNonNull(flipped);
+				ProgramBuilder builder;
+
+				try {
+					builder = ProgramBuilder.beginCompute(source.getName(), source.getSource().orElse(null), IrisSamplers.COMPOSITE_RESERVED_TEXTURE_UNITS);
+				} catch (RuntimeException e) {
+					// TODO: Better error handling
+					throw new RuntimeException("Shader compilation failed!", e);
+				}
+
+				ProgramSamplers.CustomTextureSamplerInterceptor customTextureSamplerInterceptor = ProgramSamplers.customTextureSamplerInterceptor(builder, customTextureIds, flippedAtLeastOnceSnapshot);
+
+				CommonUniforms.addCommonUniforms(builder, source.getParent().getPack().getIdMap(), source.getParent().getPackDirectives(), updateNotifier);
+				IrisSamplers.addRenderTargetSamplers(customTextureSamplerInterceptor, () -> flipped, renderTargets, true);
+				IrisImages.addRenderTargetImages(builder, () -> flipped, renderTargets);
+
+				IrisSamplers.addNoiseSampler(customTextureSamplerInterceptor, noiseTexture);
+				IrisSamplers.addCompositeSamplers(customTextureSamplerInterceptor, renderTargets);
+
+				if (IrisSamplers.hasShadowSamplers(customTextureSamplerInterceptor)) {
+					IrisSamplers.addShadowSamplers(customTextureSamplerInterceptor, shadowTargetsSupplier.get());
+					IrisImages.addShadowColorImages(builder, shadowTargetsSupplier.get());
+				}
+
+				// TODO: Don't duplicate this with FinalPassRenderer
+				builder.addDynamicSampler(centerDepthSampler::getCenterDepthTexture, "iris_centerDepthSmooth");
+
+				programs[i] = builder.buildCompute();
+
+				programs[i].setWorkGroupInfo(source.getWorkGroupRelative(), source.getWorkGroups());
+			}
+		}
+
+
+		return programs;
 	}
 
 	public void destroy() {

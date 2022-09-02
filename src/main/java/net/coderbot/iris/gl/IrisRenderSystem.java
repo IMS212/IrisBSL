@@ -7,6 +7,7 @@ import net.coderbot.iris.gl.texture.TextureType;
 import net.coderbot.iris.mixin.GlStateManagerAccessor;
 import net.coderbot.iris.texture.TextureInfoCache;
 import net.coderbot.iris.texture.TextureTracker;
+import net.coderbot.iris.vendored.joml.Vector3i;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.EXTShaderImageLoadStore;
 import org.lwjgl.opengl.GL;
@@ -17,6 +18,7 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30C;
 import org.lwjgl.opengl.GL40C;
 import org.lwjgl.opengl.GL42C;
+import org.lwjgl.opengl.GL43C;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -214,6 +216,22 @@ public class IrisRenderSystem {
 	public static void blendFuncSeparatei(int buffer, int srcRGB, int dstRGB, int srcAlpha, int dstAlpha) {
 		RenderSystem.assertOnRenderThreadOrInit();
 		GL40C.glBlendFuncSeparatei(buffer, srcRGB, dstRGB, srcAlpha, dstAlpha);
+	}
+
+	public static void getProgramiv(int program, int value, int[] storage) {
+		GL30C.glGetProgramiv(program, value, storage);
+	}
+
+	public static void dispatchCompute(int workX, int workY, int workZ) {
+		GL43C.glDispatchCompute(workX, workY, workZ);
+	}
+
+	public static void dispatchCompute(Vector3i workGroups) {
+		GL43C.glDispatchCompute(workGroups.x, workGroups.y, workGroups.z);
+	}
+
+	public static void memoryBarrier(int barriers) {
+		GL43C.glMemoryBarrier(barriers);
 	}
 
 	// These functions are deprecated and unavailable in the core profile.

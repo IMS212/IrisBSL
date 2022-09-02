@@ -12,9 +12,11 @@ import net.coderbot.batchedentityrendering.impl.MemoryTrackingRenderBuffers;
 import net.coderbot.batchedentityrendering.impl.RenderBuffersExt;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.IrisRenderSystem;
+import net.coderbot.iris.gl.program.ComputeProgram;
 import net.coderbot.iris.gl.texture.DepthCopyStrategy;
 import net.coderbot.iris.gui.option.IrisVideoSettings;
 import net.coderbot.iris.mixin.LevelRendererAccessor;
+import net.coderbot.iris.shaderpack.ComputeSource;
 import net.coderbot.iris.shaderpack.OptionalBoolean;
 import net.coderbot.iris.shaderpack.PackDirectives;
 import net.coderbot.iris.shaderpack.PackShadowDirectives;
@@ -35,6 +37,7 @@ import net.coderbot.iris.uniforms.CameraUniforms;
 import net.coderbot.iris.uniforms.CapturedRenderingState;
 import net.coderbot.iris.uniforms.CelestialUniforms;
 import net.coderbot.iris.vendored.joml.Vector3d;
+import net.coderbot.iris.vendored.joml.Vector3i;
 import net.coderbot.iris.vendored.joml.Vector4f;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -51,6 +54,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import org.lwjgl.opengl.ARBTextureSwizzle;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL30C;
+import org.lwjgl.opengl.GL43C;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -83,6 +87,7 @@ public class ShadowRenderer {
 	private final RenderBuffersExt renderBuffersExt;
 	private final List<MipmapPass> mipmapPasses = new ArrayList<>();
 	private final String debugStringOverall;
+	private final ComputeProgram[] computePrograms;
 	private FrustumHolder terrainFrustumHolder;
 	private FrustumHolder entityFrustumHolder;
 	private String debugStringTerrain = "(unavailable)";
@@ -92,12 +97,13 @@ public class ShadowRenderer {
 	private final CustomUniforms customUniforms;
 	private final ImmutableSet<Integer> flipped;
 
-	public ShadowRenderer(ProgramSource shadow, PackDirectives directives,
+	public ShadowRenderer(ProgramSource shadow, ComputeProgram[] compute, PackDirectives directives,
 						  ShadowRenderTargets shadowRenderTargets, boolean shadowUsesImages, CustomUniforms customUniforms, ShadowCompositeRenderer compositeRenderer) {
 
 		this.flipped = ImmutableSet.of();
 
 		this.customUniforms = customUniforms;
+		this.computePrograms = compute;
 
 		final PackShadowDirectives shadowDirectives = directives.getShadowDirectives();
 
@@ -432,6 +438,9 @@ public class ShadowRenderer {
 		//
 		// TODO: Better way of preventing light from leaking into places where it shouldn't
 		RenderSystem.disableCull();
+
+
+
 
 		// Render all opaque terrain unless pack requests not to
 		if (shouldRenderTerrain) {
