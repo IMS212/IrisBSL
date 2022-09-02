@@ -19,6 +19,7 @@ import org.lwjgl.opengl.GL40C;
 import org.lwjgl.opengl.GL42C;
 
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 /**
@@ -194,8 +195,6 @@ public class IrisRenderSystem {
 		RenderSystem.assertOnRenderThreadOrInit();
 
 		GL32C.glBindTexture(target, id);
-		TextureTracker.INSTANCE.onBindTexture(id);
-
 	}
 
 	public static boolean supportsBufferBlending() {

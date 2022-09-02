@@ -201,8 +201,6 @@ public class CompositeRenderer {
 			this.customUniforms.push(renderPass.program);
 
 			FullScreenQuadRenderer.INSTANCE.renderQuad();
-
-			RenderSystem.viewport(0, 0, baseWidth, baseHeight);
 		}
 
 		FullScreenQuadRenderer.INSTANCE.end();

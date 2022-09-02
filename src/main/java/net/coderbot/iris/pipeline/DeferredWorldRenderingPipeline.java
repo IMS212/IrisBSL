@@ -295,7 +295,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 			this.shadowCompositeRenderer = new ShadowCompositeRenderer(programs.getPackDirectives(), programs.getShadowComposite(), this.shadowRenderTargets, customTextureManager.getNoiseTexture(), updateNotifier,
 				customTextureManager.getCustomTextureIdMap(TextureStage.SHADOWCOMP), programs.getPackDirectives().getExplicitFlips("shadowcomp_pre"));
 			this.shadowRenderer = new ShadowRenderer(programs.getShadow().orElse(null),
-				programs.getPackDirectives(), shadowRenderTargets, shadowCompositeRenderer);
+				programs.getPackDirectives(), shadowRenderTargets, false, customUniforms, shadowCompositeRenderer);
 		} else {
 			this.shadowClearPasses = ImmutableList.of();
 			this.shadowClearPassesFull = ImmutableList.of();
@@ -423,7 +423,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 
 		this.sodiumTerrainPipeline = new SodiumTerrainPipeline(this, programs, createTerrainSamplers,
 			shadowRenderTargets == null ? null : createShadowTerrainSamplers, createTerrainImages, createShadowTerrainImages, renderTargets, flippedAfterPrepare, flippedAfterTranslucent,
-			shadowRenderTargets != null ? shadowRenderTargets.getFramebuffer() : null, customUniforms);
+			shadowRenderTargets != null ? shadowRenderTargets.createShadowFramebuffer(ImmutableSet.of(), new int[] { 0, 1 }) : null, customUniforms);
 
 		// first optimization pass
 		this.customUniforms.optimise();

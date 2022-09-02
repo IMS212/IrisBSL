@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import io.github.douira.glsl_transformer.ast.node.Identifier;
@@ -11,6 +12,8 @@ import io.github.douira.glsl_transformer.ast.node.Profile;
 import io.github.douira.glsl_transformer.ast.node.TranslationUnit;
 import io.github.douira.glsl_transformer.ast.node.Version;
 import io.github.douira.glsl_transformer.ast.node.VersionStatement;
+import io.github.douira.glsl_transformer.ast.node.basic.ASTNode;
+import io.github.douira.glsl_transformer.ast.node.declaration.DeclarationMember;
 import io.github.douira.glsl_transformer.ast.node.expression.Expression;
 import io.github.douira.glsl_transformer.ast.node.expression.LiteralExpression;
 import io.github.douira.glsl_transformer.ast.node.expression.ReferenceExpression;
@@ -36,6 +39,8 @@ public class CommonTransformer {
 			"gl_TextureMatrix[0]", Matcher.expressionPattern);
 	public static final AutoHintedMatcher<Expression> glTextureMatrix1 = new AutoHintedMatcher<>(
 			"gl_TextureMatrix[1]", Matcher.expressionPattern);
+	private static final AutoHintedMatcher<ExternalDeclaration> uniformSampler2DGTexture = new AutoHintedMatcher<>(
+		"uniform sampler2D gtexture;", Matcher.externalDeclarationPattern);
 
 	private static final AutoHintedMatcher<Expression> glFragDataI = new AutoHintedMatcher<>(
 			"gl_FragData[index]", Matcher.expressionPattern) {
@@ -171,6 +176,12 @@ public class CommonTransformer {
 				root.identifierIndex.getStream("texture"))
 				.filter(id -> !(id.getParent() instanceof FunctionCallExpression)),
 				id -> id.setName("gtexture"));
+
+		// replace original declaration of gtexture to avoid multi-declarations
+		if (root.processMatches(t, uniformSampler2DGTexture, ASTNode::detachAndDelete)) {
+			tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
+				"uniform sampler2D gtexture;");
+		}
 
 		// This must be defined and valid in all shader passes, including composite
 		// passes. A shader that relies on this behavior is SEUS v11 - it reads

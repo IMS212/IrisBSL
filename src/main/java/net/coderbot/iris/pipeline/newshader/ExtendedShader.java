@@ -4,16 +4,22 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.preprocessor.GlslPreprocessor;
 import com.mojang.blaze3d.shaders.Program;
 import com.mojang.blaze3d.shaders.Uniform;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import it.unimi.dsi.fastutil.Pair;
 import net.coderbot.iris.Iris;
+import net.coderbot.iris.gbuffer_overrides.matching.ProgramTable;
+import net.coderbot.iris.gl.IrisRenderSystem;
 import net.coderbot.iris.gl.blending.AlphaTest;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
+import net.coderbot.iris.gl.blending.BufferBlendOverride;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
 import net.coderbot.iris.gl.image.ImageHolder;
 import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramUniforms;
 import net.coderbot.iris.gl.sampler.SamplerHolder;
 import net.coderbot.iris.gl.texture.InternalTextureFormat;
+import net.coderbot.iris.gl.texture.TextureType;
 import net.coderbot.iris.gl.uniform.DynamicLocationalUniformHolder;
 import net.coderbot.iris.gl.uniform.DynamicUniformHolder;
 import net.coderbot.iris.pipeline.DeferredWorldRenderingPipeline;
@@ -28,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.IntSupplier;
 
@@ -40,16 +47,18 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 	GlFramebuffer writingToAfterTranslucent;
 	GlFramebuffer baseline;
 	BlendModeOverride blendModeOverride;
+	List<BufferBlendOverride> bufferBlendOverrides;
 	HashMap<String, IntSupplier> dynamicSamplers;
 	float alphaTest;
 	private ProgramImages currentImages;
 	private Program geometry;
 	private final ShaderAttributeInputs inputs;
 	private CustomUniforms customUniforms;
+	private HashMap<Pair<String, TextureType>, IntSupplier> dynamicSamplersNon2D = new HashMap<>();
 
 	public ExtendedShader(ResourceProvider resourceFactory, String string, VertexFormat vertexFormat,
 						  GlFramebuffer writingToBeforeTranslucent, GlFramebuffer writingToAfterTranslucent,
-						  GlFramebuffer baseline, BlendModeOverride blendModeOverride, AlphaTest alphaTest,
+						  GlFramebuffer baseline, BlendModeOverride blendModeOverride, List<BufferBlendOverride> bufferBlendOverrides, AlphaTest alphaTest,
 						  Consumer<DynamicLocationalUniformHolder> uniformCreator, boolean isIntensity,
 						  NewWorldRenderingPipeline parent, ShaderAttributeInputs inputs) throws IOException {
 		super(resourceFactory, string, vertexFormat);
@@ -67,6 +76,7 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 		this.writingToAfterTranslucent = writingToAfterTranslucent;
 		this.baseline = baseline;
 		this.blendModeOverride = blendModeOverride;
+		this.bufferBlendOverrides = bufferBlendOverrides;
 		this.dynamicSamplers = new HashMap<>();
 		this.alphaTest = alphaTest.getReference();
 		this.parent = parent;
@@ -87,7 +97,7 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 		ProgramUniforms.clearActiveUniforms();
 		super.clear();
 
-		if (this.blendModeOverride != null) {
+		if (blendModeOverride != null || (bufferBlendOverrides != null && !bufferBlendOverrides.isEmpty())) {
 			BlendModeOverride.restore();
 		}
 
@@ -112,6 +122,15 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 			setSampler("Sampler1", parent.getWhitePixel().getId());
 		}
 
+		final int[] textureUnit = {0};
+		dynamicSamplersNon2D.forEach((name, supplier) -> {
+			int k = Uniform.glGetUniformLocation(this.getId(), name.left());
+			Uniform.uploadInteger(k, textureUnit[0]);
+			RenderSystem.activeTexture(33984 + textureUnit[0]);
+			IrisRenderSystem.bindTexture(name.right().getGlType(), supplier.getAsInt());
+			textureUnit[0]++;
+		});
+
 		super.apply();
 		uniforms.update();
 		customUniforms.push(this);
@@ -125,6 +144,10 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 
 		if (this.blendModeOverride != null) {
 			this.blendModeOverride.apply();
+		}
+
+		if (bufferBlendOverrides != null && !bufferBlendOverrides.isEmpty()) {
+			bufferBlendOverrides.forEach(BufferBlendOverride::apply);
 		}
 
 		if (parent.isBeforeTranslucent) {
@@ -210,6 +233,12 @@ public class ExtendedShader extends ShaderInstance implements SamplerHolder, Ima
 		}
 
 		return used;
+	}
+
+	@Override
+	public boolean addDynamicSampler(TextureType type, IntSupplier sampler, String... names) {
+			return addDynamicSampler(sampler, names);
+
 	}
 
 	@Override

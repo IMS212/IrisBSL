@@ -4,8 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
+import net.coderbot.iris.gl.blending.BufferBlendOverride;
 import org.jetbrains.annotations.Nullable;
 
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -37,6 +39,7 @@ public class NewShaderTests {
 										boolean isFullbright) throws IOException {
 		AlphaTest alpha = source.getDirectives().getAlphaTestOverride().orElse(fallbackAlpha);
 		BlendModeOverride blendModeOverride = source.getDirectives().getBlendModeOverride();
+		List<BufferBlendOverride> bufferBlendOverrides = source.getDirectives().getBufferBlendOverrides();
 
 		Map<PatchShaderType, String> transformed = TransformPatcher.patchVanilla(
 			source.getVertexSource().orElseThrow(RuntimeException::new),
@@ -120,7 +123,7 @@ public class NewShaderTests {
 
 		ResourceProvider shaderResourceFactory = new IrisProgramResourceFactory(shaderJsonString, vertex, geometry, fragment);
 
-		return new ExtendedShader(shaderResourceFactory, name, vertexFormat, writingToBeforeTranslucent, writingToAfterTranslucent, baseline, blendModeOverride, alpha, uniforms -> {
+		return new ExtendedShader(shaderResourceFactory, name, vertexFormat, writingToBeforeTranslucent, writingToAfterTranslucent, baseline, blendModeOverride, bufferBlendOverrides, alpha, uniforms -> {
 			CommonUniforms.addDynamicUniforms(uniforms, fogMode);
 			parent.customUniforms.assignTo(uniforms);
 			//SamplerUniforms.addWorldSamplerUniforms(uniforms);

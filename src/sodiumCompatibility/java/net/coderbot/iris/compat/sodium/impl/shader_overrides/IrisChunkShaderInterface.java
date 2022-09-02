@@ -6,6 +6,7 @@ import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformBlock;
 import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformFloat3v;
 import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformMatrix4f;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
+import net.coderbot.iris.gl.blending.BufferBlendOverride;
 import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.program.ProgramUniforms;
@@ -16,6 +17,8 @@ import net.coderbot.iris.uniforms.custom.CustomUniforms;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL32C;
+
+import java.util.List;
 
 public class IrisChunkShaderInterface {
 	@Nullable
@@ -36,9 +39,10 @@ public class IrisChunkShaderInterface {
 	private final ProgramSamplers irisProgramSamplers;
 	private final ProgramImages irisProgramImages;
 	private final CustomUniforms customUniforms;
+	private final List<BufferBlendOverride> blendOverride2;
 
 	public IrisChunkShaderInterface(int handle, ShaderBindingContextExt contextExt, SodiumTerrainPipeline pipeline,
-									boolean isShadowPass, BlendModeOverride blendModeOverride, float alpha) {
+									boolean isShadowPass, BlendModeOverride blendModeOverride, List<BufferBlendOverride> blendOverride2, float alpha) {
 		this.uniformModelViewMatrix = contextExt.bindUniformIfPresent("iris_ModelViewMatrix", GlUniformMatrix4f::new);
 		this.uniformProjectionMatrix = contextExt.bindUniformIfPresent("iris_ProjectionMatrix", GlUniformMatrix4f::new);
 		this.uniformRegionOffset = contextExt.bindUniformIfPresent("u_RegionOffset", GlUniformFloat3v::new);
@@ -48,6 +52,7 @@ public class IrisChunkShaderInterface {
 		this.alpha = alpha;
 
 		this.blendModeOverride = blendModeOverride;
+		this.blendOverride2 = blendOverride2;
 		this.fogShaderComponent = new IrisShaderFogComponent(contextExt);
 
 		ProgramUniforms.Builder uniforms = pipeline.initUniforms(handle);
@@ -78,6 +83,10 @@ public class IrisChunkShaderInterface {
 			blendModeOverride.apply();
 		}
 
+		if (blendOverride2 != null && !blendOverride2.isEmpty()) {
+			blendOverride2.forEach(BufferBlendOverride::apply);
+		}
+
 		CapturedRenderingState.INSTANCE.setCurrentAlphaTest(alpha);
 
 		fogShaderComponent.setup();
@@ -89,7 +98,7 @@ public class IrisChunkShaderInterface {
 	}
 
 	public void restore() {
-		if (blendModeOverride != null) {
+		if (blendModeOverride != null || (blendOverride2 != null && !blendOverride2.isEmpty())) {
 			BlendModeOverride.restore();
 		}
 	}
