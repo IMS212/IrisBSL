@@ -1,13 +1,16 @@
 package net.coderbot.iris.pipeline.transform;
 
+import com.google.common.collect.ImmutableSet;
 import io.github.douira.glsl_transformer.job_parameter.JobParameters;
 
 class Parameters extends JobParameters {
 	public final Patch patch;
+	public final ImmutableSet<Integer> flipped;
 	public PatchShaderType type;
 
-	public Parameters(Patch patch) {
+	public Parameters(Patch patch, ImmutableSet<Integer> flipped) {
 		this.patch = patch;
+		this.flipped = flipped;
 	}
 
 	@Override

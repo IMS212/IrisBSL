@@ -122,4 +122,8 @@ public interface LocationalUniformHolder extends UniformHolder {
 
 		return this;
 	}
+
+	default boolean hasSampler(String name) {
+		return location(name, UniformType.INT).isPresent();
+	}
 }

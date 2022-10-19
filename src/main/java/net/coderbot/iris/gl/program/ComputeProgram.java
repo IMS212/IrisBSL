@@ -12,7 +12,6 @@ import org.lwjgl.opengl.GL43C;
 
 public final class ComputeProgram extends GlResource {
 	private final ProgramUniforms uniforms;
-	private final ProgramSamplers samplers;
 	private final ProgramImages images;
 	private Vector3i absoluteWorkGroups;
 	private Vector2f relativeWorkGroups;
@@ -21,13 +20,12 @@ public final class ComputeProgram extends GlResource {
 	private float cachedHeight;
 	private Vector3i cachedWorkGroups;
 
-	ComputeProgram(int program, ProgramUniforms uniforms, ProgramSamplers samplers, ProgramImages images) {
+	ComputeProgram(int program, ProgramUniforms uniforms, ProgramImages images) {
 		super(program);
 
 		localSize = new int[3];
 		IrisRenderSystem.getProgramiv(program, GL43C.GL_COMPUTE_WORK_GROUP_SIZE, localSize);
 		this.uniforms = uniforms;
-		this.samplers = samplers;
 		this.images = images;
 	}
 
@@ -57,7 +55,6 @@ public final class ComputeProgram extends GlResource {
 	public void dispatch(float width, float height) {
 		ProgramManager.glUseProgram(getGlId());
 		uniforms.update();
-		samplers.update();
 		images.update();
 
 		if (!Iris.getPipelineManager().getPipeline().map(WorldRenderingPipeline::allowConcurrentCompute).orElse(false)) {

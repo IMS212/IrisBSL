@@ -56,8 +56,8 @@ public class CenterDepthSampler {
 			throw new RuntimeException(e);
 		}
 
-		builder.addDynamicSampler(targets::getDepthTexture, "depth");
-		builder.addDynamicSampler(() -> altTexture, "altDepth");
+		//builder.addDynamicSampler(targets::getDepthTexture, "depth");
+		//builder.addDynamicSampler(() -> altTexture, "altDepth");
 		builder.uniform1f(UniformUpdateFrequency.PER_FRAME, "lastFrameTime", SystemTimeUniforms.TIMER::getLastFrameTime);
 		builder.uniform1f(UniformUpdateFrequency.ONCE, "decay", () -> (1.0f / ((halfLife * 0.1) / LN2)));
 		this.program = builder.build();

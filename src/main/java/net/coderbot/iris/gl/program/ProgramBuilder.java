@@ -14,16 +14,14 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.IntSupplier;
 
-public class ProgramBuilder extends ProgramUniforms.Builder implements SamplerHolder, ImageHolder {
+public class ProgramBuilder extends ProgramUniforms.Builder implements ImageHolder {
 	private final int program;
-	private final ProgramSamplers.Builder samplers;
 	private final ProgramImages.Builder images;
 
 	private ProgramBuilder(String name, int program, ImmutableSet<Integer> reservedTextureUnits) {
 		super(name, program);
 
 		this.program = program;
-		this.samplers = ProgramSamplers.builder(program, reservedTextureUnits);
 		this.images = ProgramImages.builder(program);
 	}
 
@@ -85,11 +83,11 @@ public class ProgramBuilder extends ProgramUniforms.Builder implements SamplerHo
 	}
 
 	public Program build() {
-		return new Program(program, super.buildUniforms(), this.samplers.build(), this.images.build());
+		return new Program(program, super.buildUniforms(), this.images.build());
 	}
 
 	public ComputeProgram buildCompute() {
-		return new ComputeProgram(program, super.buildUniforms(), this.samplers.build(), this.images.build());
+		return new ComputeProgram(program, super.buildUniforms(), this.images.build());
 	}
 
 	private static GlShader buildShader(ShaderType shaderType, String name, @Nullable String source) {
@@ -98,30 +96,6 @@ public class ProgramBuilder extends ProgramUniforms.Builder implements SamplerHo
 		} catch (RuntimeException e) {
 			throw new RuntimeException("Failed to compile " + shaderType + " shader for program " + name, e);
 		}
-	}
-
-	@Override
-	public void addExternalSampler(int textureUnit, String... names) {
-		samplers.addExternalSampler(textureUnit, names);
-	}
-
-	@Override
-	public boolean hasSampler(String name) {
-		return samplers.hasSampler(name);
-	}
-
-	@Override
-	public boolean addDefaultSampler(IntSupplier sampler, String... names) {
-		return samplers.addDefaultSampler(sampler, names);
-	}
-
-	@Override
-	public boolean addDynamicSampler(IntSupplier sampler, String... names) {
-		return samplers.addDynamicSampler(sampler, names);
-	}
-
-	public boolean addDynamicSampler(IntSupplier sampler, ValueUpdateNotifier notifier, String... names) {
-		return samplers.addDynamicSampler(sampler, notifier, names);
 	}
 
 	@Override

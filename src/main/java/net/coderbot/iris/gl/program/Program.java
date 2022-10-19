@@ -6,14 +6,12 @@ import net.coderbot.iris.gl.GlResource;
 
 public final class Program extends GlResource {
 	private final ProgramUniforms uniforms;
-	private final ProgramSamplers samplers;
 	private final ProgramImages images;
 
-	Program(int program, ProgramUniforms uniforms, ProgramSamplers samplers, ProgramImages images) {
+	Program(int program, ProgramUniforms uniforms, ProgramImages images) {
 		super(program);
 
 		this.uniforms = uniforms;
-		this.samplers = samplers;
 		this.images = images;
 	}
 
@@ -21,7 +19,6 @@ public final class Program extends GlResource {
 		ProgramManager.glUseProgram(getGlId());
 
 		uniforms.update();
-		samplers.update();
 		images.update();
 	}
 

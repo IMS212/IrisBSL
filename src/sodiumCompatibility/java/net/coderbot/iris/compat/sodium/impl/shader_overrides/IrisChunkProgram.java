@@ -26,19 +26,15 @@ public class IrisChunkProgram extends ChunkProgram {
 	private final ProgramUniforms irisProgramUniforms;
 
 	@Nullable
-	private final ProgramSamplers irisProgramSamplers;
-
-	@Nullable
 	private final ProgramImages irisProgramImages;
 
 	public IrisChunkProgram(RenderDevice owner, ResourceLocation name, int handle,
-							@Nullable ProgramUniforms irisProgramUniforms, @Nullable ProgramSamplers irisProgramSamplers,
+							@Nullable ProgramUniforms irisProgramUniforms,
 							@Nullable ProgramImages irisProgramImages) {
 		super(owner, name, handle, ChunkShaderFogComponent.None::new);
 		this.uModelViewMatrix = this.getUniformLocation("iris_ModelViewMatrix");
 		this.uNormalMatrix = this.getUniformLocation("iris_NormalMatrix");
 		this.irisProgramUniforms = irisProgramUniforms;
-		this.irisProgramSamplers = irisProgramSamplers;
 		this.irisProgramImages = irisProgramImages;
 	}
 
@@ -47,10 +43,6 @@ public class IrisChunkProgram extends ChunkProgram {
 
 		if (irisProgramUniforms != null) {
 			irisProgramUniforms.update();
-		}
-
-		if (irisProgramSamplers != null) {
-			irisProgramSamplers.update();
 		}
 
 		if (irisProgramImages != null) {

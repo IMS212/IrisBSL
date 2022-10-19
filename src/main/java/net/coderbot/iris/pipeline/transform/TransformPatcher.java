@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.collect.ImmutableSet;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 import org.apache.logging.log4j.LogManager;
@@ -28,7 +29,7 @@ import net.coderbot.iris.pipeline.PatchedShaderPrinter;
 /**
  * The transform patcher (triforce 2) uses glsl-transformer's ASTTransformer to
  * do shader transformation.
- * 
+ *
  * The TransformPatcher does caching on the source string and associated
  * parameters. For this to work, all objects contained in a parameter must have
  * an equals method and they must never be changed after having been used for
@@ -169,6 +170,7 @@ public class TransformPatcher {
 							break;
 					}
 					CompatibilityTransformer.transformEach(transformer, tree, root, parameters);
+					TextureFlipTransformer.transform(transformer, tree, root, parameters);
 				});
 			}
 
@@ -212,15 +214,15 @@ public class TransformPatcher {
 		return result;
 	}
 
-	public static Map<PatchShaderType, String> patchAttributes(String vertex, String geometry, String fragment, InputAvailability inputs) {
-		return transform(vertex, geometry, fragment, new AttributeParameters(Patch.ATTRIBUTES, geometry != null, inputs));
+	public static Map<PatchShaderType, String> patchAttributes(String vertex, String geometry, String fragment, InputAvailability inputs, ImmutableSet<Integer> flipped) {
+		return transform(vertex, geometry, fragment, new AttributeParameters(Patch.ATTRIBUTES, geometry != null, inputs, flipped));
 	}
 
-	public static Map<PatchShaderType, String> patchSodiumTerrain(String vertex, String geometry, String fragment) {
-		return transform(vertex, geometry, fragment, new Parameters(Patch.SODIUM_TERRAIN));
+	public static Map<PatchShaderType, String> patchSodiumTerrain(String vertex, String geometry, String fragment, ImmutableSet<Integer> flipped) {
+		return transform(vertex, geometry, fragment, new Parameters(Patch.SODIUM_TERRAIN, flipped));
 	}
 
-	public static Map<PatchShaderType, String> patchComposite(String vertex, String geometry, String fragment) {
-		return transform(vertex, geometry, fragment, new Parameters(Patch.COMPOSITE));
+	public static Map<PatchShaderType, String> patchComposite(String vertex, String geometry, String fragment, ImmutableSet<Integer> flipped) {
+		return transform(vertex, geometry, fragment, new Parameters(Patch.COMPOSITE, flipped));
 	}
 }

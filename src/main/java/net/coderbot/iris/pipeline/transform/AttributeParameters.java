@@ -1,13 +1,14 @@
 package net.coderbot.iris.pipeline.transform;
 
+import com.google.common.collect.ImmutableSet;
 import net.coderbot.iris.gbuffer_overrides.matching.InputAvailability;
 
 class AttributeParameters extends Parameters {
 	public final boolean hasGeometry;
 	public final InputAvailability inputs;
 
-	public AttributeParameters(Patch patch, boolean hasGeometry, InputAvailability inputs) {
-		super(patch);
+	public AttributeParameters(Patch patch, boolean hasGeometry, InputAvailability inputs, ImmutableSet<Integer> flipped) {
+		super(patch, flipped);
 		this.hasGeometry = hasGeometry;
 		this.inputs = inputs;
 	}

@@ -3,11 +3,15 @@ package net.coderbot.iris.pipeline;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.IntFunction;
 
+import com.google.common.collect.ImmutableSet;
 import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.program.ProgramUniforms;
+import net.coderbot.iris.gl.uniform.DynamicLocationalUniformHolder;
+import net.coderbot.iris.gl.uniform.UniformHolder;
 import net.coderbot.iris.pipeline.transform.PatchShaderType;
 import net.coderbot.iris.pipeline.transform.TransformPatcher;
 import net.coderbot.iris.shaderpack.ProgramSet;
@@ -30,17 +34,17 @@ public class SodiumTerrainPipeline {
 
 	private final WorldRenderingPipeline parent;
 
-	private final IntFunction<ProgramSamplers> createTerrainSamplers;
-	private final IntFunction<ProgramSamplers> createShadowSamplers;
+	private final BiFunction<Integer, DynamicLocationalUniformHolder, DynamicLocationalUniformHolder>  createTerrainSamplers;
+	private final BiFunction<Integer, DynamicLocationalUniformHolder, DynamicLocationalUniformHolder>  createShadowSamplers;
 
 	private final IntFunction<ProgramImages> createTerrainImages;
 	private final IntFunction<ProgramImages> createShadowImages;
 
 	public SodiumTerrainPipeline(WorldRenderingPipeline parent,
-								 ProgramSet programSet, IntFunction<ProgramSamplers> createTerrainSamplers,
-								 IntFunction<ProgramSamplers> createShadowSamplers,
+								 ProgramSet programSet, BiFunction<Integer, DynamicLocationalUniformHolder, DynamicLocationalUniformHolder>  createTerrainSamplers,
+								 BiFunction<Integer, DynamicLocationalUniformHolder, DynamicLocationalUniformHolder> createShadowSamplers,
 								 IntFunction<ProgramImages> createTerrainImages,
-								 IntFunction<ProgramImages> createShadowImages) {
+								 IntFunction<ProgramImages> createShadowImages, ImmutableSet<Integer> shadowFlip, ImmutableSet<Integer> terrainFlip, ImmutableSet<Integer> translucentFlip) {
 		this.parent = Objects.requireNonNull(parent);
 
 		Optional<ProgramSource> terrainSource = first(programSet.getGbuffersTerrain(), programSet.getGbuffersTexturedLit(), programSet.getGbuffersTextured(), programSet.getGbuffersBasic());
@@ -53,7 +57,7 @@ public class SodiumTerrainPipeline {
 			Map<PatchShaderType, String> result = TransformPatcher.patchSodiumTerrain(
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
-				sources.getFragmentSource().orElse(null));
+				sources.getFragmentSource().orElse(null), terrainFlip);
 			terrainVertex = Optional.ofNullable(result.get(PatchShaderType.VERTEX));
 			terrainGeometry = Optional.ofNullable(result.get(PatchShaderType.GEOMETRY));
 			terrainFragment = Optional.ofNullable(result.get(PatchShaderType.FRAGMENT));
@@ -66,7 +70,7 @@ public class SodiumTerrainPipeline {
 			Map<PatchShaderType, String> result = TransformPatcher.patchSodiumTerrain(
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
-				sources.getFragmentSource().orElse(null));
+				sources.getFragmentSource().orElse(null), translucentFlip);
 			translucentVertex = Optional.ofNullable(result.get(PatchShaderType.VERTEX));
 			translucentGeometry = Optional.ofNullable(result.get(PatchShaderType.GEOMETRY));
 			translucentFragment = Optional.ofNullable(result.get(PatchShaderType.FRAGMENT));
@@ -79,7 +83,7 @@ public class SodiumTerrainPipeline {
 			Map<PatchShaderType, String> result = TransformPatcher.patchSodiumTerrain(
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
-				sources.getFragmentSource().orElse(null));
+				sources.getFragmentSource().orElse(null), shadowFlip);
 			shadowVertex = Optional.ofNullable(result.get(PatchShaderType.VERTEX));
 			shadowGeometry = Optional.ofNullable(result.get(PatchShaderType.GEOMETRY));
 			shadowFragment = Optional.ofNullable(result.get(PatchShaderType.FRAGMENT));
@@ -130,25 +134,25 @@ public class SodiumTerrainPipeline {
 		return shadowFragment;
 	}
 
-	public ProgramUniforms initUniforms(int programId) {
+	public ProgramUniforms.Builder initUniforms(int programId) {
 		ProgramUniforms.Builder uniforms = ProgramUniforms.builder("<sodium shaders>", programId);
 
 		CommonUniforms.addCommonUniforms(uniforms, programSet.getPack().getIdMap(), programSet.getPackDirectives(), parent.getFrameUpdateNotifier());
 		BuiltinReplacementUniforms.addBuiltinReplacementUniforms(uniforms);
 
-		return uniforms.buildUniforms();
+		return uniforms;
 	}
 
 	public boolean hasShadowPass() {
 		return createShadowSamplers != null;
 	}
 
-	public ProgramSamplers initTerrainSamplers(int programId) {
-		return createTerrainSamplers.apply(programId);
+	public DynamicLocationalUniformHolder initTerrainSamplers(int programId, DynamicLocationalUniformHolder uniforms) {
+		return createTerrainSamplers.apply(programId, uniforms);
 	}
 
-	public ProgramSamplers initShadowSamplers(int programId) {
-		return createShadowSamplers.apply(programId);
+	public DynamicLocationalUniformHolder initShadowSamplers(int programId, DynamicLocationalUniformHolder uniforms) {
+		return createShadowSamplers.apply(programId, uniforms);
 	}
 
 	public ProgramImages initTerrainImages(int programId) {
