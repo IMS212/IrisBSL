@@ -18,6 +18,7 @@ import net.coderbot.iris.uniforms.CommonUniforms;
 import net.coderbot.iris.uniforms.FrameUpdateNotifier;
 import net.coderbot.iris.uniforms.VanillaUniforms;
 import net.coderbot.iris.uniforms.builtin.BuiltinReplacementUniforms;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.metadata.MetadataSectionSerializer;
 import net.minecraft.server.packs.resources.Resource;
@@ -34,13 +35,12 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 public class NewShaderTests {
-	public static ExtendedShader create(String name, ProgramSource source, ProgramId programId, GlFramebuffer writingToBeforeTranslucent,
-										GlFramebuffer writingToAfterTranslucent, GlFramebuffer baseline, AlphaTest fallbackAlpha,
-										VertexFormat vertexFormat, ShaderAttributeInputs inputs, FrameUpdateNotifier updateNotifier,
-										NewWorldRenderingPipeline parent, Supplier<ImmutableSet<Integer>> flipped, FogMode fogMode, boolean isIntensity,
-										boolean isFullbright, boolean isShadowPass) throws IOException {
-		AlphaTest alpha = source.getDirectives().getAlphaTestOverride().orElse(fallbackAlpha);
-		BlendModeOverride blendModeOverride = source.getDirectives().getBlendModeOverride().orElse(programId.getBlendModeOverride());
+	public static ShaderTemplate create(String name, ProgramSource source, ShaderKey shaderKey, GlFramebuffer writingToBeforeTranslucent,
+										GlFramebuffer writingToAfterTranslucent, GlFramebuffer baseline,
+										FrameUpdateNotifier updateNotifier,
+										NewWorldRenderingPipeline parent, Supplier<ImmutableSet<Integer>> flipped, AbstractTexture whitePixel, boolean isShadowPass) throws IOException {
+		AlphaTest alpha = shaderKey.hasAlphaTest() ? AlphaTests.ONE_TENTH_ALPHA : AlphaTests.OFF;
+		BlendModeOverride blendModeOverride = source.getDirectives().getBlendModeOverride().orElse(shaderKey.getProgram().getBlendModeOverride());
 
 		Map<PatchShaderType, String> transformed = TransformPatcher.patchVanilla(
 			source.getVertexSource().orElseThrow(RuntimeException::new),
@@ -51,29 +51,7 @@ public class NewShaderTests {
 		String geometry = transformed.get(PatchShaderType.GEOMETRY);
 		String fragment = transformed.get(PatchShaderType.FRAGMENT);
 
-		StringBuilder shaderJson = new StringBuilder("{\n" +
-				"    \"blend\": {\n" +
-				"        \"func\": \"add\",\n" +
-				"        \"srcrgb\": \"srcalpha\",\n" +
-				"        \"dstrgb\": \"1-srcalpha\"\n" +
-				"    },\n" +
-				"    \"vertex\": \"" + name + "\",\n" +
-				"    \"fragment\": \"" + name + "\",\n" +
-				"    \"attributes\": [\n" +
-				"        \"Position\",\n" +
-				"        \"Color\",\n" +
-				"        \"UV0\",\n" +
-				"        \"UV1\",\n" +
-				"        \"UV2\",\n" +
-				"        \"Normal\"\n" +
-				"    ]\n" +
-				"}");
-
-		String shaderJsonString = shaderJson.toString();
-
-		PatchedShaderPrinter.debugPatchedShaders(source.getName(), vertex, geometry, fragment, shaderJsonString);
-
-		ResourceProvider shaderResourceFactory = new IrisProgramResourceFactory(shaderJsonString, vertex, geometry, fragment);
+		PatchedShaderPrinter.debugPatchedShaders(source.getName(), vertex, geometry, fragment);
 
 		List<BufferBlendOverride> overrides = new ArrayList<>();
 		source.getDirectives().getBufferBlendOverrides().forEach(information -> {
@@ -83,15 +61,15 @@ public class NewShaderTests {
 			}
 		});
 
-		return new ExtendedShader(shaderResourceFactory, name, vertexFormat, writingToBeforeTranslucent, writingToAfterTranslucent, baseline, blendModeOverride, alpha, uniforms -> {
-			CommonUniforms.addCommonUniforms(uniforms, source.getParent().getPack().getIdMap(), source.getParent().getPackDirectives(), updateNotifier, fogMode);
+		return new ShaderTemplate(name, vertex, geometry, fragment, writingToBeforeTranslucent, writingToAfterTranslucent, baseline, blendModeOverride, shaderKey, whitePixel, uniforms -> {
+			CommonUniforms.addCommonUniforms(uniforms, source.getParent().getPack().getIdMap(), source.getParent().getPackDirectives(), updateNotifier, FogMode.OFF);
 			//SamplerUniforms.addWorldSamplerUniforms(uniforms);
 			//SamplerUniforms.addDepthSamplerUniforms(uniforms);
 			BuiltinReplacementUniforms.addBuiltinReplacementUniforms(uniforms);
 			VanillaUniforms.addVanillaUniforms(uniforms);
 		}, (samplerHolder, imageHolder) -> {
-			parent.addGbufferOrShadowSamplers(samplerHolder, imageHolder, flipped, isShadowPass, inputs.toAvailability());
-		}, isIntensity, parent, inputs, overrides);
+			parent.addGbufferOrShadowSamplers(samplerHolder, imageHolder, flipped, isShadowPass);
+		}, parent, overrides);
 	}
 
 	public static FallbackShader createFallback(String name, GlFramebuffer writingToBeforeTranslucent,

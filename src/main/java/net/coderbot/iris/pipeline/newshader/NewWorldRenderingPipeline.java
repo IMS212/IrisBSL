@@ -71,6 +71,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
+
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL15C;
@@ -99,7 +100,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 	private WorldRenderingPhase overridePhase = null;
 	private WorldRenderingPhase phase = WorldRenderingPhase.NONE;
 
-	private final Set<ShaderInstance> loadedShaders;
+	private final Set<AutoCloseable> loadedShaders;
 	private ImmutableList<ClearPass> clearPassesFull;
 	private ImmutableList<ClearPass> clearPasses;
 	private ImmutableList<ClearPass> shadowClearPasses;
@@ -254,7 +255,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 				shouldBindPBR = IrisSamplers.hasPBRSamplers(customTextureSamplerInterceptor);
 			}
 
-			IrisSamplers.addLevelSamplers(customTextureSamplerInterceptor, this, whitePixel, new InputAvailability(true, true, false));
+			IrisSamplers.addLevelSamplers(customTextureSamplerInterceptor, this, whitePixel);
 			IrisSamplers.addWorldDepthSamplers(customTextureSamplerInterceptor, renderTargets);
 			IrisSamplers.addNoiseSampler(customTextureSamplerInterceptor, customTextureManager.getNoiseTexture());
 
@@ -292,7 +293,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 				shouldBindPBR = IrisSamplers.hasPBRSamplers(customTextureSamplerInterceptor);
 			}
 
-			IrisSamplers.addLevelSamplers(customTextureSamplerInterceptor, this, whitePixel, new InputAvailability(true, true, false));
+			IrisSamplers.addLevelSamplers(customTextureSamplerInterceptor, this, whitePixel);
 			IrisSamplers.addNoiseSampler(customTextureSamplerInterceptor, customTextureManager.getNoiseTexture());
 
 			// Only initialize these samplers if the shadow map renderer exists.
@@ -331,12 +332,12 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 			try {
 				if (key.isShadow()) {
 					if (shadowRenderTargets != null) {
-						return createShadowShader(key.getName(), resolver.resolve(key.getProgram()), key);
+						return createShadowShader(key.name(), resolver.resolve(key.getProgram()), key);
 					} else {
 						return null;
 					}
 				} else {
-					return createShader(key.getName(), resolver.resolve(key.getProgram()), key);
+					return createShader(key.name(), resolver.resolve(key.getProgram()), key);
 				}
 			} catch (IOException e) {
 				destroyShaders();
@@ -363,12 +364,11 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 				programSet.getPackDirectives().getRenderTargetDirectives());
 
 		if (shadowRenderTargets != null) {
-			ShaderInstance shader = shaderMap.getShader(ShaderKey.SHADOW_TERRAIN_CUTOUT);
+			ShaderTemplate shader = shaderMap.getShader(ShaderKey.SHADOW);
 			boolean shadowUsesImages = false;
 
-			if (shader instanceof ExtendedShader) {
-				ExtendedShader shader2 = (ExtendedShader) shader;
-				shadowUsesImages = shader2.hasActiveImages();
+			if (shader != null) {
+				shadowUsesImages = shader.hasActiveImages();
 			}
 
 			this.shadowClearPasses = ClearPassCreator.createShadowClearPasses(shadowRenderTargets, false, shadowDirectives);
@@ -441,7 +441,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		return programs;
 	}
 
-	private ShaderInstance createShader(String name, Optional<ProgramSource> source, ShaderKey key) throws IOException {
+	private ShaderTemplate createShader(String name, Optional<ProgramSource> source, ShaderKey key) throws IOException {
 		if (!source.isPresent()) {
 			return createFallbackShader(name, key);
 		}
@@ -450,7 +450,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 				key.isIntensity(), key.shouldIgnoreLightmap());
 	}
 
-	private ShaderInstance createShader(String name, ProgramSource source, ProgramId programId, AlphaTest fallbackAlpha,
+	private ShaderTemplate createShader(String name, ProgramSource source, ShaderKey key, AlphaTest fallbackAlpha,
 										VertexFormat vertexFormat, FogMode fogMode,
 										boolean isIntensity, boolean isFullbright) throws IOException {
 		GlFramebuffer beforeTranslucent = renderTargets.createGbufferFramebuffer(flippedAfterPrepare, source.getDirectives().getDrawBuffers());
@@ -460,15 +460,14 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		Supplier<ImmutableSet<Integer>> flipped =
 			() -> isBeforeTranslucent ? flippedAfterPrepare : flippedAfterTranslucent;
 
-		ExtendedShader extendedShader = NewShaderTests.create(name, source, programId, beforeTranslucent, afterTranslucent,
-				baseline, fallbackAlpha, vertexFormat, inputs, updateNotifier, this, flipped, fogMode, isIntensity, isFullbright, false);
+		ShaderTemplate shaderTemplate = NewShaderTests.create(name, source, key, beforeTranslucent, afterTranslucent, baseline, updateNotifier, this, flipped, whitePixel, false);
 
-		loadedShaders.add(extendedShader);
+		loadedShaders.add(shaderTemplate);
 
-		return extendedShader;
+		return shaderTemplate;
 	}
 
-	private ShaderInstance createFallbackShader(String name, ShaderKey key) throws IOException {
+	private ShaderTemplate createFallbackShader(String name, ShaderKey key) throws IOException {
 		GlFramebuffer beforeTranslucent = renderTargets.createGbufferFramebuffer(flippedAfterPrepare, new int[] {0});
 		GlFramebuffer afterTranslucent = renderTargets.createGbufferFramebuffer(flippedAfterTranslucent, new int[] {0});
 
@@ -481,16 +480,15 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		return shader;
 	}
 
-	private ShaderInstance createShadowShader(String name, Optional<ProgramSource> source, ShaderKey key) throws IOException {
+	private ShaderTemplate createShadowShader(String name, Optional<ProgramSource> source, ShaderKey key) throws IOException {
 		if (!source.isPresent()) {
 			return createFallbackShadowShader(name, key);
 		}
 
-		return createShadowShader(name, source.get(), key.getProgram(), key.getAlphaTest(), key.getVertexFormat(),
-				key.isIntensity(), key.shouldIgnoreLightmap());
+		return createShadowShader(name, source.get(), key);
 	}
 
-	private ShaderInstance createFallbackShadowShader(String name, ShaderKey key) throws IOException {
+	private ShaderTemplate createFallbackShadowShader(String name, ShaderKey key) throws IOException {
 		GlFramebuffer framebuffer = this.shadowRenderTargets.createShadowFramebuffer(shadowRenderTargets.snapshot(), new int[] { 0, 1 });
 
 		FallbackShader shader = NewShaderTests.createFallback(name, framebuffer, framebuffer,
@@ -502,23 +500,20 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		return shader;
 	}
 
-	private ShaderInstance createShadowShader(String name, ProgramSource source, ProgramId programId, AlphaTest fallbackAlpha,
-											  VertexFormat vertexFormat, boolean isIntensity, boolean isFullbright) throws IOException {
+	private ShaderTemplate createShadowShader(String name, ProgramSource source, ShaderKey key) throws IOException {
 		GlFramebuffer framebuffer = this.shadowRenderTargets.createShadowFramebuffer(shadowRenderTargets.snapshot(), new int[] { 0, 1 });
-		ShaderAttributeInputs inputs = new ShaderAttributeInputs(vertexFormat, isFullbright);
 
 		Supplier<ImmutableSet<Integer>> flipped = () -> (prepareBeforeShadow ? flippedAfterPrepare : flippedBeforeShadow);
 
-		ExtendedShader extendedShader = NewShaderTests.create(name, source, programId, framebuffer, framebuffer, baseline,
-				fallbackAlpha, vertexFormat, inputs, updateNotifier, this, flipped, FogMode.PER_VERTEX, isIntensity, isFullbright, true);
+		ShaderTemplate shaderTemplate = NewShaderTests.create(name, source, key, framebuffer, framebuffer, baseline, updateNotifier, this, flipped, whitePixel, true);
 
-		loadedShaders.add(extendedShader);
+		loadedShaders.add(shaderTemplate);
 
-		return extendedShader;
+		return shaderTemplate;
 	}
 
 	public void addGbufferOrShadowSamplers(SamplerHolder samplers, ImageHolder images, Supplier<ImmutableSet<Integer>> flipped,
-										   boolean isShadowPass, InputAvailability availability) {
+										   boolean isShadowPass) {
 		TextureStage textureStage = TextureStage.GBUFFERS_AND_SHADOW;
 
 		ProgramSamplers.CustomTextureSamplerInterceptor samplerHolder =
@@ -532,7 +527,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 			shouldBindPBR = IrisSamplers.hasPBRSamplers(samplerHolder);
 		}
 
-		IrisSamplers.addLevelSamplers(samplers, this, whitePixel, availability);
+		IrisSamplers.addLevelSamplers(samplers, this, whitePixel);
 		IrisSamplers.addWorldDepthSamplers(samplerHolder, this.renderTargets);
 		IrisSamplers.addNoiseSampler(samplerHolder, this.customTextureManager.getNoiseTexture());
 
@@ -863,8 +858,11 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 	private void destroyShaders() {
 		// NB: If you forget this, shader reloads won't work!
 		loadedShaders.forEach(shader -> {
-			shader.clear();
-			shader.close();
+			try {
+				shader.close();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
 		});
 	}
 

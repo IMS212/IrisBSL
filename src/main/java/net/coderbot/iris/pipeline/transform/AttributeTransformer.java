@@ -137,6 +137,7 @@ class AttributeTransformer {
 			// this stage. But this is needed for the pass-through behavior.
 			tree.parseAndInjectNodes(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
 					"uniform sampler2D iris_overlay;",
+					"uniform bool iris_hasOverlay;",
 					"out vec4 entityColor;",
 					"out vec4 iris_vertexColor;",
 					"in ivec2 iris_UV1;");
@@ -145,7 +146,11 @@ class AttributeTransformer {
 			// can pass through the overlay color at the end to the geometry or fragment
 			// stage.
 			tree.prependMain(t,
+					"if (iris_hasOverlay) {",
 					"vec4 overlayColor = texelFetch(iris_overlay, iris_UV1, 0);",
+					"} else {",
+					"vec4 overlayColor = vec4(0)",
+					"}",
 					"entityColor = vec4(overlayColor.rgb, 1.0 - overlayColor.a);",
 					"iris_vertexColor = iris_Color;",
 					// Workaround for a shader pack bug:

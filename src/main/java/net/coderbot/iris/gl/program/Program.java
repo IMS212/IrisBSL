@@ -47,4 +47,8 @@ public final class Program extends GlResource {
 	public int getActiveImages() {
 		return images.getActiveImages();
 	}
+
+    public void updateUniforms() {
+		uniforms.update();
+    }
 }

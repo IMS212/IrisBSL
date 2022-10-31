@@ -5,15 +5,13 @@ import net.coderbot.iris.pipeline.newshader.ShaderAttributeInputs;
 
 public class VanillaParameters extends OverlayParameters {
 	public final AlphaTest alpha;
-	public final ShaderAttributeInputs inputs;
 	public final boolean hasChunkOffset;
 
 	public VanillaParameters(Patch patch, AlphaTest alpha, boolean hasChunkOffset,
-			ShaderAttributeInputs inputs, boolean hasGeometry) {
+			boolean hasGeometry) {
 		super(patch, hasGeometry);
 		this.alpha = alpha;
 		this.hasChunkOffset = hasChunkOffset;
-		this.inputs = inputs;
 	}
 
 	@Override
@@ -27,7 +25,6 @@ public class VanillaParameters extends OverlayParameters {
 		int result = super.hashCode();
 		result = prime * result + ((alpha == null) ? 0 : alpha.hashCode());
 		result = prime * result + (hasChunkOffset ? 1231 : 1237);
-		result = prime * result + ((inputs == null) ? 0 : inputs.hashCode());
 		return result;
 	}
 
@@ -46,11 +43,6 @@ public class VanillaParameters extends OverlayParameters {
 		} else if (!alpha.equals(other.alpha))
 			return false;
 		if (hasChunkOffset != other.hasChunkOffset)
-			return false;
-		if (inputs == null) {
-			if (other.inputs != null)
-				return false;
-		} else if (!inputs.equals(other.inputs))
 			return false;
 		return true;
 	}

@@ -16,9 +16,7 @@ public class VanillaTransformer {
 			VanillaParameters parameters) {
 		// this happens before common to make sure the renaming of attributes is done on
 		// attribute inserted by this
-		if (parameters.inputs.hasOverlay()) {
-			AttributeTransformer.patchOverlayColor(t, tree, root, parameters);
-		}
+		AttributeTransformer.patchOverlayColor(t, tree, root, parameters);
 
 		CommonTransformer.transform(t, tree, root, parameters);
 
@@ -27,25 +25,15 @@ public class VanillaTransformer {
 			// See https://github.com/IrisShaders/Iris/issues/1149
 			root.rename("gl_MultiTexCoord2", "gl_MultiTexCoord1");
 
-			if (parameters.inputs.hasTex()) {
 				root.replaceReferenceExpressions(t, "gl_MultiTexCoord0",
-						"vec4(iris_UV0, 0.0, 1.0)");
-				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
-						"in vec2 iris_UV0;");
-			} else {
-				root.replaceReferenceExpressions(t, "gl_MultiTexCoord0",
-						"vec4(0.5, 0.5, 0.0, 1.0)");
-			}
+						"(iris_hasTex ? vec4(iris_UV0, 0.0, 1.0) : vec4(0.5, 0.5, 0.0, 1.0))");
+				tree.parseAndInjectNodes(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
+						"in vec2 iris_UV0;", "uniform bool iris_hasTex;");
 
-			if (parameters.inputs.hasLight()) {
-				root.replaceReferenceExpressions(t, "gl_MultiTexCoord1",
-						"vec4(iris_UV2, 0.0, 1.0)");
-				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
-						"in ivec2 iris_UV2;");
-			} else {
-				root.replaceReferenceExpressions(t, "gl_MultiTexCoord1",
-						"vec4(240.0, 240.0, 0.0, 1.0)");
-			}
+			root.replaceReferenceExpressions(t, "gl_MultiTexCoord2",
+				"(iris_hasLight ? vec4(iris_UV2, 0.0, 1.0) : vec4(240.0, 240.0, 0.0, 1.0))");
+			tree.parseAndInjectNodes(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
+				"in vec2 iris_UV2;", "uniform bool iris_hasLight;");
 
 			AttributeTransformer.patchMultiTexCoord3(t, tree, root, parameters);
 
@@ -78,20 +66,11 @@ public class VanillaTransformer {
 		}
 
 		if (parameters.type.glShaderType == ShaderType.VERTEX) {
-			if (parameters.inputs.hasNormal()) {
-				if (!parameters.inputs.isNewLines()) {
-					root.rename("gl_Normal", "iris_Normal");
-				} else {
-					root.replaceReferenceExpressions(t, "gl_Normal",
-							"vec3(0.0, 0.0, 1.0)");
-				}
+			root.replaceReferenceExpressions(t, "gl_Normal",
+				"((iris_hasNormal && !iris_applyLines) ? iris_Normal : vec3(0.0, 0.0, 1.0))");
 
-				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
-						"in vec3 iris_Normal;");
-			} else {
-				root.replaceReferenceExpressions(t, "gl_Normal",
-						"vec3(0.0, 0.0, 1.0)");
-			}
+			tree.parseAndInjectNodes(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
+				"in vec3 iris_Normal;", "uniform bool iris_hasNormal;");
 		}
 
 		tree.parseAndInjectNodes(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
@@ -116,10 +95,9 @@ public class VanillaTransformer {
 						"vec4 ftransform() { return gl_ModelViewProjectionMatrix * gl_Vertex; }");
 			}
 
-			if (parameters.inputs.isNewLines()) {
-				root.replaceReferenceExpressions(t, "gl_Vertex",
-						"vec4(iris_Position + iris_vertex_offset, 1.0)");
-
+			root.replaceReferenceExpressions(t, "gl_Vertex",
+				"(iris_applyLines ? vec4(iris_Position + iris_vertex_offset, 1.0) : vec4(iris_Position, 1.0))");
+			tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "uniform bool iris_applyLines");
 				// Create our own main function to wrap the existing main function, so that we
 				// can do our line shenanigans.
 				// TRANSFORM: this is fine since the AttributeTransformer has a different name
@@ -145,6 +123,7 @@ public class VanillaTransformer {
 								"    gl_Position = vec4((ndc1 - vec3(lineOffset, 0.0)) * linePosStart.w, linePosStart.w);" +
 								"}}",
 						"void main() {" +
+							"if (iris_applyLines) {" +
 								"iris_vertex_offset = iris_Normal;" +
 								"irisMain();" +
 								"vec4 linePosEnd = gl_Position;" +
@@ -152,10 +131,10 @@ public class VanillaTransformer {
 								"iris_vertex_offset = vec3(0.0);" +
 								"irisMain();" +
 								"vec4 linePosStart = gl_Position;" +
-								"iris_widen_lines(linePosStart, linePosEnd);}");
-			} else {
-				root.replaceReferenceExpressions(t, "gl_Vertex", "vec4(iris_Position, 1.0)");
-			}
+								"iris_widen_lines(linePosStart, linePosEnd);" +
+					"} else {" +
+					"irisMain();" +
+					"} }");
 		}
 
 		// TODO: All of the transformed variants of the input matrices, preferably
@@ -163,31 +142,23 @@ public class VanillaTransformer {
 		root.replaceReferenceExpressions(t, "gl_ModelViewProjectionMatrix",
 				"(gl_ProjectionMatrix * gl_ModelViewMatrix)");
 
-		if (parameters.hasChunkOffset) {
-			boolean doInjection = root.replaceReferenceExpressionsReport(t, "gl_ModelViewMatrix",
-					"(iris_ModelViewMat * _iris_internal_translate(iris_ChunkOffset))");
-			if (doInjection) {
-				tree.parseAndInjectNodes(t, ASTInjectionPoint.BEFORE_FUNCTIONS,
-						"uniform vec3 iris_ChunkOffset;",
-						"mat4 _iris_internal_translate(vec3 offset) {" +
-								"return mat4(1.0, 0.0, 0.0, 0.0," +
-								"0.0, 1.0, 0.0, 0.0," +
-								"0.0, 0.0, 1.0, 0.0," +
-								"offset.x, offset.y, offset.z, 1.0); }");
-			}
-		} else if (parameters.inputs.isNewLines()) {
-			tree.parseAndInjectNodes(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
-					"const float iris_VIEW_SHRINK = 1.0 - (1.0 / 256.0);",
-					"const mat4 iris_VIEW_SCALE = mat4(" +
-							"iris_VIEW_SHRINK, 0.0, 0.0, 0.0," +
-							"0.0, iris_VIEW_SHRINK, 0.0, 0.0," +
-							"0.0, 0.0, iris_VIEW_SHRINK, 0.0," +
-							"0.0, 0.0, 0.0, 1.0);");
-			root.replaceReferenceExpressions(t, "gl_ModelViewMatrix",
-					"(iris_VIEW_SCALE * iris_ModelViewMat)");
-		} else {
-			root.rename("gl_ModelViewMatrix", "iris_ModelViewMat");
-		}
+		tree.parseAndInjectNodes(t, ASTInjectionPoint.BEFORE_FUNCTIONS,
+			"uniform vec3 iris_ChunkOffset;",
+			"mat4 _iris_internal_translate(vec3 offset) {" +
+				"return mat4(1.0, 0.0, 0.0, 0.0," +
+				"0.0, 1.0, 0.0, 0.0," +
+				"0.0, 0.0, 1.0, 0.0," +
+				"offset.x, offset.y, offset.z, 1.0); }");
+
+		tree.parseAndInjectNodes(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
+			"const float iris_VIEW_SHRINK = 1.0 - (1.0 / 256.0);",
+			"const mat4 iris_VIEW_SCALE = mat4(" +
+				"iris_VIEW_SHRINK, 0.0, 0.0, 0.0," +
+				"0.0, iris_VIEW_SHRINK, 0.0, 0.0," +
+				"0.0, 0.0, iris_VIEW_SHRINK, 0.0," +
+				"0.0, 0.0, 0.0, 1.0);");
+		root.replaceReferenceExpressions(t, "gl_ModelViewMatrix",
+			"(iris_applyLines ? (iris_VIEW_SCALE * iris_ModelViewMat) : (iris_hasChunkOffset ? (iris_ModelViewMat * _iris_internal_translate(iris_ChunkOffset)) : iris_ModelViewMat)");
 
 		root.rename("gl_ProjectionMatrix", "iris_ProjMat");
 		tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS,

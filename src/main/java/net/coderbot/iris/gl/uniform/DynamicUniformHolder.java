@@ -8,6 +8,7 @@ import net.coderbot.iris.vendored.joml.Vector3f;
 import net.coderbot.iris.vendored.joml.Vector4f;
 import net.coderbot.iris.vendored.joml.Vector4i;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
@@ -16,6 +17,7 @@ public interface DynamicUniformHolder extends UniformHolder {
 	DynamicUniformHolder uniform1f(String name, FloatSupplier value, ValueUpdateNotifier notifier);
 	DynamicUniformHolder uniform1f(String name, IntSupplier value, ValueUpdateNotifier notifier);
 	DynamicUniformHolder uniform1f(String name, DoubleSupplier value, ValueUpdateNotifier notifier);
+	DynamicUniformHolder uniform1b(String name, BooleanSupplier value, ValueUpdateNotifier notifier);
 	DynamicUniformHolder uniform1i(String name, IntSupplier value, ValueUpdateNotifier notifier);
 	DynamicUniformHolder uniform2f(String name, Supplier<Vector2f> value, ValueUpdateNotifier notifier);
 	DynamicUniformHolder uniform2i(String name, Supplier<Vector2i> value, ValueUpdateNotifier notifier);

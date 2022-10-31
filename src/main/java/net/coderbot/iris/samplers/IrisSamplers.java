@@ -124,26 +124,12 @@ public class IrisSamplers {
 		return samplers.hasSampler("normals") || samplers.hasSampler("specular");
 	}
 
-	public static void addLevelSamplers(SamplerHolder samplers, WorldRenderingPipeline pipeline, AbstractTexture whitePixel, InputAvailability availability) {
-		if (availability.texture) {
+	public static void addLevelSamplers(SamplerHolder samplers, WorldRenderingPipeline pipeline, AbstractTexture whitePixel) {
 			samplers.addExternalSampler(ALBEDO_TEXTURE_UNIT, "tex", "texture", "gtexture");
-		} else {
-			// TODO: Rebind unbound sampler IDs instead of hardcoding a list...
-			samplers.addDynamicSampler(whitePixel::getId, "tex", "texture", "gtexture",
-					"gcolor", "colortex0");
-		}
 
-		if (availability.lightmap) {
-			samplers.addExternalSampler(LIGHTMAP_TEXTURE_UNIT, "lightmap");
-		} else {
-			samplers.addDynamicSampler(whitePixel::getId, "lightmap");
-		}
+		samplers.addExternalSampler(LIGHTMAP_TEXTURE_UNIT, "lightmap");
 
-		if (availability.overlay) {
-			samplers.addExternalSampler(OVERLAY_TEXTURE_UNIT, "iris_overlay");
-		} else {
-			samplers.addDynamicSampler(whitePixel::getId, "iris_overlay");
-		}
+		samplers.addExternalSampler(OVERLAY_TEXTURE_UNIT, "iris_overlay");
 
 		samplers.addDynamicSampler(pipeline::getCurrentNormalTexture, StateUpdateNotifiers.normalTextureChangeNotifier, "normals");
 		samplers.addDynamicSampler(pipeline::getCurrentSpecularTexture, StateUpdateNotifiers.specularTextureChangeNotifier, "specular");

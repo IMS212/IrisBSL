@@ -8,6 +8,7 @@ import net.coderbot.iris.vertices.IrisVertexFormats;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
@@ -28,6 +29,15 @@ public class MixinVertexFormat {
 				ci.cancel();
 			}
 		}
+	}
+
+	@ModifyArg(method = "_setupBufferState", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexFormatElement;setupBufferState(IJI)V"), index = 0)
+	private int skipInt(int l) {
+		if (l == 3 && ((Object) this) == IrisVertexFormats.TERRAIN) {
+			l = 4;
+		}
+
+		return l;
 	}
 
 	@Inject(method = "clearBufferState", at = @At("HEAD"), cancellable = true)

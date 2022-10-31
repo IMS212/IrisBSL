@@ -8,6 +8,7 @@ import net.coderbot.iris.vendored.joml.Vector3f;
 import net.coderbot.iris.vendored.joml.Vector4f;
 import net.coderbot.iris.vendored.joml.Vector4i;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
@@ -29,6 +30,12 @@ public interface DynamicLocationalUniformHolder extends LocationalUniformHolder,
 
 	default DynamicLocationalUniformHolder uniform1f(String name, DoubleSupplier value, ValueUpdateNotifier notifier) {
 		location(name, UniformType.FLOAT).ifPresent(id -> addDynamicUniform(new FloatUniform(id, () -> (float) value.getAsDouble(), notifier), notifier));
+
+		return this;
+	}
+
+	default DynamicLocationalUniformHolder uniform1b(String name, BooleanSupplier value, ValueUpdateNotifier notifier) {
+		location(name, UniformType.INT).ifPresent(id -> addDynamicUniform(new BooleanUniform(id, value, notifier), notifier));
 
 		return this;
 	}
