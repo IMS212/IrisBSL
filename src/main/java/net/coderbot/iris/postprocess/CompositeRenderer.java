@@ -305,7 +305,7 @@ public class CompositeRenderer {
 		ProgramBuilder builder;
 
 		try {
-			builder = ProgramBuilder.begin(source.getName(), vertex, geometry, fragment,
+			builder = ProgramBuilder.begin(source.getName(), true, vertex, geometry, fragment,
 					IrisSamplers.COMPOSITE_RESERVED_TEXTURE_UNITS);
 		} catch (RuntimeException e) {
 			// TODO: Better error handling

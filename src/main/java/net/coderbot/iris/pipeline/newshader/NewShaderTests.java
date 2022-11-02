@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 public class NewShaderTests {
-	public static ExtendedShader create(String name, ProgramSource source, ProgramId programId, GlFramebuffer writingToBeforeTranslucent,
+	public static FakeShader create(String name, ProgramSource source, ProgramId programId, GlFramebuffer writingToBeforeTranslucent,
 										GlFramebuffer writingToAfterTranslucent, GlFramebuffer baseline, AlphaTest fallbackAlpha,
 										VertexFormat vertexFormat, ShaderAttributeInputs inputs, FrameUpdateNotifier updateNotifier,
 										NewWorldRenderingPipeline parent, Supplier<ImmutableSet<Integer>> flipped, FogMode fogMode, boolean isIntensity,
@@ -51,29 +51,7 @@ public class NewShaderTests {
 		String geometry = transformed.get(PatchShaderType.GEOMETRY);
 		String fragment = transformed.get(PatchShaderType.FRAGMENT);
 
-		StringBuilder shaderJson = new StringBuilder("{\n" +
-				"    \"blend\": {\n" +
-				"        \"func\": \"add\",\n" +
-				"        \"srcrgb\": \"srcalpha\",\n" +
-				"        \"dstrgb\": \"1-srcalpha\"\n" +
-				"    },\n" +
-				"    \"vertex\": \"" + name + "\",\n" +
-				"    \"fragment\": \"" + name + "\",\n" +
-				"    \"attributes\": [\n" +
-				"        \"Position\",\n" +
-				"        \"Color\",\n" +
-				"        \"UV0\",\n" +
-				"        \"UV1\",\n" +
-				"        \"UV2\",\n" +
-				"        \"Normal\"\n" +
-				"    ]\n" +
-				"}");
-
-		String shaderJsonString = shaderJson.toString();
-
-		PatchedShaderPrinter.debugPatchedShaders(source.getName(), vertex, geometry, fragment, shaderJsonString);
-
-		ResourceProvider shaderResourceFactory = new IrisProgramResourceFactory(shaderJsonString, vertex, geometry, fragment);
+		PatchedShaderPrinter.debugPatchedShaders(source.getName(), vertex, geometry, fragment);
 
 		List<BufferBlendOverride> overrides = new ArrayList<>();
 		source.getDirectives().getBufferBlendOverrides().forEach(information -> {
@@ -83,7 +61,7 @@ public class NewShaderTests {
 			}
 		});
 
-		return new ExtendedShader(shaderResourceFactory, name, vertexFormat, writingToBeforeTranslucent, writingToAfterTranslucent, baseline, blendModeOverride, alpha, uniforms -> {
+		return new FakeShader(name, vertex, geometry, fragment, vertexFormat, writingToBeforeTranslucent, writingToAfterTranslucent, baseline, blendModeOverride, alpha, uniforms -> {
 			CommonUniforms.addCommonUniforms(uniforms, source.getParent().getPack().getIdMap(), source.getParent().getPackDirectives(), updateNotifier, fogMode);
 			//SamplerUniforms.addWorldSamplerUniforms(uniforms);
 			//SamplerUniforms.addDepthSamplerUniforms(uniforms);

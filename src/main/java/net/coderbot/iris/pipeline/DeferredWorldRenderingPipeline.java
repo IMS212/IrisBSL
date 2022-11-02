@@ -608,7 +608,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 
 		PatchedShaderPrinter.debugPatchedShaders(source.getName(), vertex, geometry, fragment);
 
-		ProgramBuilder builder = ProgramBuilder.begin(source.getName(), vertex, geometry, fragment,
+		ProgramBuilder builder = ProgramBuilder.begin(source.getName(), true, vertex, geometry, fragment,
 			IrisSamplers.WORLD_RESERVED_TEXTURE_UNITS);
 
 		return createPassInner(builder, source.getParent().getPack().getIdMap(), source.getDirectives(), source.getParent().getPackDirectives(), availability, shadow, id);

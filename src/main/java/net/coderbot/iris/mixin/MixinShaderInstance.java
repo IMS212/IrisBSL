@@ -1,6 +1,8 @@
 package net.coderbot.iris.mixin;
 
 import com.google.common.collect.ImmutableSet;
+import com.mojang.blaze3d.shaders.ProgramManager;
+import com.mojang.blaze3d.shaders.Shader;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.coderbot.iris.Iris;
@@ -9,6 +11,7 @@ import net.coderbot.iris.gl.blending.DepthColorStorage;
 import net.coderbot.iris.pipeline.WorldRenderingPipeline;
 import net.coderbot.iris.pipeline.newshader.CoreWorldRenderingPipeline;
 import net.coderbot.iris.pipeline.newshader.ExtendedShader;
+import net.coderbot.iris.pipeline.newshader.FakeShader;
 import net.coderbot.iris.pipeline.newshader.ShaderInstanceInterface;
 import net.coderbot.iris.pipeline.newshader.fallback.FallbackShader;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -48,6 +51,20 @@ public abstract class MixinShaderInstance implements ShaderInstanceInterface {
 		lastSamplerName = samplerName;
 	}
 
+	@Inject(method = "updateLocations", at = @At("HEAD"), cancellable = true)
+	private void doNotUpdate(CallbackInfo ci) {
+		if ((Object) this instanceof FakeShader) {
+			ci.cancel();
+		}
+	}
+
+	@Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/shaders/ProgramManager;linkShader(Lcom/mojang/blaze3d/shaders/Shader;)V"))
+	private void doNotUpdate2(Shader shader) {
+		if (!((Object) shader instanceof FakeShader)) {
+			ProgramManager.linkShader(shader);
+		}
+	}
+
 	@Inject(method = "apply",
 			at = @At(value = "INVOKE", target = "com/mojang/blaze3d/systems/RenderSystem.bindTexture (I)V",
 					remap = false, shift = At.Shift.AFTER))
@@ -55,11 +72,11 @@ public abstract class MixinShaderInstance implements ShaderInstanceInterface {
 		final String samplerName = Objects.requireNonNull(lastSamplerName);
 		lastSamplerName = null;
 
-		if (!(((Object) this) instanceof ExtendedShader)) {
+		if (!(((Object) this) instanceof FakeShader)) {
 			return;
 		}
 
-		if (!((ExtendedShader) (Object) this).isIntensitySwizzle()) {
+		if (!((FakeShader) (Object) this).isIntensitySwizzle()) {
 			return;
 		}
 
@@ -84,7 +101,7 @@ public abstract class MixinShaderInstance implements ShaderInstanceInterface {
 	@Redirect(method = "updateLocations",
 			at = @At(value = "INVOKE", target = "Lorg/slf4j/Logger;warn(Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;)V", remap = false))
 	private void iris$redirectLogSpam(Logger logger, String message, Object arg1, Object arg2) {
-		if (((Object) this) instanceof ExtendedShader || ((Object) this) instanceof FallbackShader) {
+		if (((Object) this) instanceof FakeShader || ((Object) this) instanceof FallbackShader) {
 			return;
 		}
 
@@ -93,7 +110,7 @@ public abstract class MixinShaderInstance implements ShaderInstanceInterface {
 
 	@Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/shaders/Uniform;glBindAttribLocation(IILjava/lang/CharSequence;)V"))
 	public void iris$redirectBindAttributeLocation(int i, int j, CharSequence charSequence) {
-		if (((Object) this) instanceof ExtendedShader && ATTRIBUTE_LIST.contains(charSequence)) {
+		if (((Object) this) instanceof FakeShader && ATTRIBUTE_LIST.contains(charSequence)) {
 			Uniform.glBindAttribLocation(i, j, "iris_" + charSequence);
 		} else {
 			Uniform.glBindAttribLocation(i, j, charSequence);
@@ -102,7 +119,7 @@ public abstract class MixinShaderInstance implements ShaderInstanceInterface {
 
 	@Inject(method = "apply", at = @At("TAIL"))
 	private void iris$lockDepthColorState(CallbackInfo ci) {
-		if (((Object) this) instanceof ExtendedShader || ((Object) this) instanceof FallbackShader || !shouldOverrideShaders()) {
+		if (((Object) this) instanceof FakeShader || ((Object) this) instanceof FallbackShader || !shouldOverrideShaders()) {
 			return;
 		}
 
@@ -111,7 +128,7 @@ public abstract class MixinShaderInstance implements ShaderInstanceInterface {
 
 	@Inject(method = "clear", at = @At("HEAD"))
 	private void iris$unlockDepthColorState(CallbackInfo ci) {
-		if (((Object) this) instanceof ExtendedShader || ((Object) this) instanceof FallbackShader || !shouldOverrideShaders()) {
+		if (((Object) this) instanceof FakeShader || ((Object) this) instanceof FallbackShader || !shouldOverrideShaders()) {
 			return;
 		}
 

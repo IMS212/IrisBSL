@@ -366,8 +366,8 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 			ShaderInstance shader = shaderMap.getShader(ShaderKey.SHADOW_TERRAIN_CUTOUT);
 			boolean shadowUsesImages = false;
 
-			if (shader instanceof ExtendedShader) {
-				ExtendedShader shader2 = (ExtendedShader) shader;
+			if (shader instanceof FakeShader) {
+				FakeShader shader2 = (FakeShader) shader;
 				shadowUsesImages = shader2.hasActiveImages();
 			}
 
@@ -460,7 +460,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		Supplier<ImmutableSet<Integer>> flipped =
 			() -> isBeforeTranslucent ? flippedAfterPrepare : flippedAfterTranslucent;
 
-		ExtendedShader extendedShader = NewShaderTests.create(name, source, programId, beforeTranslucent, afterTranslucent,
+		FakeShader extendedShader = NewShaderTests.create(name, source, programId, beforeTranslucent, afterTranslucent,
 				baseline, fallbackAlpha, vertexFormat, inputs, updateNotifier, this, flipped, fogMode, isIntensity, isFullbright, false);
 
 		loadedShaders.add(extendedShader);
@@ -509,7 +509,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 
 		Supplier<ImmutableSet<Integer>> flipped = () -> (prepareBeforeShadow ? flippedAfterPrepare : flippedBeforeShadow);
 
-		ExtendedShader extendedShader = NewShaderTests.create(name, source, programId, framebuffer, framebuffer, baseline,
+		FakeShader extendedShader = NewShaderTests.create(name, source, programId, framebuffer, framebuffer, baseline,
 				fallbackAlpha, vertexFormat, inputs, updateNotifier, this, flipped, FogMode.PER_VERTEX, isIntensity, isFullbright, true);
 
 		loadedShaders.add(extendedShader);

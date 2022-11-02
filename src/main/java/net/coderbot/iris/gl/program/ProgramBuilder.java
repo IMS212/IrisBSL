@@ -31,7 +31,7 @@ public class ProgramBuilder extends ProgramUniforms.Builder implements SamplerHo
 		IrisRenderSystem.bindAttributeLocation(program, index, name);
 	}
 
-	public static ProgramBuilder begin(String name, @Nullable String vertexSource, @Nullable String geometrySource,
+	public static ProgramBuilder begin(String name, boolean bindAttributes, @Nullable String vertexSource, @Nullable String geometrySource,
 									   @Nullable String fragmentSource, ImmutableSet<Integer> reservedTextureUnits) {
 		RenderSystem.assertOnRenderThread();
 
@@ -52,9 +52,9 @@ public class ProgramBuilder extends ProgramUniforms.Builder implements SamplerHo
 		int programId;
 
 		if (geometry != null) {
-			programId = ProgramCreator.create(name, vertex, geometry, fragment);
+			programId = ProgramCreator.create(name, bindAttributes, vertex, geometry, fragment);
 		} else {
-			programId = ProgramCreator.create(name, vertex, fragment);
+			programId = ProgramCreator.create(name, bindAttributes, vertex, fragment);
 		}
 
 		vertex.destroy();
@@ -77,7 +77,7 @@ public class ProgramBuilder extends ProgramUniforms.Builder implements SamplerHo
 
 		GlShader compute = buildShader(ShaderType.COMPUTE, name + ".csh", source);
 
-		int programId = ProgramCreator.create(name, compute);
+		int programId = ProgramCreator.create(name, false, compute);
 
 		compute.destroy();
 
