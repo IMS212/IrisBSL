@@ -12,7 +12,6 @@ import net.fabricmc.loader.api.VersionParsingException;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextComponent;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -130,28 +129,7 @@ public class UpdateChecker {
 	}
 
 	public Optional<Component> getUpdateMessage() {
-		if (shouldShowUpdateMessage) {
-			UpdateInfo info = getUpdateInfo();
-
-			if (info == null) {
-				return Optional.empty();
-			}
-
-			String languageCode = Minecraft.getInstance().options.languageCode.toLowerCase(Locale.ROOT);
-			String originalText = info.updateInfo.containsKey(languageCode) ? info.updateInfo.get(languageCode) : info.updateInfo.get("en_us");
-			String[] textParts = originalText.split("\\{link}");
-			if (textParts.length > 1) {
-				MutableComponent component1 = new TextComponent(textParts[0]);
-				MutableComponent component2 = new TextComponent(textParts[1]);
-				MutableComponent link = new TextComponent(usedIrisInstaller ? "the Iris Installer" : info.modHost).withStyle(arg -> arg.withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, usedIrisInstaller ? info.installer : info.modDownload)).withUnderlined(true));
-				return Optional.of(component1.append(link).append(component2));
-			} else {
-				MutableComponent link = new TextComponent(usedIrisInstaller ? "the Iris Installer" : info.modHost).withStyle(arg -> arg.withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, usedIrisInstaller ? info.installer : info.modDownload)).withUnderlined(true));
-				return Optional.of(new TextComponent(textParts[0]).append(link));
-			}
-		} else {
-			return Optional.empty();
-		}
+		return Optional.empty();
 	}
 
 	public Optional<String> getUpdateLink() {

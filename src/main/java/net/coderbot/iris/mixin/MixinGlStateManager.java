@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.injection.ModifyConstant;
 
 @Mixin(GlStateManager.class)
 public class MixinGlStateManager {
-	@ModifyConstant(method = "<clinit>", constant = @Constant(intValue = 12), require = 1)
+	@ModifyConstant(method = "<clinit>", constant = @Constant(intValue = 8), require = 1)
 	private static int iris$increaseMaximumAllowedTextureUnits(int existingValue) {
 		return SamplerLimits.get().getMaxTextureUnits();
 	}

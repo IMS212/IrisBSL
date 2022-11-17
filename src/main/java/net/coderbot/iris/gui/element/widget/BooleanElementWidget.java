@@ -8,16 +8,16 @@ import net.coderbot.iris.gui.screen.ShaderPackScreen;
 import net.coderbot.iris.shaderpack.option.BooleanOption;
 import net.coderbot.iris.shaderpack.option.menu.OptionMenuBooleanOptionElement;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextColor;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 
 public class BooleanElementWidget extends BaseOptionElementWidget<OptionMenuBooleanOptionElement> {
-	private static final Component TEXT_TRUE = new TranslatableComponent("label.iris.true").withStyle(ChatFormatting.GREEN);
-	private static final Component TEXT_FALSE = new TranslatableComponent("label.iris.false").withStyle(ChatFormatting.RED);
-	private static final Component TEXT_TRUE_DEFAULT = new TranslatableComponent("label.iris.true");
-	private static final Component TEXT_FALSE_DEFAULT = new TranslatableComponent("label.iris.false");
+	private static final String TEXT_TRUE = ChatFormatting.GREEN + I18n.get("label.iris.true");
+	private static final String TEXT_FALSE = ChatFormatting.RED + I18n.get("label.iris.false");
+	private static final String TEXT_TRUE_DEFAULT = I18n.get("label.iris.true");
+	private static final String TEXT_FALSE_DEFAULT = I18n.get("label.iris.false");
 
 	private final BooleanOption option;
 
@@ -45,19 +45,19 @@ public class BooleanElementWidget extends BaseOptionElementWidget<OptionMenuBool
 		this.defaultValue = this.element.getAppliedOptionValues().getOptionSet().getBooleanOptions()
 			.get(this.option.getName()).getOption().getDefaultValue();
 
-		this.setLabel(GuiUtil.translateOrDefault(new TextComponent(this.option.getName()), "option." + this.option.getName()));
+		this.setLabel(GuiUtil.translateOrDefault((this.option.getName()), "option." + this.option.getName()));
 	}
 
 	@Override
-	public void render(PoseStack poseStack, int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
+	public void render(int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
 		this.updateRenderParams(width, 28);
 
-		this.renderOptionWithValue(poseStack, x, y, width, height, hovered);
-		this.tryRenderTooltip(poseStack, mouseX, mouseY, hovered);
+		this.renderOptionWithValue(x, y, width, height, hovered);
+		this.tryRenderTooltip(mouseX, mouseY, hovered);
 	}
 
 	@Override
-	protected Component createValueLabel() {
+	protected String createValueLabel() {
 		// UX: Do not use color if the value is set to default.
 		//
 		// This is because the red color for "Off" and green color of "On"

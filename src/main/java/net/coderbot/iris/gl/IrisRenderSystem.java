@@ -2,6 +2,7 @@ package net.coderbot.iris.gl;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.coderbot.iris.mixin.GlStateManagerAccessor;
 import net.coderbot.iris.vendored.joml.Vector3i;
 import net.coderbot.iris.Iris;
 import org.jetbrains.annotations.Nullable;
@@ -263,7 +264,7 @@ public class IrisRenderSystem {
 		RenderSystem.assertThread(RenderSystem::isOnRenderThreadOrInit);
 		GL40C.glBlendFuncSeparatei(buffer, srcRGB, dstRGB, srcAlpha, dstAlpha);
   }
-  
+
 	public static void bindTextureToUnit(int unit, int texture) {
 		dsaState.bindTextureToUnit(unit, texture);
 	}
@@ -453,7 +454,7 @@ public class IrisRenderSystem {
 
 		@Override
 		public void copyTexSubImage2D(int destTexture, int target, int i, int i1, int i2, int i3, int i4, int width, int height) {
-			int previous = GlStateManager.getActiveTextureName();
+			int previous = GlStateManagerAccessor.getTEXTURES()[GlStateManagerAccessor.getActiveTexture()].binding;
 			GlStateManager._bindTexture(destTexture);
 			GL30C.glCopyTexSubImage2D(target, i, i1, i2, i3, i4, width, height);
 			GlStateManager._bindTexture(previous);

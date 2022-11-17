@@ -37,8 +37,6 @@ public enum WorldRenderingPhase {
 			return WorldRenderingPhase.TERRAIN_CUTOUT_MIPPED;
 		} else if (renderType == RenderType.translucent()) {
 			return WorldRenderingPhase.TERRAIN_TRANSLUCENT;
-		} else if (renderType == RenderType.tripwire()) {
-			return WorldRenderingPhase.TRIPWIRE;
 		} else {
 			throw new IllegalStateException("Illegal render type!");
 		}

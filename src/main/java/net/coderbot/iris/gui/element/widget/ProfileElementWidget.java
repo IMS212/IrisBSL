@@ -12,20 +12,20 @@ import net.coderbot.iris.shaderpack.option.menu.OptionMenuProfileElement;
 import net.coderbot.iris.shaderpack.option.values.OptionValues;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 
 import java.util.Optional;
 
 public class ProfileElementWidget extends BaseOptionElementWidget<OptionMenuProfileElement> {
-	private static final MutableComponent PROFILE_LABEL = new TranslatableComponent("options.iris.profile");
-	private static final MutableComponent PROFILE_CUSTOM = new TranslatableComponent("options.iris.profile.custom").withStyle(ChatFormatting.YELLOW);
+	private static final String PROFILE_LABEL = I18n.get("options.iris.profile");
+	private static final String PROFILE_CUSTOM = ChatFormatting.YELLOW + I18n.get("options.iris.profile.custom");
 
 	private Profile next;
 	private Profile previous;
-	private Component profileLabel;
+	private String profileLabel;
 
 	public ProfileElementWidget(OptionMenuProfileElement element) {
 		super(element);
@@ -46,23 +46,23 @@ public class ProfileElementWidget extends BaseOptionElementWidget<OptionMenuProf
 		this.previous = result.previous;
 		Optional<String> profileName = result.current.map(p -> p.name);
 
-		this.profileLabel = profileName.map(name -> GuiUtil.translateOrDefault(new TextComponent(name), "profile." + name)).orElse(PROFILE_CUSTOM);
+		this.profileLabel = profileName.map(name -> GuiUtil.translateOrDefault(name, "profile." + name)).orElse(PROFILE_CUSTOM);
 	}
 
 	@Override
-	public void render(PoseStack poseStack, int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
+	public void render(int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
 		this.updateRenderParams(width, width - (Minecraft.getInstance().font.width(PROFILE_LABEL) + 16));
 
-		this.renderOptionWithValue(poseStack, x, y, width, height, hovered);
+		this.renderOptionWithValue( x, y, width, height, hovered);
 	}
 
 	@Override
-	protected Component createValueLabel() {
+	protected String createValueLabel() {
 		return this.profileLabel;
 	}
 
 	@Override
-	public Optional<Component> getCommentTitle() {
+	public Optional<String> getCommentTitle() {
 		return Optional.of(PROFILE_LABEL);
 	}
 

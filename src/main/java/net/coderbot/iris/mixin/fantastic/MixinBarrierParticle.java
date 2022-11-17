@@ -20,19 +20,6 @@ public class MixinBarrierParticle {
 	@Unique
 	private boolean isOpaque;
 
-	@Inject(method = "<init>", at = @At("RETURN"))
-	private void iris$resolveTranslucency(ClientLevel level, double x, double y, double z, ItemLike itemConvertible, CallbackInfo ci) {
-		if (itemConvertible instanceof BlockItem) {
-			BlockItem blockItem = (BlockItem) itemConvertible;
-
-			RenderType type = ItemBlockRenderTypes.getChunkRenderType(blockItem.getBlock().defaultBlockState());
-
-			if (type == RenderType.solid() || type == RenderType.cutout() || type == RenderType.cutoutMipped()) {
-				isOpaque = true;
-			}
-		}
-	}
-
 	@Inject(method = "getRenderType", at = @At("HEAD"), cancellable = true)
 	private void iris$overrideParticleRenderType(CallbackInfoReturnable<ParticleRenderType> cir) {
 		if (isOpaque) {

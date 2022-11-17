@@ -8,6 +8,7 @@ import net.coderbot.iris.gl.texture.PixelType;
 import net.coderbot.iris.vendored.joml.Vector2i;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL13C;
+import org.lwjgl.opengl.GL43C;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -36,7 +37,7 @@ public class RenderTarget {
 		this.height = builder.height;
 
 		int[] textures = new int[2];
-		GlStateManager._genTextures(textures);
+		GL43C.glGenTextures(textures);
 
 		this.mainTexture = textures[0];
 		this.altTexture = textures[1];
@@ -107,7 +108,7 @@ public class RenderTarget {
 		requireValid();
 		isValid = false;
 
-		GlStateManager._deleteTextures(new int[]{mainTexture, altTexture});
+		GL43C.glDeleteTextures(new int[]{mainTexture, altTexture});
 	}
 
 	private void requireValid() {

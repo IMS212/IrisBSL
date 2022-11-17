@@ -25,10 +25,9 @@ public abstract class MixinVideoSettingsScreen extends Screen {
 			index = 0
 	)
 	private Option[] iris$addShaderPackScreenButton(Option[] old) {
-		Option[] options = new Option[old.length + 2];
+		Option[] options = new Option[old.length + 1];
 		System.arraycopy(old, 0, options, 0, old.length);
-		options[options.length - 2] = new ShaderPackSelectionButtonOption((VideoSettingsScreen)(Object)this, this.minecraft);
-		options[options.length - 1] = IrisVideoSettings.RENDER_DISTANCE;
+		options[options.length - 1] = new ShaderPackSelectionButtonOption((VideoSettingsScreen)(Object)this, this.minecraft);
 		return options;
 	}
 }

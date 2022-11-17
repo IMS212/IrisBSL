@@ -11,7 +11,8 @@ import java.util.function.Function;
 
 public class ShadowDistanceOption extends ProgressOption {
 
-	public ShadowDistanceOption(String string, double d, double e, float f, Function<Options, Double> function, BiConsumer<Options, Double> biConsumer, BiFunction<Options, ProgressOption, Component> biFunction) {
+
+	public ShadowDistanceOption(String string, double d, double e, float f, Function<Options, Double> function, BiConsumer<Options, Double> biConsumer, BiFunction<Options, ProgressOption, String> biFunction) {
 		super(string, d, e, f, function, biConsumer, biFunction);
 	}
 

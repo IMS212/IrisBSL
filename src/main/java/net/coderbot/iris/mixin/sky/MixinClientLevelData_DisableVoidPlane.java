@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * takes a far more conservative approach and only disables specific parts of sky rendering in high-fog
  * situations.
  */
-@Mixin(ClientLevel.ClientLevelData.class)
+@Mixin(ClientLevel.class)
 public class MixinClientLevelData_DisableVoidPlane {
 	@Inject(method = "getHorizonHeight()D", at = @At("HEAD"), cancellable = true)
 	private void iris$getHorizonHeight(CallbackInfoReturnable<Double> cir) {

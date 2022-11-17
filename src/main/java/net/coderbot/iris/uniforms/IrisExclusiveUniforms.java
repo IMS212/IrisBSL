@@ -9,7 +9,7 @@ import net.coderbot.iris.vendored.joml.Vector3f;
 import net.coderbot.iris.vendored.joml.Vector4f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.world.entity.LightningBolt;
+import net.minecraft.world.entity.global.LightningBolt;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 
@@ -36,7 +36,7 @@ public class IrisExclusiveUniforms {
 			if (Minecraft.getInstance().level != null) {
 				return StreamSupport.stream(Minecraft.getInstance().level.entitiesForRendering().spliterator(), false).filter(bolt -> bolt instanceof LightningBolt).findAny().map(bolt -> {
 					Vector3d unshiftedCameraPosition = CameraUniforms.getUnshiftedCameraPosition();
-					Vec3 vec3 = bolt.getPosition(Minecraft.getInstance().getDeltaFrameTime());
+					Vec3 vec3 = bolt.getEyePosition(Minecraft.getInstance().getDeltaFrameTime());
 					return new Vector4f((float) (vec3.x - unshiftedCameraPosition.x), (float) (vec3.y - unshiftedCameraPosition.y), (float) (vec3.z - unshiftedCameraPosition.z), 1);
 				}).orElse(zero);
 			} else {
@@ -93,9 +93,9 @@ public class IrisExclusiveUniforms {
 
 	private static boolean isFirstPersonCamera() {
 		// If camera type is not explicitly third-person, assume it's first-person.
-		switch (Minecraft.getInstance().options.getCameraType()) {
-			case THIRD_PERSON_BACK:
-			case THIRD_PERSON_FRONT:
+		switch (Minecraft.getInstance().options.thirdPersonView) {
+			case 1:
+			case 2:
 				return false;
 			default: return true;
 		}
@@ -120,27 +120,6 @@ public class IrisExclusiveUniforms {
 					return level.getMaxBuildHeight();
 				} else {
 					return 256;
-				}
-			});
-			uniforms.uniform1b(UniformUpdateFrequency.PER_FRAME, "hasCeiling", () -> {
-				if (level != null) {
-					return level.dimensionType().hasCeiling();
-				} else {
-					return false;
-				}
-			});
-			uniforms.uniform1b(UniformUpdateFrequency.PER_FRAME, "hasSkylight", () -> {
-				if (level != null) {
-					return level.dimensionType().hasSkyLight();
-				} else {
-					return true;
-				}
-			});
-			uniforms.uniform1f(UniformUpdateFrequency.PER_FRAME, "ambientLight", () -> {
-				if (level != null) {
-					return ((DimensionTypeAccessor) level.dimensionType()).getAmbientLight();
-				} else {
-					return 0f;
 				}
 			});
 

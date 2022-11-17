@@ -8,6 +8,7 @@ import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.TranslatableComponent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -40,22 +41,5 @@ public class MixinTitleScreen {
 
 			return;
 		}
-
-		Minecraft.getInstance().setScreen(new ConfirmScreen(
-				(boolean accepted) -> {
-					if (accepted) {
-						try {
-							Util.getPlatform().openUri(new URI(SodiumVersionCheck.getDownloadLink()));
-						} catch (URISyntaxException e) {
-							throw new IllegalStateException(e);
-						}
-					} else {
-						Minecraft.getInstance().stop();
-					}
-				},
-				new TranslatableComponent("iris.sodium.failure.title").withStyle(ChatFormatting.RED),
-				new TranslatableComponent(reason),
-				new TranslatableComponent("iris.sodium.failure.download"),
-				new TranslatableComponent("menu.quit")));
 	}
 }

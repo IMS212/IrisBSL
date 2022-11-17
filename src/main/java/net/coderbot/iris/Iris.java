@@ -622,9 +622,9 @@ public class Iris {
 		ClientLevel level = Minecraft.getInstance().level;
 
 		if (level != null) {
-			if (level.dimensionType().effectsLocation().equals(DimensionType.END_EFFECTS) || level.dimension().equals(net.minecraft.world.level.Level.END)) {
+			if (level.dimension.getType() == DimensionType.THE_END) {
 				return DimensionId.END;
-			} else if (level.dimensionType().effectsLocation().equals(DimensionType.NETHER_EFFECTS) || level.dimension().equals(net.minecraft.world.level.Level.NETHER)) {
+			} else if (level.dimension.getType() == DimensionType.NETHER) {
 				return DimensionId.NETHER;
 			} else {
 				return DimensionId.OVERWORLD;
