@@ -64,8 +64,9 @@ import net.coderbot.iris.vendored.joml.Vector3d;
 import net.coderbot.iris.vendored.joml.Vector4f;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.DimensionSpecialEffects;
 import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.world.level.dimension.Dimension;
+import net.minecraft.world.level.dimension.DimensionType;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL20C;
@@ -171,7 +172,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 
 		RenderTarget mainTarget = Minecraft.getInstance().getMainRenderTarget();
 
-		int depthTextureId = mainTarget.getDepthTextureId();
+		int depthTextureId = mainTarget.depthBufferId;
 		int internalFormat = TextureInfoCache.INSTANCE.getInfo(depthTextureId).getInternalFormat();
 		DepthBufferFormat depthBufferFormat = DepthBufferFormat.fromGlEnumOrDefault(internalFormat);
 
@@ -899,7 +900,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 		RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
 		Blaze3dRenderTargetExt mainExt = (Blaze3dRenderTargetExt) main;
 
-		int depthTextureId = main.getDepthTextureId();
+		int depthTextureId = main.depthBufferId;
 		int internalFormat = TextureInfoCache.INSTANCE.getInfo(depthTextureId).getInternalFormat();
 		DepthBufferFormat depthBufferFormat = DepthBufferFormat.fromGlEnumOrDefault(internalFormat);
 
@@ -1116,9 +1117,9 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 		// while rendering the sky.
 		//
 		// A lot of dimension mods touch sky rendering, FabricSkyboxes injects at HEAD and cancels, etc.
-		DimensionSpecialEffects.SkyType skyType = Minecraft.getInstance().level.effects().skyType();
+		DimensionType skyType = Minecraft.getInstance().level.dimension.getType();
 
-		if (skyType == DimensionSpecialEffects.SkyType.NORMAL) {
+		if (skyType == DimensionType.OVERWORLD) {
 			RenderSystem.disableTexture();
 			RenderSystem.depthMask(false);
 

@@ -127,7 +127,8 @@ public class PBRAtlasTexture extends AbstractTexture {
 	}
 
 	@Override
-	public void close() {
+	public void releaseId() {
+		super.releaseId();
 		PBRAtlasHolder pbrHolder = ((TextureAtlasExtension) atlasTexture).getPBRHolder();
 		if (pbrHolder != null) {
 			switch (type) {

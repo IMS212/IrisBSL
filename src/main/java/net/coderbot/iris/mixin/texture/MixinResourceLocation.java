@@ -17,9 +17,9 @@ public class MixinResourceLocation {
 		}
 	}
 
-	@Inject(method = "validPathChar", at = @At("HEAD"), cancellable = true)
-	private static void iris$allowInvalidPaths(char c, CallbackInfoReturnable<Boolean> cir) {
-		if (c >= 'A' && c <= 'Z') {
+	@Inject(method = "lambda$isValidPath$0", at = @At("HEAD"), cancellable = true)
+	private static void iris$allowInvalidPaths(int i, CallbackInfoReturnable<Boolean> cir) {
+		if (i >= 'A' && i <= 'Z') {
 			cir.setReturnValue(true);
 		}
 	}

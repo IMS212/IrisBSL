@@ -9,7 +9,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import org.lwjgl.glfw.GLFW;
@@ -17,20 +16,20 @@ import org.lwjgl.glfw.GLFW;
 import java.util.Optional;
 
 public class LinkElementWidget extends CommentedElementWidget<OptionMenuLinkElement> {
-	private static final Component ARROW = new TextComponent(">");
+	private static final String ARROW = ">";
 
 	private final String targetScreenId;
-	private final MutableComponent label;
+	private final String label;
 
 	private NavigationController navigation;
-	private MutableComponent trimmedLabel = null;
+	private String trimmedLabel = null;
 	private boolean isLabelTrimmed = false;
 
 	public LinkElementWidget(OptionMenuLinkElement element) {
 		super(element);
 
 		this.targetScreenId = element.targetScreenId;
-		this.label = GuiUtil.translateOrDefault(new TextComponent(element.targetScreenId), "screen." + element.targetScreenId);
+		this.label = GuiUtil.translateOrDefault(element.targetScreenId, "screen." + element.targetScreenId);
 	}
 
 	@Override
@@ -39,9 +38,9 @@ public class LinkElementWidget extends CommentedElementWidget<OptionMenuLinkElem
 	}
 
 	@Override
-	public void render(PoseStack poseStack, int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
+	public void render(int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
 		GuiUtil.bindIrisWidgetsTexture();
-		GuiUtil.drawButton(poseStack, x, y, width, height, hovered, false);
+		GuiUtil.drawButton(x, y, width, height, hovered, false);
 
 		Font font = Minecraft.getInstance().font;
 
@@ -57,12 +56,12 @@ public class LinkElementWidget extends CommentedElementWidget<OptionMenuLinkElem
 
 		int labelWidth = font.width(this.trimmedLabel);
 
-		font.drawShadow(poseStack, this.trimmedLabel, x + (int)(width * 0.5) - (int)(labelWidth * 0.5) - (int)(0.5 * Math.max(labelWidth - (width - 18), 0)), y + 7, 0xFFFFFF);
-		font.draw(poseStack, ARROW, (x + width) - 9, y + 7, 0xFFFFFF);
+		font.drawShadow(this.trimmedLabel, x + (int)(width * 0.5) - (int)(labelWidth * 0.5) - (int)(0.5 * Math.max(labelWidth - (width - 18), 0)), y + 7, 0xFFFFFF);
+		font.draw(ARROW, (x + width) - 9, y + 7, 0xFFFFFF);
 
 		if (hovered && this.isLabelTrimmed) {
 			// To prevent other elements from being drawn on top of the tooltip
-			ShaderPackScreen.TOP_LAYER_RENDER_QUEUE.add(() -> GuiUtil.drawTextPanel(font, poseStack, this.label, mouseX + 2, mouseY - 16));
+			ShaderPackScreen.TOP_LAYER_RENDER_QUEUE.add(() -> GuiUtil.drawTextPanel(font, this.label, mouseX + 2, mouseY - 16));
 		}
 	}
 
@@ -78,13 +77,13 @@ public class LinkElementWidget extends CommentedElementWidget<OptionMenuLinkElem
 	}
 
 	@Override
-	public Optional<Component> getCommentTitle() {
+	public Optional<String> getCommentTitle() {
 		return Optional.of(this.label);
 	}
 
 	@Override
-	public Optional<Component> getCommentBody() {
+	public Optional<String> getCommentBody() {
 		String translation = "screen." + this.targetScreenId + ".comment";
-		return Optional.ofNullable(I18n.exists(translation) ? new TranslatableComponent(translation) : null);
+		return Optional.ofNullable(I18n.exists(translation) ? I18n.get(translation) : null);
 	}
 }

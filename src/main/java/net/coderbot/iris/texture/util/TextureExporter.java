@@ -26,7 +26,7 @@ public class TextureExporter {
 		dir.mkdirs();
 		File file = new File(dir, filename);
 
-		Util.ioPool().execute(() -> {
+		Util.backgroundExecutor().execute(() -> {
 			try {
 				nativeImage.writeToFile(file);
 			} catch (Exception var7) {

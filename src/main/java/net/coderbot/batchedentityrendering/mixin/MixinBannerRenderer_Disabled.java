@@ -35,31 +35,4 @@ public class MixinBannerRenderer_Disabled {
     @Unique
     private static Groupable groupableToEnd;
     private static int index;
-
-    @ModifyVariable(method = RENDER_PATTERNS, at = @At("HEAD"), argsOnly = true)
-    private static MultiBufferSource iris$wrapBufferSource(MultiBufferSource multiBufferSource) {
-        if (multiBufferSource instanceof Groupable) {
-            Groupable groupable = (Groupable) multiBufferSource;
-            boolean started = groupable.maybeStartGroup();
-
-            if (started) {
-                groupableToEnd = groupable;
-            }
-
-			index = 0;
-			// NB: Groupable not needed for this implementation of MultiBufferSource.
-			return type -> multiBufferSource.getBuffer(new TaggingRenderTypeWrapper(type.toString(), type, index++));
-        }
-
-        return multiBufferSource;
-    }
-
-    @Inject(method = RENDER_PATTERNS, at = @At("RETURN"))
-    private static void iris$endRenderingCanvas(PoseStack poseStack, MultiBufferSource multiBufferSource, int i, int j, ModelPart modelPart, Material material, boolean bl, List<Pair<BannerPattern, DyeColor>> list, boolean bl2, CallbackInfo ci) {
-        if (groupableToEnd != null) {
-            groupableToEnd.endGroup();
-            groupableToEnd = null;
-			index = 0;
-        }
-    }
 }

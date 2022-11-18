@@ -10,7 +10,7 @@ public abstract class CommentedElementWidget<T extends OptionMenuElement> extend
 		super(element);
 	}
 
-	public abstract Optional<Component> getCommentTitle();
+	public abstract Optional<String> getCommentTitle();
 
-	public abstract Optional<Component> getCommentBody();
+	public abstract Optional<String> getCommentBody();
 }

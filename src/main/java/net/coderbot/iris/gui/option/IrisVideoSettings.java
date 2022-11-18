@@ -27,44 +27,4 @@ public class IrisVideoSettings {
 				.map(pipeline -> !pipeline.getForcedShadowRenderDistanceChunksForDisplay().isPresent())
 				.orElse(true);
 	}
-
-	public static final ProgressOption RENDER_DISTANCE = new ShadowDistanceOption("options.iris.shadowDistance", 0.0D, 32.0D, 1.0F, (gameOptions) -> {
-		return (double) getOverriddenShadowDistance(shadowDistance);
-	}, (gameOptions, viewDistance) -> {
-		double outputShadowDistance = viewDistance;
-		shadowDistance = (int) outputShadowDistance;
-		try {
-			Iris.getIrisConfig().save();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}, (gameOptions, option) -> {
-		int d = (int) option.get(gameOptions);
-
-		WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();
-
-		Component tooltip;
-
-		if (pipeline != null) {
-			d = pipeline.getForcedShadowRenderDistanceChunksForDisplay().orElse(d);
-
-			if (pipeline.getForcedShadowRenderDistanceChunksForDisplay().isPresent()) {
-				tooltip = DISABLED_TOOLTIP;
-			} else {
-				tooltip = ENABLED_TOOLTIP;
-			}
-		} else {
-			tooltip = ENABLED_TOOLTIP;
-		}
-
-		option.setTooltip(Minecraft.getInstance().font.split(tooltip, 200));
-
-		if (d <= 0.0) {
-			return new TranslatableComponent("options.generic_value", new TranslatableComponent("options.iris.shadowDistance"), "0 (disabled)");
-		} else {
-			return new TranslatableComponent("options.generic_value",
-					new TranslatableComponent("options.iris.shadowDistance"),
-					new TranslatableComponent("options.chunks", d));
-		}
-	});
 }

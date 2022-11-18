@@ -66,10 +66,10 @@ public final class OptionMenuConstructor {
 
 	static {
 		registerScreen(OptionMenuMainElementScreen.class, screen ->
-				new ElementWidgetScreenData(new TextComponent(Iris.getCurrentPackName()).append(Iris.isFallback() ? " (fallback)" : "").withStyle(ChatFormatting.BOLD), false));
+				new ElementWidgetScreenData(ChatFormatting.BOLD + Iris.getCurrentPackName() + (Iris.isFallback() ? " (fallback)" : ""), false));
 
 		registerScreen(OptionMenuSubElementScreen.class, screen ->
-				new ElementWidgetScreenData(GuiUtil.translateOrDefault(new TextComponent(screen.screenId), "screen." + screen.screenId), true));
+				new ElementWidgetScreenData(GuiUtil.translateOrDefault(screen.screenId, "screen." + screen.screenId), true));
 
 		registerWidget(OptionMenuBooleanOptionElement.class, BooleanElementWidget::new);
 		registerWidget(OptionMenuProfileElement.class, ProfileElementWidget::new);

@@ -40,9 +40,9 @@ import org.eclipse.jgit.errors.RepositoryNotFoundException;
 import org.eclipse.jgit.lib.Constants;
 
 public class Buildscript extends SimpleFabricProject {
-	static final boolean SODIUM = true;
+	static final boolean SODIUM = false;
 	static final boolean CUSTOM_SODIUM = false;
-	static final String MC_VERSION = "1.16.5";
+	static final String MC_VERSION = "20w14infinite";
 	static final String customSodiumName = "";
 
 	private static final String[] SOURCE_SETS = new String[] {

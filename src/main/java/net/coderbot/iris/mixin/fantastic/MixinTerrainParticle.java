@@ -6,6 +6,7 @@ import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.TerrainParticle;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -20,8 +21,8 @@ public class MixinTerrainParticle {
 	private boolean isOpaque;
 
 	@Inject(method = "<init>", at = @At("RETURN"))
-	private void iris$resolveTranslucency(ClientLevel level, double x, double y, double z, double velocityX, double velocityY, double velocityZ, BlockState blockState, CallbackInfo callback) {
-		RenderType type = ItemBlockRenderTypes.getChunkRenderType(blockState);
+	private void iris$resolveTranslucency(Level arg, double d, double e, double f, double g, double h, double i, BlockState arg2, CallbackInfo ci) {
+		RenderType type = ItemBlockRenderTypes.getChunkRenderType(arg2);
 
 		if (type == RenderType.solid() || type == RenderType.cutout() || type == RenderType.cutoutMipped()) {
 			isOpaque = true;
