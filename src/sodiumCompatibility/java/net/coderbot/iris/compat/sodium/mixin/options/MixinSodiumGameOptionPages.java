@@ -41,22 +41,4 @@ public class MixinSodiumGameOptionPages {
 
 		return builder;
 	}
-
-	@ModifyArg(method = "quality", remap = false,
-			slice = @Slice(
-					from = @At(value = "CONSTANT", args = "stringValue=Graphics Quality"),
-					to = @At(value = "CONSTANT", args = "stringValue=Clouds Quality")
-			),
-			at = @At(value = "INVOKE", remap = false,
-					target = "me/jellysquid/mods/sodium/client/gui/options/OptionGroup$Builder.add (" +
-								"Lme/jellysquid/mods/sodium/client/gui/options/Option;" +
-							")Lme/jellysquid/mods/sodium/client/gui/options/OptionGroup$Builder;"),
-			allow = 1)
-	private static Option<?> iris$replaceGraphicsQualityButton(Option<?> candidate) {
-		if (!Iris.getIrisConfig().areShadersEnabled() && GlStateManager.supportsFramebufferBlit()) {
-			return candidate;
-		} else {
-			return IrisSodiumOptions.createLimitedVideoSettingsButton(vanillaOpts);
-		}
-	}
 }

@@ -40,10 +40,10 @@ import org.eclipse.jgit.errors.RepositoryNotFoundException;
 import org.eclipse.jgit.lib.Constants;
 
 public class Buildscript extends SimpleFabricProject {
-	static final boolean SODIUM = false;
-	static final boolean CUSTOM_SODIUM = false;
+	static final boolean SODIUM = true;
+	static final boolean CUSTOM_SODIUM = true;
 	static final String MC_VERSION = "20w14infinite";
-	static final String customSodiumName = "";
+	static final String customSodiumName = "214.jar";
 
 	private static final String[] SOURCE_SETS = new String[] {
 		"main",
@@ -91,8 +91,6 @@ public class Buildscript extends SimpleFabricProject {
 		jij(d.addMaven(Maven.MAVEN_CENTRAL, new MavenId("org.antlr:antlr4-runtime:4.10.1"), ModDependencyFlag.COMPILE, ModDependencyFlag.RUNTIME));
 
 		if (SODIUM) {
-			d.addMaven(FabricMaven.URL, new MavenId(FabricMaven.GROUP_ID + ".fabric-api", "fabric-resource-loader-v0", "0.4.8+3cc0f0907d"), ModDependencyFlag.COMPILE, ModDependencyFlag.RUNTIME);
-
 			if (CUSTOM_SODIUM) {
 				d.add(new JavaJarDependency(getProjectDir().resolve("custom_sodium").resolve(customSodiumName).toAbsolutePath(), null, new MavenId("me.jellysquid.mods", "sodium-fabric", customSodiumName.replace("sodium-fabric-", ""))), ModDependencyFlag.COMPILE, ModDependencyFlag.RUNTIME);
 			} else {
