@@ -9,6 +9,8 @@ import me.jellysquid.mods.sodium.client.gl.shader.uniform.GlUniformMatrix4f;
 import net.coderbot.iris.gl.IrisRenderSystem;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
 import net.coderbot.iris.gl.blending.BufferBlendOverride;
+import net.coderbot.iris.gl.buffer.BufferMapping;
+import net.coderbot.iris.gl.buffer.BufferObjectInformation;
 import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.program.ProgramUniforms;
@@ -21,6 +23,7 @@ import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL32C;
 
 import java.util.List;
+import java.util.Set;
 
 public class IrisChunkShaderInterface {
 	@Nullable
@@ -48,7 +51,7 @@ public class IrisChunkShaderInterface {
 	private final boolean hasOverrides;
 	private CustomUniforms customUniforms;
 
-	public IrisChunkShaderInterface(int handle, ShaderBindingContextExt contextExt, SodiumTerrainPipeline pipeline,
+	public IrisChunkShaderInterface(int handle, ShaderBindingContextExt contextExt, SodiumTerrainPipeline pipeline, Set<BufferMapping> buffers,
 									boolean isShadowPass, BlendModeOverride blendModeOverride, List<BufferBlendOverride> bufferOverrides, float alpha, CustomUniforms customUniforms) {
 		this.uniformModelViewMatrix = contextExt.bindUniformIfPresent("iris_ModelViewMatrix", GlUniformMatrix4f::new);
 		this.uniformModelViewMatrixInverse = contextExt.bindUniformIfPresent("iris_ModelViewMatrixInverse", GlUniformMatrix4f::new);
@@ -66,7 +69,7 @@ public class IrisChunkShaderInterface {
 		this.hasOverrides = bufferBlendOverrides != null && !bufferBlendOverrides.isEmpty();
 		this.fogShaderComponent = new IrisShaderFogComponent(contextExt);
 
-		ProgramUniforms.Builder builder = pipeline.initUniforms(handle);
+		ProgramUniforms.Builder builder = pipeline.initUniforms(handle, buffers);
 		customUniforms.mapholderToPass(builder, this);
 		this.irisProgramUniforms = builder.buildUniforms();
 		this.irisProgramSamplers

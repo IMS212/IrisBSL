@@ -182,7 +182,7 @@ public class IrisRenderSystem {
 	}
 
 	public static void bufferData(int target, long size, int usage) {
-		RenderSystem.assertThread(RenderSystem::isOnRenderThreadOrInit);
+		RenderSystem.assertOnRenderThreadOrInit();
 		GL30C.glBufferData(target, size, usage);
 	}
 

@@ -341,7 +341,7 @@ public class SodiumTerrainPipeline {
 		return shadowAlpha;
 	}
 
-	public ProgramUniforms initUniforms(int programId, Set<BufferMapping> bufferMappings) {
+	public ProgramUniforms.Builder initUniforms(int programId, Set<BufferMapping> bufferMappings) {
 		ProgramUniforms.Builder uniforms = ProgramUniforms.builder("<sodium shaders>", programId, shaderStorageBufferHolder, bufferMappings);
 
 		CommonUniforms.addDynamicUniforms(uniforms, FogMode.PER_VERTEX);

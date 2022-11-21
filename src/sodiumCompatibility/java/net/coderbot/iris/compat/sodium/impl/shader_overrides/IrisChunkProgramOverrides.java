@@ -133,9 +133,9 @@ public class IrisChunkProgramOverrides {
 	}
 
 	private Set<BufferMapping> getBufferMappings(IrisTerrainPass pass, SodiumTerrainPipeline pipeline) {
-		if (pass == IrisTerrainPass.SHADOW) {
+		if (pass == IrisTerrainPass.SHADOW || pass == IrisTerrainPass.SHADOW_CUTOUT) {
 			return pipeline.getShadowBufferMappings();
-		} else if (pass == IrisTerrainPass.GBUFFER_SOLID) {
+		} else if (pass == IrisTerrainPass.GBUFFER_SOLID || pass == IrisTerrainPass.GBUFFER_CUTOUT) {
 			return pipeline.getTerrainBufferMappings();
 		} else if (pass == IrisTerrainPass.GBUFFER_TRANSLUCENT) {
 			return pipeline.getTranslucentBufferMappings();
@@ -195,7 +195,7 @@ public class IrisChunkProgramOverrides {
 						int handle = ((GlObject) shader).handle();
 						ShaderBindingContextExt contextExt = (ShaderBindingContextExt) shader;
 
-						return new IrisChunkShaderInterface(handle, contextExt, pipeline,
+						return new IrisChunkShaderInterface(handle, contextExt, pipeline, getBufferMappings(pass, pipeline),
 								pass == IrisTerrainPass.SHADOW || pass == IrisTerrainPass.SHADOW_CUTOUT, blendOverride, bufferOverrides, alpha, pipeline.getCustomUniforms());
 					});
         } finally {

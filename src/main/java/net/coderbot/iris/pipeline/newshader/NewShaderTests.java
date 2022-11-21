@@ -7,6 +7,7 @@ import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.blending.AlphaTest;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
 import net.coderbot.iris.gl.blending.BufferBlendOverride;
+import net.coderbot.iris.gl.buffer.ShaderStorageBufferHolder;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
 import net.coderbot.iris.pipeline.PatchedShaderPrinter;
 import net.coderbot.iris.pipeline.newshader.fallback.FallbackShader;
@@ -41,7 +42,7 @@ public class NewShaderTests {
 										GlFramebuffer writingToAfterTranslucent, GlFramebuffer baseline, AlphaTest fallbackAlpha,
 										VertexFormat vertexFormat, ShaderAttributeInputs inputs, FrameUpdateNotifier updateNotifier,
 										NewWorldRenderingPipeline parent, Supplier<ImmutableSet<Integer>> flipped, FogMode fogMode, boolean isIntensity,
-										boolean isFullbright, boolean isShadowPass, CustomUniforms customUniforms) throws IOException {
+										boolean isFullbright, boolean isShadowPass, CustomUniforms customUniforms, ShaderStorageBufferHolder holder) throws IOException {
 		AlphaTest alpha = source.getDirectives().getAlphaTestOverride().orElse(fallbackAlpha);
 		BlendModeOverride blendModeOverride = source.getDirectives().getBlendModeOverride().orElse(programId.getBlendModeOverride());
 
@@ -108,7 +109,7 @@ public class NewShaderTests {
 			VanillaUniforms.addVanillaUniforms(uniforms);
 		}, (samplerHolder, imageHolder) -> {
 			parent.addGbufferOrShadowSamplers(samplerHolder, imageHolder, flipped, isShadowPass, inputs.toAvailability());
-		}, isIntensity, parent, inputs, overrides, customUniforms);
+		}, isIntensity, parent, inputs, overrides, customUniforms, holder, source.getDirectives().getBufferMappings());
 	}
 
 	public static FallbackShader createFallback(String name, GlFramebuffer writingToBeforeTranslucent,
