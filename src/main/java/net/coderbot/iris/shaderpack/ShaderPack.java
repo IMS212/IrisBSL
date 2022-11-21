@@ -26,8 +26,7 @@ import net.coderbot.iris.shaderpack.texture.TextureFilteringData;
 import net.coderbot.iris.shaderpack.texture.TextureStage;
 import net.irisshaders.iris.api.v0.IrisApi;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
@@ -130,7 +129,7 @@ public class ShaderPack {
 
 		if (!invalidFeatureFlags.isEmpty()) {
 			if (Minecraft.getInstance().screen instanceof ShaderPackScreen) {
-				Minecraft.getInstance().setScreen(new FeatureMissingErrorScreen(Minecraft.getInstance().screen, new TranslatableComponent("iris.unsupported.pack"), new TranslatableComponent("iris.unsupported.pack.description", FeatureFlags.getInvalidStatus(invalidFlagList), invalidFeatureFlags.stream()
+				Minecraft.getInstance().setScreen(new FeatureMissingErrorScreen(Minecraft.getInstance().screen, Component.translatable("iris.unsupported.pack"), Component.translatable("iris.unsupported.pack.description", FeatureFlags.getInvalidStatus(invalidFlagList), invalidFeatureFlags.stream()
 					.collect(Collectors.joining(", ", ": ", ".")))));
 			}
 			IrisApi.getInstance().getConfig().setShadersEnabledAndApply(false);
@@ -333,11 +332,10 @@ public class ShaderPack {
 	}
 
 	private JsonObject loadMcMeta(Path mcMetaPath) throws IOException, JsonParseException {
-		BufferedReader reader =
-				new BufferedReader(new InputStreamReader(Files.newInputStream(mcMetaPath), StandardCharsets.UTF_8));
-
-		JsonReader jsonReader = new JsonReader(reader);
-		return GSON.getAdapter(JsonObject.class).read(jsonReader);
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(mcMetaPath), StandardCharsets.UTF_8))) {
+			JsonReader jsonReader = new JsonReader(reader);
+			return GSON.getAdapter(JsonObject.class).read(jsonReader);
+		}
 	}
 
 	private static String readProperties(Path shaderPath, String name) {

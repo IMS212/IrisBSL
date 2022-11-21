@@ -30,12 +30,16 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.network.chat.TranslatableComponent;
+
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.level.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystemNotFoundException;
@@ -48,6 +52,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Stream;
 import java.util.zip.ZipError;
 import java.util.zip.ZipException;
 
@@ -69,6 +74,7 @@ public class Iris {
 	private static ShaderPack currentPack;
 	private static String currentPackName;
 	private static boolean sodiumInvalid;
+	private static boolean hasNEC;
 	private static boolean sodiumInstalled;
 	private static boolean initialized;
 
@@ -89,7 +95,7 @@ public class Iris {
 	private static UpdateChecker updateChecker;
 	private static boolean fallback;
 
-	/**
+    /**
 	 * Called very early on in Minecraft initialization. At this point we *cannot* safely access OpenGL, but we can do
 	 * some very basic setup, config loading, and environment checks.
 	 *
@@ -111,6 +117,8 @@ public class Iris {
 					}
 				}
 		);
+
+		hasNEC = FabricLoader.getInstance().isModLoaded("notenoughcrashes");
 
 		ModContainer iris = FabricLoader.getInstance().getModContainer(MODID)
 				.orElseThrow(() -> new IllegalStateException("Couldn't find the mod container for Iris"));
@@ -171,7 +179,7 @@ public class Iris {
 				reload();
 
 				if (instance.player != null) {
-					instance.player.displayClientMessage(new TranslatableComponent("iris.shaders.reloaded"), false);
+					instance.player.displayClientMessage(Component.translatable("iris.shaders.reloaded"), false);
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -223,14 +231,14 @@ public class Iris {
 				reload();
 
 				if (minecraft.player != null) {
-					minecraft.player.displayClientMessage(new TranslatableComponent("iris.shaders.reloaded"), false);
+					minecraft.player.displayClientMessage(Component.translatable("iris.shaders.reloaded"), false);
 				}
 
 			} catch (Exception e) {
 				logger.error("Error while reloading Shaders for Iris!", e);
 
 				if (minecraft.player != null) {
-					minecraft.player.displayClientMessage(new TranslatableComponent("iris.shaders.reloaded.failure", Throwables.getRootCause(e).getMessage()).withStyle(ChatFormatting.RED), false);
+					minecraft.player.displayClientMessage(Component.translatable("iris.shaders.reloaded.failure", Throwables.getRootCause(e).getMessage()).withStyle(ChatFormatting.RED), false);
 				}
 			}
 		} else if (toggleShadersKeybind.consumeClick()) {
@@ -240,7 +248,7 @@ public class Iris {
 				logger.error("Error while toggling shaders!", e);
 
 				if (minecraft.player != null) {
-					minecraft.player.displayClientMessage(new TranslatableComponent("iris.shaders.toggled.failure", Throwables.getRootCause(e).getMessage()).withStyle(ChatFormatting.RED), false);
+					minecraft.player.displayClientMessage(Component.translatable("iris.shaders.toggled.failure", Throwables.getRootCause(e).getMessage()).withStyle(ChatFormatting.RED), false);
 				}
 				setShadersDisabled();
 				fallback = true;
@@ -256,7 +264,7 @@ public class Iris {
 
 		reload();
 		if (minecraft.player != null) {
-			minecraft.player.displayClientMessage(enabled ? new TranslatableComponent("iris.shaders.toggled", currentPackName) : new TranslatableComponent("iris.shaders.disabled"), false);
+			minecraft.player.displayClientMessage(enabled ? Component.translatable("iris.shaders.toggled", currentPackName) : Component.translatable("iris.shaders.disabled"), false);
 		}
 	}
 
@@ -409,10 +417,12 @@ public class Iris {
 		// For example Sildurs-Vibrant-Shaders.zip/shaders
 		// While other packs have Trippy-Shaderpack-master.zip/Trippy-Shaderpack-master/shaders
 		// This makes it hard to determine what is the actual shaders dir
-		return Files.walk(root)
-				.filter(Files::isDirectory)
-				.filter(path -> path.endsWith("shaders"))
-				.findFirst();
+		try (Stream<Path> stream = Files.walk(root)) {
+			return stream
+					.filter(Files::isDirectory)
+					.filter(path -> path.endsWith("shaders"))
+					.findFirst();
+		}
 	}
 
 	private static void setShadersDisabled() {
@@ -434,9 +444,9 @@ public class Iris {
 
 		logger.info("Debug functionality is " + (enable ? "enabled, logging will be more verbose!" : "disabled."));
 		if (Minecraft.getInstance().player != null) {
-			Minecraft.getInstance().player.displayClientMessage(new TranslatableComponent(success != 0 ? (enable ? "iris.shaders.debug.enabled" : "iris.shaders.debug.disabled") : "iris.shaders.debug.failure"), false);
+			Minecraft.getInstance().player.displayClientMessage(Component.translatable(success != 0 ? (enable ? "iris.shaders.debug.enabled" : "iris.shaders.debug.disabled") : "iris.shaders.debug.failure"), false);
 			if (success == 2) {
-				Minecraft.getInstance().player.displayClientMessage(new TranslatableComponent("iris.shaders.debug.restart"), false);
+				Minecraft.getInstance().player.displayClientMessage(Component.translatable("iris.shaders.debug.restart"), false);
 			}
 		}
 
@@ -452,10 +462,10 @@ public class Iris {
 		Properties properties = new Properties();
 
 		if (Files.exists(path)) {
-			try {
+			try (InputStream is = Files.newInputStream(path)) {
 				// NB: config properties are specified to be encoded with ISO-8859-1 by OptiFine,
 				//     so we don't need to do the UTF-8 workaround here.
-				properties.load(Files.newInputStream(path));
+				properties.load(is);
 			} catch (IOException e) {
 				// TODO: Better error handling
 				return Optional.empty();
@@ -493,8 +503,8 @@ public class Iris {
 			if (pack.equals(getShaderpacksDirectory())) {
 				return false;
 			}
-			try {
-				return Files.walk(pack)
+			try (Stream<Path> stream = Files.walk(pack)) {
+				return stream
 						.filter(Files::isDirectory)
 						// Prevent a pack simply named "shaders" from being
 						// identified as a valid pack
@@ -508,9 +518,11 @@ public class Iris {
 		if (pack.toString().endsWith(".zip")) {
 			try (FileSystem zipSystem = FileSystems.newFileSystem(pack, Iris.class.getClassLoader())) {
 				Path root = zipSystem.getRootDirectories().iterator().next();
-				return Files.walk(root)
-						.filter(Files::isDirectory)
-						.anyMatch(path -> path.endsWith("shaders"));
+				try (Stream<Path> stream = Files.walk(root)) {
+					return stream
+							.filter(Files::isDirectory)
+							.anyMatch(path -> path.endsWith("shaders"));
+				}
 			} catch (ZipError zipError) {
 				// Java 8 seems to throw a ZipError instead of a subclass of IOException
 				Iris.logger.warn("The ZIP at " + pack + " is corrupt");
@@ -616,9 +628,9 @@ public class Iris {
 		ClientLevel level = Minecraft.getInstance().level;
 
 		if (level != null) {
-			if (level.dimensionType().effectsLocation().equals(DimensionType.END_EFFECTS) || level.dimension().equals(net.minecraft.world.level.Level.END)) {
+			if (level.dimensionType().effectsLocation().equals(BuiltinDimensionTypes.END_EFFECTS) || level.dimension().equals(net.minecraft.world.level.Level.END)) {
 				return DimensionId.END;
-			} else if (level.dimensionType().effectsLocation().equals(DimensionType.NETHER_EFFECTS) || level.dimension().equals(net.minecraft.world.level.Level.NETHER)) {
+			} else if (level.dimensionType().effectsLocation().equals(BuiltinDimensionTypes.NETHER_EFFECTS) || level.dimension().equals(net.minecraft.world.level.Level.NETHER)) {
 				return DimensionId.NETHER;
 			} else {
 				return DimensionId.OVERWORLD;
@@ -713,6 +725,10 @@ public class Iris {
 
 	public static boolean isSodiumInstalled() {
 		return sodiumInstalled;
+	}
+
+	public static boolean hasNotEnoughCrashes() {
+		return hasNEC;
 	}
 
 	public static Path getShaderpacksDirectory() {

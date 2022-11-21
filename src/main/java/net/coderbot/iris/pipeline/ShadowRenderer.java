@@ -154,7 +154,7 @@ public class ShadowRenderer {
 
 		// Set up our modelview matrix stack
 		PoseStack modelView = new PoseStack();
-		ShadowMatrices.createModelViewMatrix(modelView.last().pose(), getShadowAngle(), intervalSize, sunPathRotation, cameraX, cameraY, cameraZ);
+		ShadowMatrices.createModelViewMatrix(modelView, getShadowAngle(), intervalSize, sunPathRotation, cameraX, cameraY, cameraZ);
 
 		return modelView;
 	}
@@ -293,7 +293,7 @@ public class ShadowRenderer {
 				setter = "(set by user)";
 			}
 
-			if (distance >= Minecraft.getInstance().options.renderDistance * 16) {
+			if (distance >= Minecraft.getInstance().options.getEffectiveRenderDistance() * 16) {
 				distanceInfo = "render distance = " + Minecraft.getInstance().options.getEffectiveRenderDistance() * 16
 					+ " blocks ";
 				distanceInfo += Minecraft.getInstance().isLocalServer() ? "(capped by normal render distance)" : "(capped by normal/server render distance)";
