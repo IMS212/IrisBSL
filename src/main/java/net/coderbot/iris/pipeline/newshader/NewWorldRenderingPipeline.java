@@ -486,7 +486,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 			() -> isBeforeTranslucent ? flippedAfterPrepare : flippedAfterTranslucent;
 
 		ExtendedShader extendedShader = NewShaderTests.create(name, source, programId, beforeTranslucent, afterTranslucent,
-				baseline, fallbackAlpha, vertexFormat, inputs, updateNotifier, this, flipped, fogMode, isIntensity, isFullbright, false);
+				baseline, fallbackAlpha, vertexFormat, inputs, updateNotifier, this, flipped, fogMode, isIntensity, isFullbright, false, customUniforms);
 
 		loadedShaders.add(extendedShader);
 

@@ -369,7 +369,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 				Program shadowProgram = table.match(RenderCondition.SHADOW, new InputAvailability(true, true, true)).getProgram();
 
 				this.shadowRenderer = new ShadowRenderer(programs.getShadow().orElse(null),
-					programs.getPackDirectives(), shadowRenderTargets, shadowProgram != null && shadowProgram.getActiveImages() > 0);
+					programs.getPackDirectives(), shadowRenderTargets, customUniforms);
 			} else {
 				shadowRenderer = null;
 			}
