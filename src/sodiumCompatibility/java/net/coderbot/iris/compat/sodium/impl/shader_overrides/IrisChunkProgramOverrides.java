@@ -11,6 +11,10 @@ import net.coderbot.iris.gl.blending.AlphaTest;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
 import net.coderbot.iris.gl.blending.BufferBlendOverride;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
+import net.coderbot.iris.gl.buffer.BufferMapping;
+import net.coderbot.iris.gl.program.ProgramImages;
+import net.coderbot.iris.gl.program.ProgramSamplers;
+import net.coderbot.iris.gl.program.ProgramUniforms;
 import net.coderbot.iris.pipeline.SodiumTerrainPipeline;
 import net.coderbot.iris.pipeline.WorldRenderingPipeline;
 import net.coderbot.iris.pipeline.newshader.AlphaTests;
@@ -23,6 +27,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 public class IrisChunkProgramOverrides {
 	private boolean shadersCreated = false;
@@ -127,11 +132,23 @@ public class IrisChunkProgramOverrides {
 		}
 	}
 
-    @Nullable
-    private GlProgram<IrisChunkShaderInterface> createShader(IrisTerrainPass pass, SodiumTerrainPipeline pipeline) {
-        GlShader vertShader = createVertexShader(pass, pipeline);
-        GlShader geomShader = createGeometryShader(pass, pipeline);
-        GlShader fragShader = createFragmentShader(pass, pipeline);
+	private Set<BufferMapping> getBufferMappings(IrisTerrainPass pass, SodiumTerrainPipeline pipeline) {
+		if (pass == IrisTerrainPass.SHADOW) {
+			return pipeline.getShadowBufferMappings();
+		} else if (pass == IrisTerrainPass.GBUFFER_SOLID) {
+			return pipeline.getTerrainBufferMappings();
+		} else if (pass == IrisTerrainPass.GBUFFER_TRANSLUCENT) {
+			return pipeline.getTranslucentBufferMappings();
+		} else {
+			throw new IllegalArgumentException("Unknown pass type " + pass);
+		}
+	}
+
+	@Nullable
+	private GlProgram<IrisChunkShaderInterface> createShader(IrisTerrainPass pass, SodiumTerrainPipeline pipeline) {
+		GlShader vertShader = createVertexShader(pass, pipeline);
+		GlShader geomShader = createGeometryShader(pass, pipeline);
+		GlShader fragShader = createFragmentShader(pass, pipeline);
 		BlendModeOverride blendOverride = getBlendOverride(pass, pipeline);
 		List<BufferBlendOverride> bufferOverrides = getBufferBlendOverride(pass, pipeline);
 		float alpha = getAlphaReference(pass, pipeline);

@@ -7,6 +7,7 @@ import it.unimi.dsi.fastutil.objects.Object2FloatMap;
 import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.IrisRenderSystem;
 import net.coderbot.iris.gl.blending.AlphaTest;
@@ -15,6 +16,9 @@ import net.coderbot.iris.gl.blending.AlphaTest;
 import net.coderbot.iris.gl.blending.BlendMode;
 import net.coderbot.iris.gl.blending.BlendModeFunction;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
+import net.coderbot.iris.gl.buffer.BufferMapping;
+import net.coderbot.iris.gl.buffer.BufferObjectInformation;
+import net.coderbot.iris.gl.buffer.BufferType;
 import net.coderbot.iris.gl.texture.TextureScaleOverride;
 import net.coderbot.iris.gl.blending.BufferBlendInformation;
 import net.coderbot.iris.shaderpack.option.ShaderPackOptions;
@@ -28,11 +32,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -80,6 +86,8 @@ public class ShaderProperties {
 	private final Object2FloatMap<String> viewportScaleOverrides = new Object2FloatOpenHashMap<>();
 	private final Object2ObjectMap<String, TextureScaleOverride> textureScaleOverrides = new Object2ObjectOpenHashMap<>();
 	private final Object2ObjectMap<String, BlendModeOverride> blendModeOverrides = new Object2ObjectOpenHashMap<>();
+	private final Object2ObjectMap<String, Set<BufferMapping>> bufferMappings = new Object2ObjectOpenHashMap<>();
+	private final List<BufferObjectInformation> bufferObjects = new ReferenceArrayList<>();
 	private final Object2ObjectMap<String, ArrayList<BufferBlendInformation>> bufferBlendOverrides = new Object2ObjectOpenHashMap<>();
 	private final EnumMap<TextureStage, Object2ObjectMap<String, String>> customTextures = new EnumMap<>(TextureStage.class);
 	private final Object2ObjectMap<String, Object2BooleanMap<String>> explicitFlips = new Object2ObjectOpenHashMap<>();
@@ -276,6 +284,40 @@ public class ShaderProperties {
 
 			handleProgramEnabledDirective("program.", key, value, program -> {
 				conditionallyEnabledPrograms.put(program, value);
+			});
+
+			handleTwoArgDirective("mapping.", key, value, (pass, index) -> {
+				String[] modeArray = value.split(" ");
+
+				int trueIndex = Integer.parseInt(index);
+				if (trueIndex >= 8 && trueIndex <= 16) {
+					throw new IllegalStateException("You cannot use buffer indexes 8-16, as they are reserved for Iris!");
+				}
+
+				if (trueIndex > 16) {
+					throw new IllegalStateException("You cannot use buffer indexes higher than 16!");
+				}
+
+				bufferMappings.computeIfAbsent(pass, empty -> new HashSet<>()).add(new BufferMapping(trueIndex, Integer.parseInt(modeArray[0]), BufferType.parse(modeArray[1])));
+				Iris.logger.warn("mapped! " + new BufferMapping(Integer.parseInt(index), Integer.parseInt(modeArray[0]), BufferType.parse(modeArray[1])));
+			});
+
+			handlePassDirective("bufferObject.", key, value, index -> {
+				String[] array = value.split(" ");
+
+				int trueIndex;
+				long trueSize;
+				boolean clear;
+				try {
+					trueIndex = Integer.parseInt(index);
+					trueSize = Long.parseLong(array[0]);
+					clear = Boolean.parseBoolean(array[1]);
+				} catch (NumberFormatException e) {
+					Iris.logger.warn("Number format exception parsing SSBO index/size!", e);
+					return;
+				}
+
+				bufferObjects.add(new BufferObjectInformation(trueIndex, trueSize, clear));
 			});
 
 			handleTwoArgDirective("texture.", key, value, (stageName, samplerName) -> {
@@ -590,6 +632,14 @@ public class ShaderProperties {
 
 	public Object2ObjectMap<String, BlendModeOverride> getBlendModeOverrides() {
 		return blendModeOverrides;
+	}
+
+	public Object2ObjectMap<String, Set<BufferMapping>> getBufferMappings() {
+		return bufferMappings;
+	}
+
+	public List<BufferObjectInformation> getBufferObjects() {
+		return bufferObjects;
 	}
 
 	public Object2ObjectMap<String, ArrayList<BufferBlendInformation>> getBufferBlendOverrides() {

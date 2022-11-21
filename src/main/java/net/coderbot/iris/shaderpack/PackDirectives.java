@@ -5,10 +5,14 @@ import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMaps;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import net.coderbot.iris.Iris;
+import net.coderbot.iris.gl.buffer.BufferMapping;
+import net.coderbot.iris.gl.buffer.BufferObjectInformation;
 import net.coderbot.iris.gl.texture.TextureScaleOverride;
 import net.coderbot.iris.vendored.joml.Vector2i;
 
+import java.util.List;
 import java.util.Set;
 
 public class PackDirectives {
@@ -32,6 +36,8 @@ public class PackDirectives {
 	private boolean particlesBeforeDeferred;
 	private boolean prepareBeforeShadow;
 	private Object2ObjectMap<String, Object2BooleanMap<String>> explicitFlips = new Object2ObjectOpenHashMap<>();
+	private Object2ObjectMap<String, Set<BufferMapping>> bufferMappings = new Object2ObjectOpenHashMap<>();
+	private List<BufferObjectInformation> bufferObjects;
 	private Object2ObjectMap<String, TextureScaleOverride> scaleOverrides = new Object2ObjectOpenHashMap<>();
 
 	private final PackRenderTargetDirectives renderTargetDirectives;
@@ -45,6 +51,8 @@ public class PackDirectives {
 		drynessHalfLife = 200.0f;
 		eyeBrightnessHalfLife = 10.0f;
 		centerDepthHalfLife = 1.0F;
+		bufferMappings = new Object2ObjectOpenHashMap<>();
+		bufferObjects = new ReferenceArrayList<>();
 		renderTargetDirectives = new PackRenderTargetDirectives(supportedRenderTargets);
 		shadowDirectives = packShadowDirectives;
 	}
@@ -62,6 +70,8 @@ public class PackDirectives {
 		concurrentCompute = properties.getConcurrentCompute().orElse(false);
 		oldHandLight = properties.getOldHandLight().orElse(true);
 		explicitFlips = properties.getExplicitFlips();
+		bufferMappings = properties.getBufferMappings();
+		bufferObjects = properties.getBufferObjects();
 		scaleOverrides = properties.getTextureScaleOverrides();
 		particlesBeforeDeferred = properties.getParticlesBeforeDeferred().orElse(false);
 		prepareBeforeShadow = properties.getPrepareBeforeShadow().orElse(false);
@@ -74,6 +84,8 @@ public class PackDirectives {
 		oldLighting = directives.oldLighting;
 		concurrentCompute = directives.concurrentCompute;
 		explicitFlips = directives.explicitFlips;
+		bufferMappings = directives.bufferMappings;
+		bufferObjects = directives.bufferObjects;
 		scaleOverrides = directives.scaleOverrides;
 		particlesBeforeDeferred = directives.particlesBeforeDeferred;
 		prepareBeforeShadow = directives.prepareBeforeShadow;
@@ -163,6 +175,10 @@ public class PackDirectives {
 		return shadowDirectives;
 	}
 
+	public List<BufferObjectInformation> getBufferObjects() {
+		return bufferObjects;
+	}
+
 	private static float clamp(float val, float lo, float hi) {
 		return Math.max(lo, Math.min(hi, val));
 	}
@@ -224,6 +240,10 @@ public class PackDirectives {
 		});
 
 		return explicitFlips.build();
+	}
+
+	public Set<BufferMapping> getBufferMappings(String pass) {
+		return this.bufferMappings.get(pass);
 	}
 
 	public Vector2i getTextureScaleOverride(int index, int dimensionX, int dimensionY) {

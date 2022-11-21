@@ -18,9 +18,14 @@ import net.coderbot.iris.gbuffer_overrides.state.RenderTargetStateListener;
 import net.coderbot.iris.gl.IrisRenderSystem;
 import net.coderbot.iris.gl.blending.AlphaTest;
 import net.coderbot.iris.gl.IrisRenderSystem;
+import net.coderbot.iris.gl.IrisRenderSystem;
 import net.coderbot.iris.gl.blending.AlphaTestOverride;
 import net.coderbot.iris.gl.blending.AlphaTestStorage;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
+import net.coderbot.iris.gl.buffer.ActiveBufferHolder;
+import net.coderbot.iris.gl.buffer.BufferMapping;
+import net.coderbot.iris.gl.buffer.EmptyBufferHolder;
+import net.coderbot.iris.gl.buffer.ShaderStorageBufferHolder;
 import net.coderbot.iris.gl.blending.BufferBlendOverride;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
 import net.coderbot.iris.gl.program.ComputeProgram;
@@ -75,7 +80,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL21C;
@@ -86,6 +94,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
+import org.lwjgl.opengl.GL43C;
 import org.lwjgl.opengl.GL43C;
 
 import java.util.ArrayList;
@@ -162,6 +171,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 	private boolean isRenderingShadow = false;
 	private InputAvailability inputs = new InputAvailability(false, false, false);
 	private SpecialCondition special = null;
+	private final ShaderStorageBufferHolder shaderStorageBufferHolder;
 
 	private boolean shouldBindPBR;
 	private int currentNormalTexture;
@@ -184,6 +194,17 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 		this.shouldRenderPrepareBeforeShadow = programs.getPackDirectives().isPrepareBeforeShadow();
 		this.oldLighting = programs.getPackDirectives().isOldLighting();
 		this.updateNotifier = new FrameUpdateNotifier();
+
+		if (!programs.getPackDirectives().getBufferObjects().isEmpty()) {
+			if (IrisRenderSystem.supportsSSBO()) {
+				this.shaderStorageBufferHolder = new ActiveBufferHolder(programs.getPackDirectives().getBufferObjects());
+			} else {
+				Iris.logger.fatal("Shader storage buffers/immutable buffer storage is not supported on this graphics card, however the shaderpack requested them? Let's hope it's not a problem.");
+				this.shaderStorageBufferHolder = new EmptyBufferHolder();
+			}
+		} else {
+			this.shaderStorageBufferHolder = new EmptyBufferHolder();
+		}
 
 		this.packDirectives = programs.getPackDirectives();
 
@@ -254,25 +275,25 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 
 		PatchedShaderPrinter.resetPrintState();
 
-		this.prepareRenderer = new CompositeRenderer(programs.getPackDirectives(), programs.getPrepare(), programs.getPrepareCompute(), renderTargets,
+		this.prepareRenderer = new CompositeRenderer(programs.getPackDirectives(), programs.getPrepare(), programs.getPrepareCompute(), renderTargets, shaderStorageBufferHolder,
 				customTextureManager.getNoiseTexture(), updateNotifier, centerDepthSampler, flipper, shadowTargetsSupplier,
 				customTextureManager.getCustomTextureIdMap(TextureStage.PREPARE),
 				programs.getPackDirectives().getExplicitFlips("prepare_pre"), customUniforms);
 
 		flippedAfterPrepare = flipper.snapshot();
 
-		this.deferredRenderer = new CompositeRenderer(programs.getPackDirectives(), programs.getDeferred(), programs.getDeferredCompute(), renderTargets,
+		this.deferredRenderer = new CompositeRenderer(programs.getPackDirectives(), programs.getDeferred(), programs.getDeferredCompute(), renderTargets, shaderStorageBufferHolder,
 				customTextureManager.getNoiseTexture(), updateNotifier, centerDepthSampler, flipper, shadowTargetsSupplier,
 				customTextureManager.getCustomTextureIdMap(TextureStage.DEFERRED),
 				programs.getPackDirectives().getExplicitFlips("deferred_pre"), customUniforms);
 
 		flippedAfterTranslucent = flipper.snapshot();
 
-		this.compositeRenderer = new CompositeRenderer(programs.getPackDirectives(), programs.getComposite(), programs.getCompositeCompute(), renderTargets,
+		this.compositeRenderer = new CompositeRenderer(programs.getPackDirectives(), programs.getComposite(), programs.getCompositeCompute(), renderTargets, shaderStorageBufferHolder,
 				customTextureManager.getNoiseTexture(), updateNotifier, centerDepthSampler, flipper, shadowTargetsSupplier,
 				customTextureManager.getCustomTextureIdMap(TextureStage.COMPOSITE_AND_FINAL),
 				programs.getPackDirectives().getExplicitFlips("composite_pre"), customUniforms);
-		this.finalPassRenderer = new FinalPassRenderer(programs, renderTargets, customTextureManager.getNoiseTexture(), updateNotifier, flipper.snapshot(),
+		this.finalPassRenderer = new FinalPassRenderer(programs, renderTargets, shaderStorageBufferHolder, customTextureManager.getNoiseTexture(), updateNotifier, flipper.snapshot(),
 				centerDepthSampler, shadowTargetsSupplier,
 				customTextureManager.getCustomTextureIdMap(TextureStage.COMPOSITE_AND_FINAL),
 				this.compositeRenderer.getFlippedAtLeastOnceFinal(), customUniforms);
@@ -448,7 +469,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 
 		this.sodiumTerrainPipeline = new SodiumTerrainPipeline(this, programs, createTerrainSamplers,
 			shadowRenderTargets == null ? null : createShadowTerrainSamplers, createTerrainImages, createShadowTerrainImages, renderTargets, flippedAfterPrepare, flippedAfterTranslucent,
-			shadowRenderTargets != null ? shadowRenderTargets.createShadowFramebuffer(shadowRenderTargets.snapshot(), new int[] { 0, 1 }) : null, customUniforms);
+			shadowRenderTargets != null ? shadowRenderTargets.createShadowFramebuffer(shadowRenderTargets.snapshot(), new int[] { 0, 1 }) : null, customUniforms, shaderStorageBufferHolder);
 
 		// first optimization pass
 		this.customUniforms.optimise();
@@ -641,7 +662,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 		PatchedShaderPrinter.debugPatchedShaders(source.getName(), vertex, geometry, fragment);
 
 		ProgramBuilder builder = ProgramBuilder.begin(source.getName(), vertex, geometry, fragment,
-			IrisSamplers.WORLD_RESERVED_TEXTURE_UNITS);
+			shaderStorageBufferHolder, source.getDirectives().getBufferMappings(), IrisSamplers.WORLD_RESERVED_TEXTURE_UNITS);
 
 		return createPassInner(builder, source.getParent().getPack().getIdMap(), source.getDirectives(), source.getParent().getPackDirectives(), availability, shadow, id);
 	}
@@ -885,6 +906,11 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 		// Destroy custom textures and the static samplers (normals, specular, and noise)
 		customTextureManager.destroy();
 		whitePixel.releaseId();
+
+		if (shaderStorageBufferHolder != null) {
+			// Destroy shader storage buffer objects
+			shaderStorageBufferHolder.destroyBuffers();
+		}
 	}
 
 	private static void destroyPasses(ProgramTable<Pass> table) {
@@ -1010,7 +1036,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 				ProgramBuilder builder;
 
 				try {
-					builder = ProgramBuilder.beginCompute(source.getName(), source.getSource().orElse(null), IrisSamplers.WORLD_RESERVED_TEXTURE_UNITS);
+					builder = ProgramBuilder.beginCompute(source.getName(), source.getSource().orElse(null), shaderStorageBufferHolder, programSet.getShadow().get().getDirectives().getBufferMappings(), IrisSamplers.WORLD_RESERVED_TEXTURE_UNITS);
 				} catch (RuntimeException e) {
 					// TODO: Better error handling
 					throw new RuntimeException("Shader compilation failed!", e);
@@ -1165,6 +1191,9 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 		}
 
 		updateNotifier.onNewFrame();
+
+		shaderStorageBufferHolder.onNewFrame();
+
 		// Get ready for world rendering
 		prepareRenderTargets();
 

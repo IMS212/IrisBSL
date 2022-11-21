@@ -8,6 +8,15 @@ import net.coderbot.iris.gl.blending.AlphaTest;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
 import net.coderbot.iris.gl.blending.BufferBlendOverride;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
+import net.coderbot.iris.IrisLogging;
+import net.coderbot.iris.gl.buffer.BufferMapping;
+import net.coderbot.iris.gl.buffer.ShaderStorageBufferHolder;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.IntFunction;
+
 import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.program.ProgramUniforms;
@@ -62,6 +71,10 @@ public class SodiumTerrainPipeline {
 	BlendModeOverride shadowBlendOverride = BlendModeOverride.OFF;
 	List<BufferBlendOverride> shadowBufferOverrides;
 	Optional<AlphaTest> shadowAlpha;
+	private final ShaderStorageBufferHolder shaderStorageBufferHolder;
+	Set<BufferMapping> terrainBufferMappings;
+	Set<BufferMapping> translucentBufferMappings;
+	Set<BufferMapping> shadowBufferMappings;
 
 	ProgramSet programSet;
 
@@ -78,8 +91,9 @@ public class SodiumTerrainPipeline {
 								 IntFunction<ProgramSamplers> createShadowSamplers, IntFunction<ProgramImages> createTerrainImages, IntFunction<ProgramImages> createShadowImages,
 								 RenderTargets targets,
 								 ImmutableSet<Integer> flippedAfterPrepare,
-								 ImmutableSet<Integer> flippedAfterTranslucent, GlFramebuffer shadowFramebuffer, CustomUniforms customUniforms) {
+								 ImmutableSet<Integer> flippedAfterTranslucent, GlFramebuffer shadowFramebuffer, ShaderStorageBufferHolder shaderStorageBufferHolder, CustomUniforms customUniforms) {
 		this.parent = Objects.requireNonNull(parent);
+		this.shaderStorageBufferHolder = shaderStorageBufferHolder;
 		this.customUniforms = customUniforms;
 
 		Optional<ProgramSource> terrainSource = first(programSet.getGbuffersTerrain(), programSet.getGbuffersTexturedLit(), programSet.getGbuffersTextured(), programSet.getGbuffersBasic());
@@ -140,6 +154,7 @@ public class SodiumTerrainPipeline {
 			terrainGeometry = Optional.ofNullable(transformed.get(PatchShaderType.GEOMETRY));
 			terrainCutoutFragment = Optional.ofNullable(transformed.get(PatchShaderType.FRAGMENT_CUTOUT));
 			terrainFragment = Optional.ofNullable(transformed.get(PatchShaderType.FRAGMENT));
+			terrainBufferMappings = sources.getDirectives().getBufferMappings();
 
 			PatchedShaderPrinter.debugPatchedShaders(sources.getName() + "_sodium", terrainVertex.orElse(null), terrainGeometry.orElse(null), terrainFragment.orElse(null));
 			PatchedShaderPrinter.debugPatchedShaders(sources.getName() + "_sodium_cutout", null, null, terrainCutoutFragment.orElse(null));
@@ -174,6 +189,7 @@ public class SodiumTerrainPipeline {
 			translucentVertex = Optional.ofNullable(transformed.get(PatchShaderType.VERTEX));
 			translucentGeometry = Optional.ofNullable(transformed.get(PatchShaderType.GEOMETRY));
 			translucentFragment = Optional.ofNullable(transformed.get(PatchShaderType.FRAGMENT));
+			translucentBufferMappings = sources.getDirectives().getBufferMappings();
 
 			PatchedShaderPrinter.debugPatchedShaders(sources.getName() + "_sodium", translucentVertex.orElse(null), translucentGeometry.orElse(null), translucentFragment.orElse(null));
 		}, () -> {
@@ -206,6 +222,7 @@ public class SodiumTerrainPipeline {
 			shadowGeometry = Optional.ofNullable(transformed.get(PatchShaderType.GEOMETRY));
 			shadowCutoutFragment = Optional.ofNullable(transformed.get(PatchShaderType.FRAGMENT_CUTOUT));
 			shadowFragment = Optional.ofNullable(transformed.get(PatchShaderType.FRAGMENT));
+			shadowBufferMappings = sources.getDirectives().getBufferMappings();
 
 			PatchedShaderPrinter.debugPatchedShaders(sources.getName() + "_sodium", shadowVertex.orElse(null), shadowGeometry.orElse(null), shadowFragment.orElse(null));
 			PatchedShaderPrinter.debugPatchedShaders(sources.getName() + "_sodium_cutout", null, null, shadowCutoutFragment.orElse(null));
@@ -252,6 +269,10 @@ public class SodiumTerrainPipeline {
 		return terrainCutoutAlpha;
 	}
 
+	public Set<BufferMapping> getTerrainBufferMappings() {
+		return terrainBufferMappings;
+	}
+
 	public Optional<String> getTranslucentVertexShaderSource() {
 		return translucentVertex;
 	}
@@ -280,6 +301,10 @@ public class SodiumTerrainPipeline {
 		return translucentAlpha;
 	}
 
+	public Set<BufferMapping> getTranslucentBufferMappings() {
+		return translucentBufferMappings;
+	}
+
 	public Optional<String> getShadowVertexShaderSource() {
 		return shadowVertex;
 	}
@@ -290,6 +315,10 @@ public class SodiumTerrainPipeline {
 
 	public Optional<String> getShadowFragmentShaderSource() {
 		return shadowFragment;
+	}
+
+	public Set<BufferMapping> getShadowBufferMappings() {
+		return shadowBufferMappings;
 	}
 
 	public Optional<String> getShadowCutoutFragmentShaderSource() {
@@ -312,8 +341,8 @@ public class SodiumTerrainPipeline {
 		return shadowAlpha;
 	}
 
-	public ProgramUniforms.Builder initUniforms(int programId) {
-		ProgramUniforms.Builder uniforms = ProgramUniforms.builder("<sodium shaders>", programId);
+	public ProgramUniforms initUniforms(int programId, Set<BufferMapping> bufferMappings) {
+		ProgramUniforms.Builder uniforms = ProgramUniforms.builder("<sodium shaders>", programId, shaderStorageBufferHolder, bufferMappings);
 
 		CommonUniforms.addDynamicUniforms(uniforms, FogMode.PER_VERTEX);
 		customUniforms.assignTo(uniforms);

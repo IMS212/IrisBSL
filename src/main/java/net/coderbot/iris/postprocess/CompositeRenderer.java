@@ -12,6 +12,8 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.coderbot.iris.gl.IrisRenderSystem;
+import net.coderbot.iris.gl.buffer.BufferMapping;
+import net.coderbot.iris.gl.buffer.ShaderStorageBufferHolder;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
 import net.coderbot.iris.gl.program.ComputeProgram;
 import net.coderbot.iris.gl.program.Program;
@@ -40,9 +42,17 @@ import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL30C;
+import org.lwjgl.opengl.GL43C;
+
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 
 public class CompositeRenderer {
 	private final RenderTargets renderTargets;
+	private final ShaderStorageBufferHolder shaderStorageBufferHolder;
 
 	private final ImmutableList<Pass> passes;
 	private final IntSupplier noiseTexture;
@@ -52,7 +62,7 @@ public class CompositeRenderer {
 	private final ImmutableSet<Integer> flippedAtLeastOnceFinal;
 	private final CustomUniforms customUniforms;
 
-	public CompositeRenderer(PackDirectives packDirectives, ProgramSource[] sources, ComputeSource[][] computes, RenderTargets renderTargets,
+	public CompositeRenderer(PackDirectives packDirectives, ProgramSource[] sources, ComputeSource[][] computes, RenderTargets renderTargets, ShaderStorageBufferHolder shaderStorageBufferHolder,
 							 IntSupplier noiseTexture, FrameUpdateNotifier updateNotifier,
 							 CenterDepthSampler centerDepthSampler, BufferFlipper bufferFlipper,
 							 Supplier<ShadowRenderTargets> shadowTargetsSupplier,
@@ -64,6 +74,7 @@ public class CompositeRenderer {
 		this.renderTargets = renderTargets;
 		this.customTextureIds = customTextureIds;
 		this.customUniforms = customUniforms;
+		this.shaderStorageBufferHolder = shaderStorageBufferHolder;
 
 		final PackRenderTargetDirectives renderTargetDirectives = packDirectives.getRenderTargetDirectives();
 		final Map<Integer, PackRenderTargetDirectives.RenderTargetSettings> renderTargetSettings =
@@ -88,7 +99,7 @@ public class CompositeRenderer {
 			if (source == null || !source.isValid()) {
 				if (computes[i] != null) {
 					ComputeOnlyPass pass = new ComputeOnlyPass();
-					pass.computes = createComputes(computes[i], flipped, flippedAtLeastOnceSnapshot, shadowTargetsSupplier);
+					pass.computes = createComputes(computes[i], ImmutableSet.of(), flipped, flippedAtLeastOnceSnapshot, shadowTargetsSupplier);
 					passes.add(pass);
 				}
 				continue;
@@ -98,7 +109,7 @@ public class CompositeRenderer {
 			ProgramDirectives directives = source.getDirectives();
 
 			pass.program = createProgram(source, flipped, flippedAtLeastOnceSnapshot, shadowTargetsSupplier);
-			pass.computes = createComputes(computes[i], flipped, flippedAtLeastOnceSnapshot, shadowTargetsSupplier);
+			pass.computes = createComputes(computes[i], source.getDirectives().getBufferMappings(), flipped, flippedAtLeastOnceSnapshot, shadowTargetsSupplier);
 			int[] drawBuffers = directives.getDrawBuffers();
 
 			GlFramebuffer framebuffer = renderTargets.createColorFramebuffer(flipped, drawBuffers);
@@ -318,7 +329,7 @@ public class CompositeRenderer {
 
 		try {
 			builder = ProgramBuilder.begin(source.getName(), vertex, geometry, fragment,
-					IrisSamplers.COMPOSITE_RESERVED_TEXTURE_UNITS);
+				shaderStorageBufferHolder, source.getDirectives().getBufferMappings(), IrisSamplers.COMPOSITE_RESERVED_TEXTURE_UNITS);
 		} catch (RuntimeException e) {
 			// TODO: Better error handling
 			throw new RuntimeException("Shader compilation failed!", e);
@@ -353,7 +364,7 @@ public class CompositeRenderer {
 		return build;
 	}
 
-	private ComputeProgram[] createComputes(ComputeSource[] compute, ImmutableSet<Integer> flipped, ImmutableSet<Integer> flippedAtLeastOnceSnapshot, Supplier<ShadowRenderTargets> shadowTargetsSupplier) {
+	private ComputeProgram[] createComputes(ComputeSource[] compute, Set<BufferMapping> bufferMappings, ImmutableSet<Integer> flipped, ImmutableSet<Integer> flippedAtLeastOnceSnapshot, Supplier<ShadowRenderTargets> shadowTargetsSupplier) {
 		ComputeProgram[] programs = new ComputeProgram[compute.length];
 		for (int i = 0; i < programs.length; i++) {
 			ComputeSource source = compute[i];
@@ -365,7 +376,7 @@ public class CompositeRenderer {
 				ProgramBuilder builder;
 
 				try {
-					builder = ProgramBuilder.beginCompute(source.getName(), source.getSource().orElse(null), IrisSamplers.COMPOSITE_RESERVED_TEXTURE_UNITS);
+					builder = ProgramBuilder.beginCompute(source.getName(), source.getSource().orElse(null), shaderStorageBufferHolder, bufferMappings, IrisSamplers.COMPOSITE_RESERVED_TEXTURE_UNITS);
 				} catch (RuntimeException e) {
 					// TODO: Better error handling
 					throw new RuntimeException("Shader compilation failed!", e);

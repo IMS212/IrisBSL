@@ -11,9 +11,15 @@ import org.lwjgl.opengl.ARBDirectStateAccess;
 import org.lwjgl.opengl.EXTShaderImageLoadStore;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL32C;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30C;
+import org.lwjgl.opengl.GL32C;
 import org.lwjgl.opengl.GL40C;
 import org.lwjgl.opengl.GL42C;
+import org.lwjgl.opengl.GL43C;
 import org.lwjgl.opengl.GL45C;
+import org.lwjgl.opengl.NVXGPUMemoryInfo;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
@@ -175,6 +181,19 @@ public class IrisRenderSystem {
 		GL32C.glBufferData(target, data, usage);
 	}
 
+	public static void bufferData(int target, long size, int usage) {
+		RenderSystem.assertThread(RenderSystem::isOnRenderThreadOrInit);
+		GL30C.glBufferData(target, size, usage);
+	}
+
+	public static void clearBufferData(int glShaderStorageBuffer, int internalFormat, int format, int type, int[] data) {
+		GL45C.glClearBufferData(glShaderStorageBuffer, internalFormat, format, type, data);
+	}
+
+	public static void bindBufferBase(int target, int index, int buffer) {
+		GL43C.glBindBufferBase(target, index, buffer);
+	}
+
 	public static int bufferStorage(int target, float[] data, int usage) {
 		RenderSystem.assertOnRenderThreadOrInit();
 		return dsaState.bufferStorage(target, data, usage);
@@ -216,6 +235,18 @@ public class IrisRenderSystem {
 		} else {
 			return 0;
 		}
+	}
+
+	public static boolean supportsSSBO() {
+		return GL.getCapabilities().OpenGL44 || (GL.getCapabilities().GL_ARB_shader_storage_buffer_object && GL.getCapabilities().GL_ARB_buffer_storage);
+	}
+
+	public static void genBuffers(int[] buffers) {
+		GL43C.glGenBuffers(buffers);
+	}
+
+	public static void clearBufferSubData(int glShaderStorageBuffer, int glR8, long offset, long size, int glRed, int glByte, int[] ints) {
+		GL43C.glClearBufferSubData(glShaderStorageBuffer, glR8, offset, size, glRed, glByte, ints);
 	}
 
 	public static void getProgramiv(int program, int value, int[] storage) {
@@ -518,4 +549,13 @@ public class IrisRenderSystem {
 		}
 	}
 	 */
+
+
+	public static long getVRAM() {
+		if (GL.getCapabilities().GL_NVX_gpu_memory_info) {
+			return GL32C.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) * 1024L;
+		} else {
+			return 4294967296L;
+		}
+	}
 }
