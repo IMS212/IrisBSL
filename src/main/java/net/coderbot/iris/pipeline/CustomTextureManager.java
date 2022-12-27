@@ -169,6 +169,9 @@ public class CustomTextureManager {
 							case SPECULAR:
 								pbrTexture = pbrHolder.getSpecularTexture();
 								break;
+							case METALNESS:
+								pbrTexture = pbrHolder.getMetalnessTexture();
+								break;
 							default:
 								throw new Error("Unknown PBRType '" + pbrType + "'");
 						}

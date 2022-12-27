@@ -112,6 +112,11 @@ public class FixedFunctionWorldRenderingPipeline implements WorldRenderingPipeli
 	}
 
 	@Override
+	public int getCurrentMetalnessTexture() {
+		return 0;
+	}
+
+	@Override
 	public void onSetShaderTexture(int id) {
 
 	}

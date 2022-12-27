@@ -53,10 +53,12 @@ public class AtlasPBRLoader implements PBRTextureLoader<TextureAtlas> {
 
 		PBRAtlasTexture normalAtlas = null;
 		PBRAtlasTexture specularAtlas = null;
+		PBRAtlasTexture metalnessAtlas = null;
 		for (TextureAtlasSprite sprite : ((TextureAtlasAccessor) atlas).getTexturesByName().values()) {
 			if (!(sprite instanceof MissingTextureAtlasSprite)) {
 				TextureAtlasSprite normalSprite = createPBRSprite(sprite, resourceManager, atlas, atlasWidth, atlasHeight, mipLevel, PBRType.NORMAL);
 				TextureAtlasSprite specularSprite = createPBRSprite(sprite, resourceManager, atlas, atlasWidth, atlasHeight, mipLevel, PBRType.SPECULAR);
+				TextureAtlasSprite metalnessSprite = createPBRSprite(sprite, resourceManager, atlas, atlasWidth, atlasHeight, mipLevel, PBRType.METALNESS);
 				if (normalSprite != null) {
 					if (normalAtlas == null) {
 						normalAtlas = new PBRAtlasTexture(atlas, PBRType.NORMAL);
@@ -73,6 +75,15 @@ public class AtlasPBRLoader implements PBRTextureLoader<TextureAtlas> {
 					PBRSpriteHolder pbrSpriteHolder = ((TextureAtlasSpriteExtension) sprite).getOrCreatePBRHolder();
 					pbrSpriteHolder.setSpecularSprite(specularSprite);
 				}
+
+				if (metalnessSprite != null) {
+					if (metalnessAtlas == null) {
+						metalnessAtlas = new PBRAtlasTexture(atlas, PBRType.METALNESS);
+					}
+					metalnessAtlas.addSprite(metalnessSprite);
+					PBRSpriteHolder pbrSpriteHolder = ((TextureAtlasSpriteExtension) sprite).getOrCreatePBRHolder();
+					pbrSpriteHolder.setMetalnessSprite(metalnessSprite);
+				}
 			}
 		}
 
@@ -84,6 +95,11 @@ public class AtlasPBRLoader implements PBRTextureLoader<TextureAtlas> {
 		if (specularAtlas != null) {
 			if (specularAtlas.tryUpload(atlasWidth, atlasHeight, mipLevel)) {
 				pbrTextureConsumer.acceptSpecularTexture(specularAtlas);
+			}
+		}
+		if (metalnessAtlas != null) {
+			if (metalnessAtlas.tryUpload(atlasWidth, atlasHeight, mipLevel)) {
+				pbrTextureConsumer.acceptMetalnessTexture(metalnessAtlas);
 			}
 		}
 	}

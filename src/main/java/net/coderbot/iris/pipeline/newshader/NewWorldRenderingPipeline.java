@@ -158,6 +158,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 	private boolean shouldBindPBR;
 	private int currentNormalTexture;
 	private int currentSpecularTexture;
+	private int currentMetalnessTexture;
 	private ParticleRenderingSettings particleRenderingSettings;
 	private PackDirectives packDirectives;
 
@@ -649,17 +650,24 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 	}
 
 	@Override
+	public int getCurrentMetalnessTexture() {
+		return currentMetalnessTexture;
+	}
+
+	@Override
 	public void onSetShaderTexture(int id) {
 		if (shouldBindPBR && isRenderingWorld) {
 			PBRTextureHolder pbrHolder = PBRTextureManager.INSTANCE.getOrLoadHolder(id);
 			currentNormalTexture = pbrHolder.getNormalTexture().getId();
 			currentSpecularTexture = pbrHolder.getSpecularTexture().getId();
+			currentMetalnessTexture = pbrHolder.getMetalnessTexture().getId();
 
 			TextureFormat textureFormat = TextureFormatLoader.getFormat();
 			if (textureFormat != null) {
 				int previousBinding = RenderSystem.getTextureId(GlStateManagerAccessor.getActiveTexture());
 				textureFormat.setupTextureParameters(PBRType.NORMAL, pbrHolder.getNormalTexture());
 				textureFormat.setupTextureParameters(PBRType.SPECULAR, pbrHolder.getSpecularTexture());
+				textureFormat.setupTextureParameters(PBRType.METALNESS, pbrHolder.getMetalnessTexture());
 				GlStateManager._bindTexture(previousBinding);
 			}
 

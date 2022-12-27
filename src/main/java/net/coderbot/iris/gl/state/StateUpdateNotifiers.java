@@ -11,5 +11,6 @@ public class StateUpdateNotifiers {
 	public static ValueUpdateNotifier bindTextureNotifier;
 	public static ValueUpdateNotifier normalTextureChangeNotifier;
 	public static ValueUpdateNotifier specularTextureChangeNotifier;
+	public static ValueUpdateNotifier metalnessTextureChangeNotifier;
 	public static ValueUpdateNotifier phaseChangeNotifier;
 }

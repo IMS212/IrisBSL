@@ -9,4 +9,7 @@ public interface PBRTextureHolder {
 
 	@NotNull
 	AbstractTexture getSpecularTexture();
+
+	@NotNull
+	AbstractTexture getMetalnessTexture();
 }

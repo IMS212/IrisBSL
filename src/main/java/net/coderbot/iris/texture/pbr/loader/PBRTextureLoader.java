@@ -19,5 +19,6 @@ public interface PBRTextureLoader<T extends AbstractTexture> {
 		void acceptNormalTexture(@NotNull AbstractTexture texture);
 
 		void acceptSpecularTexture(@NotNull AbstractTexture texture);
+		void acceptMetalnessTexture(@NotNull AbstractTexture texture);
 	}
 }

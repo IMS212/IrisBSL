@@ -34,6 +34,7 @@ public interface WorldRenderingPipeline {
 
 	int getCurrentNormalTexture();
 	int getCurrentSpecularTexture();
+	int getCurrentMetalnessTexture();
 
 	void onSetShaderTexture(int id);
 
@@ -58,4 +59,5 @@ public interface WorldRenderingPipeline {
 	boolean allowConcurrentCompute();
 
 	float getSunPathRotation();
+
 }

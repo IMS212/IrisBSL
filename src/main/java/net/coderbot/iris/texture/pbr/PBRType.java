@@ -6,7 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 public enum PBRType {
 	NORMAL("_n", 0x7F7FFFFF),
-	SPECULAR("_s", 0x00000000);
+	SPECULAR("_s", 0x00000000),
+	METALNESS("_m", 0x00000000);
 
 	private static final PBRType[] VALUES = values();
 

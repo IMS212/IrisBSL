@@ -129,7 +129,7 @@ public class IrisSamplers {
 	}
 
 	public static boolean hasPBRSamplers(SamplerHolder samplers) {
-		return samplers.hasSampler("normals") || samplers.hasSampler("specular");
+		return samplers.hasSampler("normals") || samplers.hasSampler("specular") || samplers.hasSampler("metalness");
 	}
 
 	public static void addLevelSamplers(SamplerHolder samplers, WorldRenderingPipeline pipeline, AbstractTexture whitePixel, InputAvailability availability) {
@@ -155,6 +155,7 @@ public class IrisSamplers {
 
 		samplers.addDynamicSampler(pipeline::getCurrentNormalTexture, StateUpdateNotifiers.normalTextureChangeNotifier, "normals");
 		samplers.addDynamicSampler(pipeline::getCurrentSpecularTexture, StateUpdateNotifiers.specularTextureChangeNotifier, "specular");
+		samplers.addDynamicSampler(pipeline::getCurrentMetalnessTexture, StateUpdateNotifiers.metalnessTextureChangeNotifier, "metalness");
 	}
 
 	public static void addWorldDepthSamplers(SamplerHolder samplers, RenderTargets renderTargets) {

@@ -84,12 +84,15 @@ public class PBRAtlasTexture extends AbstractTexture {
 		if (!animationTickers.isEmpty()) {
 			PBRAtlasHolder pbrHolder = ((TextureAtlasExtension) atlasTexture).getOrCreatePBRHolder();
 			switch (type) {
-			case NORMAL:
-				pbrHolder.setNormalAtlas(this);
-				break;
-			case SPECULAR:
-				pbrHolder.setSpecularAtlas(this);
-				break;
+				case NORMAL:
+					pbrHolder.setNormalAtlas(this);
+					break;
+				case SPECULAR:
+					pbrHolder.setSpecularAtlas(this);
+					break;
+				case METALNESS:
+					pbrHolder.setMetalnessAtlas(this);
+					break;
 			}
 		}
 
@@ -136,6 +139,9 @@ public class PBRAtlasTexture extends AbstractTexture {
 				break;
 			case SPECULAR:
 				pbrHolder.setSpecularAtlas(null);
+				break;
+			case METALNESS:
+				pbrHolder.setMetalnessAtlas(null);
 				break;
 			}
 		}
