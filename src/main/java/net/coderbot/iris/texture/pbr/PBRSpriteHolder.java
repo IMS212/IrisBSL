@@ -43,7 +43,7 @@ public class PBRSpriteHolder {
 			specularSprite.close();
 		}
 		if (metalnessSprite != null) {
-			metalnessSprite.contents().close();
+			metalnessSprite.close();
 		}
 	}
 }
