@@ -62,6 +62,7 @@ import java.util.Objects;
 public class ShadowRenderer {
 	public static boolean ACTIVE = false;
 	public static List<BlockEntity> visibleBlockEntities;
+	public static CelestialUniforms celestialUniforms;
 
 	private final float halfPlaneLength;
 	private final float renderDistanceMultiplier;
@@ -92,6 +93,7 @@ public class ShadowRenderer {
 	private int renderedShadowBlockEntities = 0;
 
 	private final CustomUniforms customUniforms;
+	public static Matrix4f PROJECTION;
 
 	public ShadowRenderer(ProgramSource shadow, PackDirectives directives,
 						  ShadowRenderTargets shadowRenderTargets, ShadowCompositeRenderer compositeRenderer, CustomUniforms customUniforms) {
@@ -110,7 +112,6 @@ public class ShadowRenderer {
 		this.shouldRenderEntities = shadowDirectives.shouldRenderEntities();
 		this.shouldRenderPlayer = shadowDirectives.shouldRenderPlayer();
 		this.shouldRenderBlockEntities = shadowDirectives.shouldRenderBlockEntities();
-
 		this.compositeRenderer = compositeRenderer;
 
 		debugStringOverall = "half plane = " + halfPlaneLength + " meters @ " + resolution + "x" + resolution;
@@ -140,6 +141,7 @@ public class ShadowRenderer {
 		} else {
 			this.renderBuffersExt = null;
 		}
+		this.celestialUniforms = new CelestialUniforms(sunPathRotation);
 
 		configureSamplingSettings(shadowDirectives);
 	}
@@ -315,7 +317,7 @@ public class ShadowRenderer {
 
 			cullingInfo = "Advanced Frustum Culling enabled";
 
-			Vector4f shadowLightPosition = new CelestialUniforms(sunPathRotation).getShadowLightPositionInWorldSpace();
+			Vector4f shadowLightPosition = celestialUniforms.getShadowLightPositionInWorldSpace();
 
 			Vector3f shadowLightVectorFromOrigin =
 				new Vector3f(shadowLightPosition.x(), shadowLightPosition.y(), shadowLightPosition.z());
@@ -404,15 +406,14 @@ public class ShadowRenderer {
 		setupShadowViewport();
 
 		// Set up our orthographic projection matrix and load it into RenderSystem
-		Matrix4f shadowProjection;
 		if (this.fov != null) {
 			// If FOV is not null, the pack wants a perspective based projection matrix. (This is to support legacy packs)
-			shadowProjection = ShadowMatrices.createPerspectiveMatrix(this.fov);
+			PROJECTION = ShadowMatrices.createPerspectiveMatrix(this.fov);
 		} else {
-			shadowProjection = ShadowMatrices.createOrthoMatrix(halfPlaneLength);
+			PROJECTION = ShadowMatrices.createOrthoMatrix(halfPlaneLength);
 		}
 
-		IrisRenderSystem.setShadowProjection(shadowProjection);
+		IrisRenderSystem.setShadowProjection(PROJECTION);
 
 		// Disable backface culling
 		// This partially works around an issue where if the front face of a mountain isn't visible, it casts no
@@ -425,9 +426,9 @@ public class ShadowRenderer {
 
 		// Render all opaque terrain unless pack requests not to
 		if (shouldRenderTerrain) {
-			levelRenderer.invokeRenderChunkLayer(RenderType.solid(), modelView, cameraX, cameraY, cameraZ, shadowProjection);
-			levelRenderer.invokeRenderChunkLayer(RenderType.cutout(), modelView, cameraX, cameraY, cameraZ, shadowProjection);
-			levelRenderer.invokeRenderChunkLayer(RenderType.cutoutMipped(), modelView, cameraX, cameraY, cameraZ, shadowProjection);
+			levelRenderer.invokeRenderChunkLayer(RenderType.solid(), modelView, cameraX, cameraY, cameraZ, PROJECTION);
+			levelRenderer.invokeRenderChunkLayer(RenderType.cutout(), modelView, cameraX, cameraY, cameraZ, PROJECTION);
+			levelRenderer.invokeRenderChunkLayer(RenderType.cutoutMipped(), modelView, cameraX, cameraY, cameraZ, PROJECTION);
 		}
 
 		// Reset our viewport in case Sodium overrode it
@@ -495,7 +496,7 @@ public class ShadowRenderer {
 		// It doesn't matter a ton, since this just means that they won't be sorted in the normal rendering pass.
 		// Just something to watch out for, however...
 		if (shouldRenderTranslucent) {
-			levelRenderer.invokeRenderChunkLayer(RenderType.translucent(), modelView, cameraX, cameraY, cameraZ, shadowProjection);
+			levelRenderer.invokeRenderChunkLayer(RenderType.translucent(), modelView, cameraX, cameraY, cameraZ, PROJECTION);
 		}
 
 		// Note: Apparently tripwire isn't rendered in the shadow pass.

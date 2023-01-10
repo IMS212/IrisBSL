@@ -2,7 +2,9 @@ package net.coderbot.iris.compat.sodium.mixin.shadow_map.frustum;
 
 import me.jellysquid.mods.sodium.client.util.frustum.Frustum;
 import me.jellysquid.mods.sodium.client.util.frustum.FrustumAdapter;
+import net.coderbot.iris.shadows.ShadowRenderingState;
 import net.coderbot.iris.shadows.frustum.advanced.AdvancedShadowCullingFrustum;
+import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
@@ -21,6 +23,11 @@ public abstract class MixinAdvancedShadowCullingFrustum implements Frustum, Frus
 			default ->
 				throw new IllegalStateException("Unexpected value: " + fastAabbTest(minX, minY, minZ, maxX, maxY, maxZ));
 		};
+	}
+
+	@Override
+	public Matrix4f getMatrix() {
+		return ShadowRenderingState.getShadowOrthoMatrix();
 	}
 
 	@Override

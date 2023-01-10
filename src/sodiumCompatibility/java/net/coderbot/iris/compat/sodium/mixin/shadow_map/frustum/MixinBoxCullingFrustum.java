@@ -2,6 +2,7 @@ package net.coderbot.iris.compat.sodium.mixin.shadow_map.frustum;
 
 import me.jellysquid.mods.sodium.client.util.frustum.Frustum;
 import me.jellysquid.mods.sodium.client.util.frustum.FrustumAdapter;
+import net.coderbot.iris.shadows.ShadowRenderingState;
 import net.coderbot.iris.shadows.frustum.BoxCuller;
 import net.coderbot.iris.shadows.frustum.fallback.BoxCullingFrustum;
 import org.joml.Matrix4f;
@@ -24,7 +25,7 @@ public class MixinBoxCullingFrustum implements Frustum, FrustumAdapter {
 
 	@Override
 	public Matrix4f getMatrix() {
-		return null;
+		return ShadowRenderingState.getShadowOrthoMatrix();
 	}
 
 	@Override
