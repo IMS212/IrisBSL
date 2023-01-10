@@ -1,6 +1,7 @@
 package net.coderbot.iris.uniforms;
 
 import com.mojang.math.Axis;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import net.coderbot.iris.JomlConversions;
 import net.coderbot.iris.gl.uniform.UniformHolder;
@@ -70,8 +71,31 @@ public final class CelestialUniforms {
 		return isDay() ? getCelestialPositionInWorldSpace(100.0F) : getCelestialPositionInWorldSpace(-100.0F);
 	}
 
+	public Vector4f getShadowLightPositionInWorldSpace2() {
+		return isDay() ? getCelestialPositionInWorldSpace2(100.0F) : getCelestialPositionInWorldSpace2(-100.0F);
+	}
+
 	private Vector4f getCelestialPositionInWorldSpace(float y) {
 		Vector4f position = new Vector4f(0.0F, y, 0.0F, 0.0F);
+
+		// TODO: Deduplicate / remove this function.
+		Matrix4f celestial = new Matrix4f();
+		celestial.identity();
+
+		// This is the same transformation applied by renderSky, however, it's been moved to here.
+		// This is because we need the result of it before it's actually performed in vanilla.
+		celestial.rotate(Axis.YP.rotationDegrees(-90.0F));
+		celestial.rotate(Axis.ZP.rotationDegrees(sunPathRotation));
+		celestial.rotate(Axis.XP.rotationDegrees(getSkyAngle() * 360.0F));
+
+		celestial.transform(position);
+
+		return position;
+	}
+
+	private Vector4f getCelestialPositionInWorldSpace2(float y) {
+		Vec3 pos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+		Vector4f position = new Vector4f((float) pos.x, y, (float) pos.z, 0.0F);
 
 		// TODO: Deduplicate / remove this function.
 		Matrix4f celestial = new Matrix4f();
