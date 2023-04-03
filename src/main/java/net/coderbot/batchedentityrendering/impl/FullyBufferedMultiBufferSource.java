@@ -57,6 +57,8 @@ public class FullyBufferedMultiBufferSource extends MultiBufferSource.BufferSour
 
 	@Override
 	public VertexConsumer getBuffer(RenderType renderType) {
+		removeReady();
+
 		if (wrappingFunction != null) {
 			renderType = wrappingFunction.apply(renderType);
 		}
@@ -89,6 +91,8 @@ public class FullyBufferedMultiBufferSource extends MultiBufferSource.BufferSour
 
 	@Override
 	public void endBatch() {
+		if (!isReady) readyUp();
+
 		for (RenderType renderType : renderOrder) {
 			renderType.setupRenderState();
 
@@ -102,14 +106,16 @@ public class FullyBufferedMultiBufferSource extends MultiBufferSource.BufferSour
 			renderType.clearRenderState();
 		}
 
-		renderOrder.clear();
-		typeToSegment.clear();
+		removeReady();
 	}
 
+	private boolean isReady;
 	private Map<RenderType, List<BufferSegment>> typeToSegment = new HashMap<>();
-	private List<RenderType> renderOrder;
+	private List<RenderType> renderOrder = new ArrayList<>();
 
 	public void readyUp() {
+		isReady = true;
+
 		for (SegmentedBufferBuilder builder : builders) {
 			List<BufferSegment> segments = builder.getSegments();
 
@@ -124,7 +130,15 @@ public class FullyBufferedMultiBufferSource extends MultiBufferSource.BufferSour
 		affinities.clear();
 	}
 
+	public void removeReady() {
+		isReady = false;
+		renderOrder.clear();
+		typeToSegment.clear();
+	}
+
 	public void endBatchWithType(TransparencyType transparencyType) {
+		if (!isReady) readyUp();
+
 		List<RenderType> allRemoved = new ArrayList<>();
 
 		for (RenderType renderType : renderOrder) {
@@ -145,6 +159,7 @@ public class FullyBufferedMultiBufferSource extends MultiBufferSource.BufferSour
 			renderType.clearRenderState();
 		}
 
+		// Avoids a CME
 		renderOrder.removeAll(allRemoved);
 	}
 
