@@ -89,12 +89,27 @@ public class FullyBufferedMultiBufferSource extends MultiBufferSource.BufferSour
 
 	@Override
 	public void endBatch() {
-		ProfilerFiller profiler = Minecraft.getInstance().getProfiler();
+		for (RenderType renderType : renderOrder) {
+			renderType.setupRenderState();
 
-		profiler.push("collect");
+			renderTypes += 1;
 
-		Map<RenderType, List<BufferSegment>> typeToSegment = new HashMap<>();
+			for (BufferSegment segment : typeToSegment.getOrDefault(renderType, Collections.emptyList())) {
+				segmentRenderer.drawInner(segment);
+				drawCalls += 1;
+			}
 
+			renderType.clearRenderState();
+		}
+
+		renderOrder.clear();
+		typeToSegment.clear();
+	}
+
+	private Map<RenderType, List<BufferSegment>> typeToSegment = new HashMap<>();
+	private List<RenderType> renderOrder;
+
+	public void readyUp() {
 		for (SegmentedBufferBuilder builder : builders) {
 			List<BufferSegment> segments = builder.getSegments();
 
@@ -103,81 +118,34 @@ public class FullyBufferedMultiBufferSource extends MultiBufferSource.BufferSour
 			}
 		}
 
-		profiler.popPush("resolve ordering");
-
-		Iterable<RenderType> renderOrder = renderOrderManager.getRenderOrder();
-
-		profiler.popPush("draw buffers");
-
-		for (RenderType type : renderOrder) {
-			type.setupRenderState();
-
-			renderTypes += 1;
-
-			for (BufferSegment segment : typeToSegment.getOrDefault(type, Collections.emptyList())) {
-				segmentRenderer.drawInner(segment);
-				drawCalls += 1;
-			}
-
-			type.clearRenderState();
-		}
-
-		profiler.popPush("reset");
+		renderOrder = renderOrderManager.getRenderOrder();
 
 		renderOrderManager.reset();
 		affinities.clear();
-
-		profiler.pop();
 	}
 
 	public void endBatchWithType(TransparencyType transparencyType) {
-		ProfilerFiller profiler = Minecraft.getInstance().getProfiler();
+		List<RenderType> allRemoved = new ArrayList<>();
 
-		profiler.push("collect");
+		for (RenderType renderType : renderOrder) {
+			if (((BlendingStateHolder) renderType).getTransparencyType() != transparencyType) continue;
+			allRemoved.add(renderType);
 
-		Map<RenderType, List<BufferSegment>> typeToSegment = new HashMap<>();
-
-		for (SegmentedBufferBuilder builder : builders) {
-			List<BufferSegment> segments = builder.getSegmentsForType(transparencyType);
-
-			for (BufferSegment segment : segments) {
-				typeToSegment.computeIfAbsent(segment.type(), (type) -> new ArrayList<>()).add(segment);
-			}
-		}
-
-		profiler.popPush("resolve ordering");
-
-		Iterable<RenderType> renderOrder = renderOrderManager.getRenderOrder();
-
-		profiler.popPush("draw buffers");
-
-		List<RenderType> types = new ArrayList<>();
-
-		for (RenderType type : renderOrder) {
-			if (((BlendingStateHolder) type).getTransparencyType() != transparencyType) {
-				continue;
-			}
-
-			types.add(type);
-
-			type.setupRenderState();
+			renderType.setupRenderState();
 
 			renderTypes += 1;
 
-			for (BufferSegment segment : typeToSegment.getOrDefault(type, Collections.emptyList())) {
+			for (BufferSegment segment : typeToSegment.getOrDefault(renderType, Collections.emptyList())) {
 				segmentRenderer.drawInner(segment);
 				drawCalls += 1;
 			}
 
-			type.clearRenderState();
+			typeToSegment.remove(renderType);
+
+			renderType.clearRenderState();
 		}
 
-		profiler.popPush("reset type " + transparencyType);
-
-		renderOrderManager.resetType(transparencyType);
-		types.forEach(affinities::remove);
-
-		profiler.pop();
+		renderOrder.removeAll(allRemoved);
 	}
 
 	public int getDrawCalls() {
