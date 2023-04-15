@@ -182,6 +182,7 @@ public class IrisChunkProgramOverrides {
 				.bindAttribute("at_tangent", IrisChunkShaderBindingPoints.TANGENT)
 				.bindAttribute("iris_Normal", IrisChunkShaderBindingPoints.NORMAL)
 				.bindAttribute("at_midBlock", IrisChunkShaderBindingPoints.MID_BLOCK)
+				.bindAttribute("iris_spriteBounds", IrisChunkShaderBindingPoints.SPRITE_BOUNDS)
 				.link((shader) -> {
 					// TODO: Better way for this? It's a bit too much casting for me.
 					int handle = ((GlObject) shader).handle();

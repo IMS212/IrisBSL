@@ -11,4 +11,5 @@ public class IrisChunkMeshAttributes {
 	public static ChunkMeshAttribute MID_TEX_COORD;
 	public static ChunkMeshAttribute BLOCK_ID;
 	public static ChunkMeshAttribute MID_BLOCK;
+	public static ChunkMeshAttribute SPRITE_BOUNDS;
 }

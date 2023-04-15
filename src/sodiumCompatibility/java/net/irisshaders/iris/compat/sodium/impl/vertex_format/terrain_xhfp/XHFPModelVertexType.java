@@ -12,7 +12,7 @@ import net.irisshaders.iris.compat.sodium.impl.vertex_format.IrisGlVertexAttribu
  * Like HFPModelVertexType, but extended to support Iris. The extensions aren't particularly efficient right now.
  */
 public class XHFPModelVertexType implements ChunkVertexType {
-	public static final int STRIDE = 44;
+	public static final int STRIDE = 52;
 	public static final GlVertexFormat<ChunkMeshAttribute> VERTEX_FORMAT = GlVertexFormat.builder(ChunkMeshAttribute.class, STRIDE)
 		.addElement(ChunkMeshAttribute.POSITION_ID, 0, GlVertexAttributeFormat.UNSIGNED_SHORT, 4, false, false)
 		.addElement(ChunkMeshAttribute.COLOR, 8, GlVertexAttributeFormat.UNSIGNED_BYTE, 4, true, false)
@@ -23,6 +23,7 @@ public class XHFPModelVertexType implements ChunkVertexType {
 		.addElement(IrisChunkMeshAttributes.NORMAL, 32, IrisGlVertexAttributeFormat.BYTE, 3, true, false)
 		.addElement(IrisChunkMeshAttributes.BLOCK_ID, 36, IrisGlVertexAttributeFormat.SHORT, 2, false, false)
 		.addElement(IrisChunkMeshAttributes.MID_BLOCK, 40, IrisGlVertexAttributeFormat.BYTE, 3, false, false)
+		.addElement(IrisChunkMeshAttributes.SPRITE_BOUNDS, 44, GlVertexAttributeFormat.UNSIGNED_SHORT, 4, false, false)
 		.build();
 
 	private static final int POSITION_MAX_VALUE = 65536;

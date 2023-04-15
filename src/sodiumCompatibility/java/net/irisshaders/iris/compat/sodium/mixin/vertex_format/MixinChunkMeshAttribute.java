@@ -35,12 +35,15 @@ public class MixinChunkMeshAttribute {
 			= ChunkMeshAttributeAccessor.createChunkMeshAttribute("BLOCK_ID", baseOrdinal + 3);
 		IrisChunkMeshAttributes.MID_BLOCK
 			= ChunkMeshAttributeAccessor.createChunkMeshAttribute("MID_BLOCK", baseOrdinal + 4);
+		IrisChunkMeshAttributes.SPRITE_BOUNDS
+			= ChunkMeshAttributeAccessor.createChunkMeshAttribute("SPRITE_BOUNDS", baseOrdinal + 5);
 
 		$VALUES = ArrayUtils.addAll($VALUES,
 			IrisChunkMeshAttributes.NORMAL,
 			IrisChunkMeshAttributes.TANGENT,
 			IrisChunkMeshAttributes.MID_TEX_COORD,
 			IrisChunkMeshAttributes.BLOCK_ID,
-			IrisChunkMeshAttributes.MID_BLOCK);
+			IrisChunkMeshAttributes.MID_BLOCK,
+			IrisChunkMeshAttributes.SPRITE_BOUNDS);
 	}
 }

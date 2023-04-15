@@ -1,10 +1,14 @@
 package net.irisshaders.iris.pipeline.transform.transformer;
 
 import io.github.douira.glsl_transformer.ast.node.TranslationUnit;
+import io.github.douira.glsl_transformer.ast.node.abstract_node.ASTNode;
+import io.github.douira.glsl_transformer.ast.node.external_declaration.ExternalDeclaration;
 import io.github.douira.glsl_transformer.ast.node.type.qualifier.StorageQualifier;
 import io.github.douira.glsl_transformer.ast.query.Root;
+import io.github.douira.glsl_transformer.ast.query.match.AutoHintedMatcher;
 import io.github.douira.glsl_transformer.ast.transform.ASTInjectionPoint;
 import io.github.douira.glsl_transformer.ast.transform.ASTParser;
+import io.github.douira.glsl_transformer.parser.ParseShape;
 import io.github.douira.glsl_transformer.util.Type;
 import net.irisshaders.iris.gl.shader.ShaderType;
 import net.irisshaders.iris.pipeline.transform.parameter.SodiumParameters;
@@ -12,6 +16,8 @@ import net.irisshaders.iris.pipeline.transform.parameter.SodiumParameters;
 import static net.irisshaders.iris.pipeline.transform.transformer.CommonTransformer.addIfNotExists;
 
 public class SodiumTransformer {
+	private static final AutoHintedMatcher<ExternalDeclaration> attributeMcSpriteBounds = new AutoHintedMatcher<>(
+		"in vec4 mc_spriteBounds;", ParseShape.EXTERNAL_DECLARATION);
 	public static void transform(
 		ASTParser t,
 		TranslationUnit tree,
@@ -130,11 +136,13 @@ public class SodiumTransformer {
 			"vec2 _vert_tex_diffuse_coord;",
 			"ivec2 _vert_tex_light_coord;",
 			"vec4 _vert_color;",
+			"vec4 mc_spriteBounds;",
 			"uint _draw_id;",
 			"void _vert_init() {" +
 				"_vert_position = (a_PosId.xyz * " + parameters.positionScale + " + "
 				+ parameters.positionOffset + ");" +
 				"_vert_tex_diffuse_coord = (a_TexCoord * " + parameters.textureScale + ");" +
+				"mc_spriteBounds = (iris_spriteBounds * " + parameters.textureScale + ");" +
 				"_vert_tex_light_coord = a_LightCoord;" +
 				"_vert_color = a_Color;" +
 				"_draw_id = uint(a_PosId.w); }",
@@ -146,8 +154,10 @@ public class SodiumTransformer {
 			// extra memory with this, only fixing broken drivers.
 			"struct DrawParameters { vec4 offset; };",
 			"layout(std140) uniform ubo_DrawParameters {DrawParameters Chunks[256]; };");
+		root.processMatches(t, attributeMcSpriteBounds, ASTNode::detachAndDelete);
 		addIfNotExists(root, t, tree, "a_PosId", Type.F32VEC4, StorageQualifier.StorageType.IN);
 		addIfNotExists(root, t, tree, "a_TexCoord", Type.F32VEC2, StorageQualifier.StorageType.IN);
+		addIfNotExists(root, t, tree, "iris_spriteBounds", Type.F32VEC4, StorageQualifier.StorageType.IN);
 		addIfNotExists(root, t, tree, "a_Color", Type.F32VEC4, StorageQualifier.StorageType.IN);
 		addIfNotExists(root, t, tree, "a_LightCoord", Type.I32VEC2, StorageQualifier.StorageType.IN);
 		tree.prependMainFunctionBody(t, "_vert_init();");

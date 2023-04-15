@@ -21,6 +21,9 @@ public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertex
 	private float vSum;
 	private boolean flipUpcomingNormal;
 
+	private short uZero;
+	private short vZero;
+
 	// TODO: FIX
 
 	/*@Override
@@ -71,8 +74,16 @@ public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertex
 
 		MemoryUtil.memPutInt(ptr + 8, vertex.color);
 
-		MemoryUtil.memPutShort(ptr + 12, XHFPModelVertexType.encodeBlockTexture(vertex.u));
-		MemoryUtil.memPutShort(ptr + 14, XHFPModelVertexType.encodeBlockTexture(vertex.v));
+		short u = XHFPModelVertexType.encodeBlockTexture(vertex.u);
+		short v = XHFPModelVertexType.encodeBlockTexture(vertex.v);
+
+		if (vertexCount == 1) {
+			uZero = u;
+			vZero = v;
+		}
+
+		MemoryUtil.memPutShort(ptr + 12, u);
+		MemoryUtil.memPutShort(ptr + 14, v);
 
 		MemoryUtil.memPutInt(ptr + 16, vertex.light);
 
@@ -151,8 +162,23 @@ public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertex
 			MemoryUtil.memPutInt(ptr + 28 - STRIDE, tangent);
 			MemoryUtil.memPutInt(ptr + 28 - STRIDE * 2, tangent);
 			MemoryUtil.memPutInt(ptr + 28 - STRIDE * 3, tangent);
+
+			encode(ptr + 44, uZero);
+			encode(ptr + 46, vZero);
+			encode(ptr + 48, u);
+			encode(ptr + 50, v);
+
+			uZero = 0;
+			vZero = 0;
 		}
 
 		return ptr + STRIDE;
+	}
+
+	public void encode(long pointer, short value) {
+		MemoryUtil.memPutShort(pointer, value);
+		MemoryUtil.memPutShort(pointer - STRIDE, value);
+		MemoryUtil.memPutShort(pointer - STRIDE * 2, value);
+		MemoryUtil.memPutShort(pointer - STRIDE * 3, value);
 	}
 }
