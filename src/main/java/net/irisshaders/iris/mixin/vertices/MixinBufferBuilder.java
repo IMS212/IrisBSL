@@ -8,6 +8,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import net.irisshaders.iris.block_rendering.BlockRenderingSettings;
+import net.irisshaders.iris.vertices.QuadView;
 import org.joml.Vector3f;
 import org.jetbrains.annotations.NotNull;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
@@ -92,6 +93,12 @@ public abstract class MixinBufferBuilder extends DefaultedVertexConsumer impleme
 
 	@Shadow
 	public abstract void nextElement();
+
+	@Unique
+	private Vector3f normal = new Vector3f();
+
+	@Unique
+	private BufferBuilderPolygonView polygon = new BufferBuilderPolygonView();
 
 	@Override
 	public void iris$beginWithoutExtending(VertexFormat.Mode drawMode, VertexFormat vertexFormat) {

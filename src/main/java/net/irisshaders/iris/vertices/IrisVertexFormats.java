@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
-import net.coderbot.iris.Iris;
+import net.irisshaders.iris.Iris;
 
 public class IrisVertexFormats {
 	public static final VertexFormatElement ENTITY_ELEMENT;
