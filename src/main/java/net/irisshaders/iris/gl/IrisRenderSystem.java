@@ -78,19 +78,18 @@ public class IrisRenderSystem {
 	public static void texImage1D(int texture, int target, int level, int internalformat, int width, int border, int format, int type, @Nullable ByteBuffer pixels) {
 		RenderSystem.assertOnRenderThreadOrInit();
 		IrisRenderSystem.bindTextureForSetup(target, texture);
-		GL30C.glTexImage1D(target, level, internalformat, width, border, format, type, pixels);
+		GL45C.glTexStorage1D(target, level + 1, internalformat, width);
 	}
 
 	public static void texImage2D(int texture, int target, int level, int internalformat, int width, int height, int border, int format, int type, @Nullable ByteBuffer pixels) {
 		RenderSystem.assertOnRenderThreadOrInit();
-		IrisRenderSystem.bindTextureForSetup(target, texture);
-		GL32C.glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels);
+		GL45C.glTextureStorage2D(texture, level + 1, internalformat, width, height);
 	}
 
 	public static void texImage3D(int texture, int target, int level, int internalformat, int width, int height, int depth, int border, int format, int type, @Nullable ByteBuffer pixels) {
 		RenderSystem.assertOnRenderThreadOrInit();
 		IrisRenderSystem.bindTextureForSetup(target, texture);
-		GL30C.glTexImage3D(target, level, internalformat, width, height, depth, border, format, type, pixels);
+		GL45C.glTexStorage3D(target, level + 1, internalformat, width, height, depth);
 	}
 
 	public static void uniformMatrix4fv(int location, boolean transpose, FloatBuffer matrix) {

@@ -1,6 +1,7 @@
 package net.irisshaders.iris.rendertarget;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.texture.InternalTextureFormat;
 import net.irisshaders.iris.gl.texture.PixelFormat;
@@ -8,6 +9,8 @@ import net.irisshaders.iris.gl.texture.PixelType;
 import org.joml.Vector2i;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL13C;
+import org.lwjgl.opengl.GL30C;
+import org.lwjgl.opengl.GL45C;
 
 import java.nio.ByteBuffer;
 
@@ -16,8 +19,8 @@ public class RenderTarget {
 	private final InternalTextureFormat internalFormat;
 	private final PixelFormat format;
 	private final PixelType type;
-	private final int mainTexture;
-	private final int altTexture;
+	private int mainTexture;
+	private int altTexture;
 	private int width;
 	private int height;
 	private boolean isValid;
@@ -32,11 +35,8 @@ public class RenderTarget {
 		this.width = builder.width;
 		this.height = builder.height;
 
-		int[] textures = new int[2];
-		GlStateManager._genTextures(textures);
-
-		this.mainTexture = textures[0];
-		this.altTexture = textures[1];
+		this.mainTexture = IrisRenderSystem.createTexture(GL30C.GL_TEXTURE_2D);
+		this.altTexture = IrisRenderSystem.createTexture(GL30C.GL_TEXTURE_2D);
 
 		boolean isPixelFormatInteger = builder.internalFormat.getPixelFormat().isInteger();
 		setupTexture(mainTexture, builder.width, builder.height, !isPixelFormatInteger);
@@ -52,16 +52,12 @@ public class RenderTarget {
 	}
 
 	private void setupTexture(int texture, int width, int height, boolean allowsLinear) {
-		resizeTexture(texture, width, height);
+		GL45C.glTextureStorage2D(texture, 4, internalFormat.getGlFormat(), width, height);
 
 		IrisRenderSystem.texParameteri(texture, GL11C.GL_TEXTURE_2D, GL11C.GL_TEXTURE_MIN_FILTER, allowsLinear ? GL11C.GL_LINEAR : GL11C.GL_NEAREST);
 		IrisRenderSystem.texParameteri(texture, GL11C.GL_TEXTURE_2D, GL11C.GL_TEXTURE_MAG_FILTER, allowsLinear ? GL11C.GL_LINEAR : GL11C.GL_NEAREST);
 		IrisRenderSystem.texParameteri(texture, GL11C.GL_TEXTURE_2D, GL11C.GL_TEXTURE_WRAP_S, GL13C.GL_CLAMP_TO_EDGE);
 		IrisRenderSystem.texParameteri(texture, GL11C.GL_TEXTURE_2D, GL11C.GL_TEXTURE_WRAP_T, GL13C.GL_CLAMP_TO_EDGE);
-	}
-
-	private void resizeTexture(int texture, int width, int height) {
-		IrisRenderSystem.texImage2D(texture, GL11C.GL_TEXTURE_2D, 0, internalFormat.getGlFormat(), width, height, 0, format.getGlFormat(), type.getGlFormat(), NULL_BUFFER);
 	}
 
 	void resize(Vector2i textureScaleOverride) {
@@ -75,9 +71,13 @@ public class RenderTarget {
 		this.width = width;
 		this.height = height;
 
-		resizeTexture(mainTexture, width, height);
+		GlStateManager._deleteTextures(new int[] { mainTexture, altTexture });
+		mainTexture = IrisRenderSystem.createTexture(GL30C.GL_TEXTURE_2D);
+		altTexture = IrisRenderSystem.createTexture(GL30C.GL_TEXTURE_2D);
 
-		resizeTexture(altTexture, width, height);
+		setupTexture(mainTexture, width, height, !internalFormat.getPixelFormat().isInteger());
+
+		setupTexture(altTexture, width, height, !internalFormat.getPixelFormat().isInteger());
 	}
 
 	public InternalTextureFormat getInternalFormat() {

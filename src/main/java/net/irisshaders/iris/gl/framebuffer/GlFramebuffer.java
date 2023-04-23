@@ -10,7 +10,7 @@ import net.irisshaders.iris.texture.TextureInfoCache;
 import org.lwjgl.opengl.GL30C;
 
 public class GlFramebuffer extends GlResource {
-	private final Int2IntMap attachments;
+	protected final Int2IntMap attachments;
 	private final int maxDrawBuffers;
 	private final int maxColorAttachments;
 	private boolean hasDepthAttachment;

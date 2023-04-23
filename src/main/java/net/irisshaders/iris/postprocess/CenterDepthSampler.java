@@ -18,6 +18,7 @@ import net.minecraft.client.Minecraft;
 import org.apache.commons.io.IOUtils;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL21C;
+import org.lwjgl.opengl.GL30C;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -35,8 +36,8 @@ public class CenterDepthSampler {
 	private boolean destroyed;
 
 	public CenterDepthSampler(IntSupplier depthSupplier, float halfLife) {
-		this.texture = GlStateManager._genTexture();
-		this.altTexture = GlStateManager._genTexture();
+		this.texture = IrisRenderSystem.createTexture(GL30C.GL_TEXTURE_2D);
+		this.altTexture = IrisRenderSystem.createTexture(GL30C.GL_TEXTURE_2D);
 		this.framebuffer = new GlFramebuffer();
 
 		InternalTextureFormat format = InternalTextureFormat.R32F;

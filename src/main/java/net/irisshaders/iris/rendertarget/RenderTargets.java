@@ -1,9 +1,11 @@
 package net.irisshaders.iris.rendertarget;
 
 import com.google.common.collect.ImmutableSet;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.framebuffer.GlFramebuffer;
+import net.irisshaders.iris.gl.framebuffer.RenderTargetFramebuffer;
 import net.irisshaders.iris.gl.texture.DepthBufferFormat;
 import net.irisshaders.iris.gl.texture.DepthCopyStrategy;
 import net.irisshaders.iris.shaderpack.PackDirectives;
@@ -24,7 +26,7 @@ public class RenderTargets {
 	private final GlFramebuffer depthSourceFb;
 	private final GlFramebuffer noTranslucentsDestFb;
 	private final GlFramebuffer noHandDestFb;
-	private final List<GlFramebuffer> ownedFramebuffers;
+	private final List<RenderTargetFramebuffer> ownedFramebuffers;
 	private int currentDepthTexture;
 	private DepthBufferFormat currentDepthFormat;
 	private DepthCopyStrategy copyStrategy;
@@ -137,35 +139,6 @@ public class RenderTargets {
 			copyStrategy = DepthCopyStrategy.fastest(currentDepthFormat.isCombinedStencil());
 		}
 
-		if (recreateDepth) {
-			// Re-attach the depth textures with the new depth texture ID, since Minecraft re-creates
-			// the depth texture when resizing its render targets.
-			//
-			// I'm not sure if our framebuffers holding on to the old depth texture between frames
-			// could be a concern, in the case of resizing and similar. I think it should work
-			// based on what I've seen of the spec, though - it seems like deleting a texture
-			// automatically detaches it from its framebuffers.
-			for (GlFramebuffer framebuffer : ownedFramebuffers) {
-				if (framebuffer == noHandDestFb || framebuffer == noTranslucentsDestFb) {
-					// NB: Do not change the depth attachment of these framebuffers
-					// as it is intentionally different
-					continue;
-				}
-
-				if (framebuffer.hasDepthAttachment()) {
-					framebuffer.addDepthAttachment(newDepthTextureId);
-				}
-			}
-		}
-
-		if (depthFormatChanged || sizeChanged) {
-			// Reallocate depth buffers
-			noTranslucents.resize(newWidth, newHeight, newDepthFormat);
-			noHand.resize(newWidth, newHeight, newDepthFormat);
-			this.translucentDepthDirty = true;
-			this.handDepthDirty = true;
-		}
-
 		if (sizeChanged) {
 			cachedWidth = newWidth;
 			cachedHeight = newHeight;
@@ -177,6 +150,38 @@ public class RenderTargets {
 			fullClearRequired = true;
 		}
 
+		if (recreateDepth) {
+			// Re-attach the depth textures with the new depth texture ID, since Minecraft re-creates
+			// the depth texture when resizing its render targets.
+			//
+			// I'm not sure if our framebuffers holding on to the old depth texture between frames
+			// could be a concern, in the case of resizing and similar. I think it should work
+			// based on what I've seen of the spec, though - it seems like deleting a texture
+			// automatically detaches it from its framebuffers.
+			for (RenderTargetFramebuffer framebuffer : ownedFramebuffers) {
+				if (framebuffer == noHandDestFb || framebuffer == noTranslucentsDestFb) {
+					// NB: Do not change the depth attachment of these framebuffers
+					// as it is intentionally different
+					continue;
+				}
+
+				if (framebuffer.hasDepthAttachment()) {
+					framebuffer.addDepthAttachment(newDepthTextureId);
+				}
+
+				framebuffer.updateTargets();
+
+			}
+		}
+
+		if (depthFormatChanged || sizeChanged) {
+			// Reallocate depth buffers
+			noTranslucents.resize(newWidth, newHeight, newDepthFormat);
+			noHand.resize(newWidth, newHeight, newDepthFormat);
+			this.translucentDepthDirty = true;
+			this.handDepthDirty = true;
+		}
+
 		return sizeChanged;
 	}
 
@@ -185,7 +190,7 @@ public class RenderTargets {
 			translucentDepthDirty = false;
 			RenderSystem.bindTexture(noTranslucents.getTextureId());
 			depthSourceFb.bindAsReadBuffer();
-			IrisRenderSystem.copyTexImage2D(GL20C.GL_TEXTURE_2D, 0, currentDepthFormat.getGlInternalFormat(), 0, 0, cachedWidth, cachedHeight, 0);
+			GlStateManager._glCopyTexSubImage2D(GL20C.GL_TEXTURE_2D, 0, 0, 0, 0, 0, cachedWidth, cachedHeight);
 		} else {
 			copyStrategy.copy(depthSourceFb, getDepthTexture(), noTranslucentsDestFb, noTranslucents.getTextureId(),
 				getCurrentWidth(), getCurrentHeight());
@@ -197,7 +202,7 @@ public class RenderTargets {
 			handDepthDirty = false;
 			RenderSystem.bindTexture(noHand.getTextureId());
 			depthSourceFb.bindAsReadBuffer();
-			IrisRenderSystem.copyTexImage2D(GL20C.GL_TEXTURE_2D, 0, currentDepthFormat.getGlInternalFormat(), 0, 0, cachedWidth, cachedHeight, 0);
+			GlStateManager._glCopyTexSubImage2D(GL20C.GL_TEXTURE_2D, 0, 0, 0, 0, 0, cachedWidth, cachedHeight);
 		} else {
 			copyStrategy.copy(depthSourceFb, getDepthTexture(), noHandDestFb, noHand.getTextureId(),
 				getCurrentWidth(), getCurrentHeight());
@@ -243,7 +248,7 @@ public class RenderTargets {
 	}
 
 	private GlFramebuffer createEmptyFramebuffer() {
-		GlFramebuffer framebuffer = new GlFramebuffer();
+		RenderTargetFramebuffer framebuffer = new RenderTargetFramebuffer();
 		ownedFramebuffers.add(framebuffer);
 
 		framebuffer.addDepthAttachment(currentDepthTexture);
@@ -297,7 +302,7 @@ public class RenderTargets {
 			throw new IllegalArgumentException("Framebuffer must have at least one color buffer");
 		}
 
-		GlFramebuffer framebuffer = new GlFramebuffer();
+		RenderTargetFramebuffer framebuffer = new RenderTargetFramebuffer();
 		ownedFramebuffers.add(framebuffer);
 
 		int[] actualDrawBuffers = new int[drawBuffers.length];
@@ -315,14 +320,11 @@ public class RenderTargets {
 
 			RenderTarget target = this.get(drawBuffers[i]);
 
-			int textureId = stageWritesToMain.contains(drawBuffers[i]) ? target.getMainTexture() : target.getAltTexture();
-
-			framebuffer.addColorAttachment(i, textureId);
+			framebuffer.addColorAttachment(i, target, !stageWritesToMain.contains(drawBuffers[i]));
 		}
 
 		framebuffer.drawBuffers(actualDrawBuffers);
 		framebuffer.readBuffer(0);
-
 
 		int status = framebuffer.getStatus();
 		if (status != GL30C.GL_FRAMEBUFFER_COMPLETE) {

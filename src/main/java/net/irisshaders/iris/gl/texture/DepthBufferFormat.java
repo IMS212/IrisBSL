@@ -56,7 +56,7 @@ public enum DepthBufferFormat {
 	public int getGlInternalFormat() {
 		switch (this) {
 			case DEPTH:
-				return GL30C.GL_DEPTH_COMPONENT;
+				return GL30C.GL_DEPTH_COMPONENT16;
 			case DEPTH16:
 				return GL30C.GL_DEPTH_COMPONENT16;
 			case DEPTH24:

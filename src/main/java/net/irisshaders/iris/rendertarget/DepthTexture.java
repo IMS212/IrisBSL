@@ -6,13 +6,14 @@ import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.texture.DepthBufferFormat;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL13C;
+import org.lwjgl.opengl.GL45C;
 
 public class DepthTexture extends GlResource {
 	public DepthTexture(int width, int height, DepthBufferFormat format) {
 		super(IrisRenderSystem.createTexture(GL11C.GL_TEXTURE_2D));
 		int texture = getGlId();
 
-		resize(width, height, format);
+		GL45C.glTextureStorage2D(getTextureId(), 1, format.getGlInternalFormat(), width, height);
 
 		IrisRenderSystem.texParameteri(texture, GL11C.GL_TEXTURE_2D, GL11C.GL_TEXTURE_MIN_FILTER, GL11C.GL_NEAREST);
 		IrisRenderSystem.texParameteri(texture, GL11C.GL_TEXTURE_2D, GL11C.GL_TEXTURE_MAG_FILTER, GL11C.GL_NEAREST);
@@ -23,8 +24,11 @@ public class DepthTexture extends GlResource {
 	}
 
 	void resize(int width, int height, DepthBufferFormat format) {
-		IrisRenderSystem.texImage2D(getTextureId(), GL11C.GL_TEXTURE_2D, 0, format.getGlInternalFormat(), width, height, 0,
-			format.getGlType(), format.getGlFormat(), null);
+		GlStateManager._deleteTexture(getGlId());
+
+		changeId(IrisRenderSystem.createTexture(GL11C.GL_TEXTURE_2D));
+
+		GL45C.glTextureStorage2D(getTextureId(), 1, format.getGlInternalFormat(), width, height);
 	}
 
 	public int getTextureId() {

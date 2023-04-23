@@ -1,7 +1,7 @@
 package net.irisshaders.iris.gl;
 
 public abstract class GlResource {
-	private final int id;
+	private int id;
 	private boolean isValid;
 
 	protected GlResource(int id) {
@@ -12,6 +12,11 @@ public abstract class GlResource {
 	public final void destroy() {
 		destroyInternal();
 		isValid = false;
+	}
+
+	public final void changeId(int id) {
+		this.id = id;
+		isValid = true;
 	}
 
 	protected abstract void destroyInternal();

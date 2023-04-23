@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import net.irisshaders.iris.features.FeatureFlags;
 import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.framebuffer.GlFramebuffer;
+import net.irisshaders.iris.gl.framebuffer.RenderTargetFramebuffer;
 import net.irisshaders.iris.gl.texture.DepthBufferFormat;
 import net.irisshaders.iris.gl.texture.DepthCopyStrategy;
 import net.irisshaders.iris.gl.texture.InternalTextureFormat;
@@ -27,7 +28,7 @@ public class ShadowRenderTargets {
 	private final GlFramebuffer noTranslucentsDestFb;
 	private final boolean[] flipped;
 
-	private final List<GlFramebuffer> ownedFramebuffers;
+	private final List<RenderTargetFramebuffer> ownedFramebuffers;
 	private final int resolution;
 	private final WorldRenderingPipeline pipeline;
 	private final boolean[] hardwareFiltered;
@@ -208,7 +209,7 @@ public class ShadowRenderTargets {
 	}
 
 	private GlFramebuffer createEmptyFramebuffer() {
-		GlFramebuffer framebuffer = new GlFramebuffer();
+		RenderTargetFramebuffer framebuffer = new RenderTargetFramebuffer();
 		ownedFramebuffers.add(framebuffer);
 
 		framebuffer.addDepthAttachment(mainDepth.getTextureId());
@@ -262,7 +263,7 @@ public class ShadowRenderTargets {
 			throw new IllegalArgumentException("Framebuffer must have at least one color buffer");
 		}
 
-		GlFramebuffer framebuffer = new GlFramebuffer();
+		RenderTargetFramebuffer framebuffer = new RenderTargetFramebuffer();
 		ownedFramebuffers.add(framebuffer);
 
 		int[] actualDrawBuffers = new int[drawBuffers.length];
@@ -281,9 +282,7 @@ public class ShadowRenderTargets {
 
 			RenderTarget target = this.getOrCreate(drawBuffers[i]);
 
-			int textureId = stageWritesToMain.contains(drawBuffers[i]) ? target.getMainTexture() : target.getAltTexture();
-
-			framebuffer.addColorAttachment(i, textureId);
+			framebuffer.addColorAttachment(i, target, !stageWritesToMain.contains(drawBuffers[i]));
 		}
 
 		framebuffer.drawBuffers(actualDrawBuffers);
