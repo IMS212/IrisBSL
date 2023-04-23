@@ -223,7 +223,7 @@ public class ShadowCompositeRenderer {
 		for (int i = 0; i < renderTargets.getRenderTargetCount(); i++) {
 			// Reset mipmapping states at the end of the frame.
 			if (renderTargets.get(i) != null) {
-				resetRenderTarget(renderTargets.get(i));
+				//resetRenderTarget(renderTargets.get(i));
 			}
 		}
 

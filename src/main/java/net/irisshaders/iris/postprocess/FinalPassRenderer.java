@@ -265,7 +265,7 @@ public class FinalPassRenderer {
 
 		for (int i = 0; i < renderTargets.getRenderTargetCount(); i++) {
 			// Reset mipmapping states at the end of the frame.
-			resetRenderTarget(renderTargets.get(i));
+			//resetRenderTarget(renderTargets.get(i));
 		}
 
 		for (SwapPass swapPass : swapPasses) {

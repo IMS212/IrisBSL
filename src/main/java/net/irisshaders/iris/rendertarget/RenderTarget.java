@@ -7,6 +7,7 @@ import net.irisshaders.iris.gl.texture.InternalTextureFormat;
 import net.irisshaders.iris.gl.texture.PixelFormat;
 import net.irisshaders.iris.gl.texture.PixelType;
 import org.joml.Vector2i;
+import org.lwjgl.opengl.ARBBindlessTexture;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL13C;
 import org.lwjgl.opengl.GL30C;
@@ -21,6 +22,8 @@ public class RenderTarget {
 	private final PixelType type;
 	private int mainTexture;
 	private int altTexture;
+	private long mainTextureHandle;
+	private long altTextureHandle;
 	private int width;
 	private int height;
 	private boolean isValid;
@@ -42,6 +45,10 @@ public class RenderTarget {
 		setupTexture(mainTexture, builder.width, builder.height, !isPixelFormatInteger);
 		setupTexture(altTexture, builder.width, builder.height, !isPixelFormatInteger);
 
+		mainTextureHandle = ARBBindlessTexture.glGetTextureHandleARB(mainTexture);
+		altTextureHandle = ARBBindlessTexture.glGetTextureHandleARB(altTexture);
+		ARBBindlessTexture.glMakeTextureHandleResidentARB(mainTextureHandle);
+		ARBBindlessTexture.glMakeTextureHandleResidentARB(altTextureHandle);
 		// Clean up after ourselves
 		// This is strictly defensive to ensure that other buggy code doesn't tamper with our textures
 		GlStateManager._bindTexture(0);
@@ -70,10 +77,16 @@ public class RenderTarget {
 
 		this.width = width;
 		this.height = height;
+		ARBBindlessTexture.glMakeTextureHandleNonResidentARB(mainTextureHandle);
+		ARBBindlessTexture.glMakeTextureHandleNonResidentARB(altTextureHandle);
 
 		GlStateManager._deleteTextures(new int[] { mainTexture, altTexture });
 		mainTexture = IrisRenderSystem.createTexture(GL30C.GL_TEXTURE_2D);
 		altTexture = IrisRenderSystem.createTexture(GL30C.GL_TEXTURE_2D);
+		mainTextureHandle = ARBBindlessTexture.glGetTextureHandleARB(mainTexture);
+		altTextureHandle = ARBBindlessTexture.glGetTextureHandleARB(altTexture);
+		ARBBindlessTexture.glMakeTextureHandleResidentARB(mainTextureHandle);
+		ARBBindlessTexture.glMakeTextureHandleResidentARB(altTextureHandle);
 
 		setupTexture(mainTexture, width, height, !internalFormat.getPixelFormat().isInteger());
 
