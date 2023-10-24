@@ -78,8 +78,8 @@ public class MixinChunkRenderRebuildTask {
 		}
 	}
 
-	@Inject(remap = false, method = "performBuild", at = @At(value = "INVOKE",
-			target = "Lnet/minecraft/client/renderer/ItemBlockRenderTypes;canRenderInLayer(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/client/renderer/RenderType;)Z"), locals = LocalCapture.CAPTURE_FAILHARD)
+	@Inject(method = "performBuild", at = @At(value = "INVOKE",
+			target = "Lnet/minecraft/world/level/block/state/BlockState;getSeed(Lnet/minecraft/core/BlockPos;)J"), locals = LocalCapture.CAPTURE_FAILHARD)
 	private void iris$wrapGetBlockLayer(ChunkBuildContext context,
 										CancellationSource cancellationSource, CallbackInfoReturnable<ChunkBuildResult> cir,
 										ChunkRenderData.Builder renderData, VisGraph occluder, ChunkRenderBounds.Builder bounds, ChunkBuildBuffers buffers,
@@ -92,8 +92,8 @@ public class MixinChunkRenderRebuildTask {
 		}
 	}
 
-	@Inject(remap = false, method = "performBuild", at = @At(value = "INVOKE",
-			target = "Lnet/minecraft/client/renderer/ItemBlockRenderTypes;canRenderInLayer(Lnet/minecraft/world/level/material/FluidState;Lnet/minecraft/client/renderer/RenderType;)Z"), locals = LocalCapture.CAPTURE_FAILHARD)
+	@Inject(method = "performBuild", at = @At(value = "INVOKE",
+			target = "Lnet/minecraft/client/renderer/ItemBlockRenderTypes;getRenderLayer(Lnet/minecraft/world/level/material/FluidState;)Lnet/minecraft/client/renderer/RenderType;"), locals = LocalCapture.CAPTURE_FAILHARD)
 	private void iris$wrapGetFluidLayer(ChunkBuildContext context,
 										CancellationSource cancellationSource, CallbackInfoReturnable<ChunkBuildResult> cir,
 										ChunkRenderData.Builder renderData, VisGraph occluder, ChunkRenderBounds.Builder bounds, ChunkBuildBuffers buffers,
