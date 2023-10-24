@@ -21,3 +21,4 @@ mutable field net/minecraft/client/renderer/ShaderInstance COLOR_MODULATOR Lcom/
 accessible field net/minecraft/client/renderer/ShaderInstance uniforms Ljava/util/List;
 mutable field net/minecraft/client/renderer/LevelRenderer renderBuffers Lnet/minecraft/client/renderer/RenderBuffers;
 accessible field com/mojang/blaze3d/platform/GlStateManager$BooleanState enabled Z
+accessible class net/minecraft/client/model/geom/ModelPart$Polygon

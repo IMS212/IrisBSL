@@ -8,6 +8,7 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.client.model.data.IModelData;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -25,9 +26,7 @@ public class MixinBlockRenderer {
     private boolean useSeparateAo;
 
     @Inject(method = "renderModel", remap = false, at = @At("HEAD"))
-    private void renderModel(BlockAndTintGetter world, BlockState state, BlockPos pos, BlockPos origin,
-							 BakedModel model, ChunkModelBuilder buffers, boolean cull, long seed,
-							 CallbackInfoReturnable<Boolean> cir) {
+    private void renderModel(BlockAndTintGetter world, BlockState state, BlockPos pos, BlockPos origin, BakedModel model, ChunkModelBuilder buffers, boolean cull, long seed, IModelData modelData, CallbackInfoReturnable<Boolean> cir) {
         this.useSeparateAo = BlockRenderingSettings.INSTANCE.shouldUseSeparateAo();
     }
 

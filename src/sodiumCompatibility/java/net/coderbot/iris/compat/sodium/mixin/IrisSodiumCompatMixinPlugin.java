@@ -1,7 +1,6 @@
 package net.coderbot.iris.compat.sodium.mixin;
 
 import net.coderbot.iris.compat.sodium.SodiumVersionCheck;
-import net.fabricmc.loader.api.FabricLoader;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -19,16 +18,7 @@ public class IrisSodiumCompatMixinPlugin implements IMixinConfigPlugin {
 
 	@Override
 	public void onLoad(String mixinPackage) {
-		validSodiumVersion = FabricLoader.getInstance().getModContainer("sodium").map(sodium -> {
-			String version = sodium.getMetadata().getVersion().getFriendlyString();
 
-			return SodiumVersionCheck.isAllowedVersion(version);
-		}).orElse(false);
-
-		if (!validSodiumVersion) {
-			// We can't use Iris' logger here due to classloading issues.
-			System.err.println("[Iris] Invalid/missing version of Sodium detected, disabling compatibility mixins!");
-		}
 	}
 
 	@Override
@@ -38,7 +28,7 @@ public class IrisSodiumCompatMixinPlugin implements IMixinConfigPlugin {
 
 	@Override
 	public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-		return validSodiumVersion;
+		return true;
 	}
 
 	@Override

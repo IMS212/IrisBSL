@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.pipeline.transform.PatchShaderType;
-import net.fabricmc.loader.api.FabricLoader;
+import net.minecraftforge.fml.loading.FMLPaths;
 
 /**
  * Static class that deals with printing the patched_shader folder.
@@ -19,7 +19,7 @@ import net.fabricmc.loader.api.FabricLoader;
 public class ShaderPrinter {
 	private static boolean outputLocationCleared = false;
 	private static int programCounter = 0;
-	private static final Path debugOutDir = FabricLoader.getInstance().getGameDir().resolve("patched_shaders");
+	private static final Path debugOutDir = FMLPaths.GAMEDIR.get().resolve("patched_shaders");
 
 	public static void resetPrintState() {
 		outputLocationCleared = false;

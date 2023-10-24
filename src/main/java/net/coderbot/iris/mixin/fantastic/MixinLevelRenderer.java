@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderBuffers;
+import net.minecraft.client.renderer.culling.Frustum;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -37,6 +38,9 @@ public class MixinLevelRenderer {
 	@Shadow
 	private RenderBuffers renderBuffers;
 
+	@Shadow
+	private Frustum cullingFrustum;
+
 	@Inject(method = "renderLevel", at = @At("HEAD"))
 	private void iris$resetParticleManagerPhase(PoseStack poseStack, float f, long l, boolean bl, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f projectionMatrix, CallbackInfo ci) {
 		((PhasedParticleEngine) minecraft.particleEngine).setParticleRenderingPhase(ParticleRenderingPhase.EVERYTHING);
@@ -51,22 +55,22 @@ public class MixinLevelRenderer {
 		ParticleRenderingSettings settings = getRenderingSettings();
 
 		if (settings == ParticleRenderingSettings.BEFORE) {
-			minecraft.particleEngine.render(poseStack, bufferSource, lightTexture, camera, f);
+			minecraft.particleEngine.render(poseStack, bufferSource, lightTexture, camera, f, this.cullingFrustum);
 		} else if (settings == ParticleRenderingSettings.MIXED) {
 			((PhasedParticleEngine) minecraft.particleEngine).setParticleRenderingPhase(ParticleRenderingPhase.OPAQUE);
-			minecraft.particleEngine.render(poseStack, bufferSource, lightTexture, camera, f);
+			minecraft.particleEngine.render(poseStack, bufferSource, lightTexture, camera, f, this.cullingFrustum);
 		}
 	}
 
-	@Redirect(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/ParticleEngine;render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;F)V"))
-	private void iris$renderTranslucentAfterDeferred(ParticleEngine instance, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, LightTexture lightTexture, Camera camera, float f) {
+	@Redirect(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/ParticleEngine;render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/culling/Frustum;)V"))
+	private void iris$renderTranslucentAfterDeferred(ParticleEngine instance, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, LightTexture lightTexture, Camera camera, float f, Frustum frustum) {
 		ParticleRenderingSettings settings = getRenderingSettings();
 
 		if (settings == ParticleRenderingSettings.AFTER) {
-			minecraft.particleEngine.render(poseStack, bufferSource, lightTexture, camera, f);
+			minecraft.particleEngine.render(poseStack, bufferSource, lightTexture, camera, f, frustum);
 		} else if (settings == ParticleRenderingSettings.MIXED) {
 				((PhasedParticleEngine) minecraft.particleEngine).setParticleRenderingPhase(ParticleRenderingPhase.TRANSLUCENT);
-			minecraft.particleEngine.render(poseStack, bufferSource, lightTexture, camera, f);
+			minecraft.particleEngine.render(poseStack, bufferSource, lightTexture, camera, f, frustum);
 		}
 	}
 

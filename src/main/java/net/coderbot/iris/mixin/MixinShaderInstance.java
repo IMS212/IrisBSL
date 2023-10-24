@@ -1,10 +1,9 @@
 package net.coderbot.iris.mixin;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.gson.JsonObject;
 import com.mojang.blaze3d.shaders.Uniform;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.coderbot.iris.Iris;
-import net.coderbot.iris.gl.IrisRenderSystem;
 import net.coderbot.iris.gl.blending.DepthColorStorage;
 import net.coderbot.iris.pipeline.WorldRenderingPipeline;
 import net.coderbot.iris.pipeline.newshader.CoreWorldRenderingPipeline;
@@ -12,10 +11,9 @@ import net.coderbot.iris.pipeline.newshader.ExtendedShader;
 import net.coderbot.iris.pipeline.newshader.ShaderInstanceInterface;
 import net.coderbot.iris.pipeline.newshader.fallback.FallbackShader;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceProvider;
-import org.lwjgl.opengl.ARBTextureSwizzle;
-import org.lwjgl.opengl.GL20C;
-import org.lwjgl.opengl.GL30C;
+import net.minecraft.util.GsonHelper;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -24,9 +22,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
-import java.util.Objects;
+import java.io.Reader;
 
 @Mixin(ShaderInstance.class)
 public abstract class MixinShaderInstance implements ShaderInstanceInterface {
@@ -46,7 +43,7 @@ public abstract class MixinShaderInstance implements ShaderInstanceInterface {
 		logger.warn(message, arg1, arg2);
 	}
 
-	@Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/shaders/Uniform;glBindAttribLocation(IILjava/lang/CharSequence;)V"))
+	@Redirect(method = "<init>(Lnet/minecraft/server/packs/resources/ResourceProvider;Lnet/minecraft/resources/ResourceLocation;Lcom/mojang/blaze3d/vertex/VertexFormat;)V", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/shaders/Uniform;glBindAttribLocation(IILjava/lang/CharSequence;)V"))
 	public void iris$redirectBindAttributeLocation(int i, int j, CharSequence charSequence) {
 		if (((Object) this) instanceof ExtendedShader && ATTRIBUTE_LIST.contains(charSequence)) {
 			Uniform.glBindAttribLocation(i, j, "iris_" + charSequence);
@@ -83,9 +80,10 @@ public abstract class MixinShaderInstance implements ShaderInstanceInterface {
 		}
 	}
 
-	@Inject(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/GsonHelper;parse(Ljava/io/Reader;)Lcom/google/gson/JsonObject;"))
-	public void iris$setupGeometryShader(ResourceProvider resourceProvider, String string, VertexFormat vertexFormat, CallbackInfo ci) {
-		this.iris$createGeometryShader(resourceProvider, string);
+	@Redirect(method = "<init>(Lnet/minecraft/server/packs/resources/ResourceProvider;Lnet/minecraft/resources/ResourceLocation;Lcom/mojang/blaze3d/vertex/VertexFormat;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/GsonHelper;parse(Ljava/io/Reader;)Lcom/google/gson/JsonObject;"))
+	public JsonObject iris$setupGeometryShader(Reader reader, ResourceProvider arg, ResourceLocation shaderLocation) {
+		this.iris$createGeometryShader(arg, shaderLocation.getPath());
+		return GsonHelper.parse(reader);
 	}
 
 	@Override

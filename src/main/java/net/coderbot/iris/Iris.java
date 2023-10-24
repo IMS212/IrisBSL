@@ -23,16 +23,17 @@ import net.coderbot.iris.shaderpack.option.Profile;
 import net.coderbot.iris.shaderpack.option.values.MutableOptionValues;
 import net.coderbot.iris.shaderpack.option.values.OptionValues;
 import net.coderbot.iris.texture.pbr.PBRTextureManager;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.ModContainer;
-import net.fabricmc.loader.api.Version;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraftforge.fml.ModContainer;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLPaths;
+import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 
@@ -54,6 +55,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipError;
 import java.util.zip.ZipException;
 
+@Mod(Iris.MODID)
 public class Iris {
 	public static final String MODID = "iris";
 
@@ -89,11 +91,20 @@ public class Iris {
 	// behavior is more concrete and therefore is more likely to repair a user's issues
 	private static boolean resetShaderPackOptions = false;
 
-	private static Version IRIS_VERSION;
+	private static ArtifactVersion IRIS_VERSION;
 	private static UpdateChecker updateChecker;
 	private static boolean fallback;
 
-    /**
+	// Change this for snapshots!
+	private static String backupVersionNumber = "1.18.2";
+
+	public Iris() {
+
+		setupCommands(Minecraft.getInstance());
+
+	}
+
+	/**
 	 * Called very early on in Minecraft initialization. At this point we *cannot* safely access OpenGL, but we can do
 	 * some very basic setup, config loading, and environment checks.
 	 *
@@ -102,28 +113,13 @@ public class Iris {
 	 *
 	 * <p>This is called right before options are loaded, so we can add key bindings here.</p>
 	 */
-	public void onEarlyInitialize() {
-		FabricLoader.getInstance().getModContainer("sodium").ifPresent(
-				modContainer -> {
-					sodiumInstalled = true;
-					String versionString = modContainer.getMetadata().getVersion().getFriendlyString();
+	public static void onEarlyInitialize() {
 
-					// This makes it so that if we don't have the right version of Sodium, it will show the user a
-					// nice warning, and prevent them from playing the game with a wrong version of Sodium.
-					if (!SodiumVersionCheck.isAllowedVersion(versionString)) {
-						sodiumInvalid = true;
-					}
-				}
-		);
 
-		hasNEC = FabricLoader.getInstance().isModLoaded("notenoughcrashes");
 
-		ModContainer iris = FabricLoader.getInstance().getModContainer(MODID)
-				.orElseThrow(() -> new IllegalStateException("Couldn't find the mod container for Iris"));
-
-		IRIS_VERSION = iris.getMetadata().getVersion();
-
-		this.updateChecker = new UpdateChecker(IRIS_VERSION);
+		reloadKeybind = new KeyMapping("iris.keybind.reload", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, "iris.keybinds");
+		toggleShadersKeybind = new KeyMapping("iris.keybind.toggleShaders", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, "iris.keybinds");
+		shaderpackScreenKeybind = new KeyMapping("iris.keybind.shaderPackSelection", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_O, "iris.keybinds");
 
 		try {
 			if (!Files.exists(getShaderpacksDirectory())) {
@@ -134,7 +130,7 @@ public class Iris {
 			logger.warn("", e);
 		}
 
-		irisConfig = new IrisConfig(FabricLoader.getInstance().getConfigDir().resolve("iris.properties"));
+		irisConfig = new IrisConfig(FMLPaths.CONFIGDIR.get().resolve("iris.properties"));
 
 		try {
 			irisConfig.initialize();
@@ -143,13 +139,7 @@ public class Iris {
 			logger.error("", e);
 		}
 
-		this.updateChecker.checkForUpdates(irisConfig);
 
-		reloadKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping("iris.keybind.reload", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, "iris.keybinds"));
-		toggleShadersKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping("iris.keybind.toggleShaders", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, "iris.keybinds"));
-		shaderpackScreenKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping("iris.keybind.shaderPackSelection", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_O, "iris.keybinds"));
-
-		setupCommands(Minecraft.getInstance());
 
 		initialized = true;
 	}
@@ -217,6 +207,17 @@ public class Iris {
 				" Trying to avoid a crash but this is an odd state.");
 			return;
 		}
+
+		hasNEC = ModList.get().isLoaded("notenoughcrashes");
+
+		ModContainer iris = ModList.get().getModContainerById(MODID)
+			.orElseThrow(() -> new IllegalStateException("Couldn't find the mod container for Iris"));
+
+		IRIS_VERSION = iris.getModInfo().getVersion();
+
+		updateChecker = new UpdateChecker(IRIS_VERSION);
+
+		updateChecker.checkForUpdates(irisConfig);
 
 		// Initialize the pipeline now so that we don't increase world loading time. Just going to guess that
 		// the player is in the overworld.
@@ -702,7 +703,7 @@ public class Iris {
 			return "Version info unknown!";
 		}
 
-		return IRIS_VERSION.getFriendlyString();
+		return IRIS_VERSION.toString();
 	}
 
 	public static String getFormattedVersion() {
@@ -724,11 +725,11 @@ public class Iris {
 	}
 
 	public static boolean isSodiumInvalid() {
-		return sodiumInvalid;
+		return false;
  	}
 
 	public static boolean isSodiumInstalled() {
-		return sodiumInstalled;
+		return true;
 	}
 
 	public static boolean hasNotEnoughCrashes() {
@@ -737,7 +738,7 @@ public class Iris {
 
 	public static Path getShaderpacksDirectory() {
 		if (shaderpacksDirectory == null) {
-			shaderpacksDirectory = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
+			shaderpacksDirectory = FMLPaths.GAMEDIR.get().resolve("shaderpacks");
 		}
 
 		return shaderpacksDirectory;

@@ -1,7 +1,7 @@
 package net.coderbot.iris.vertices;
 
+import net.coderbot.iris.vendored.joml.Vector3f;
 import net.minecraft.util.Mth;
-import org.joml.Vector3f;
 
 /**
  * Provides some utilities for working with packed normal vectors. Each normal component provides 8 bits of

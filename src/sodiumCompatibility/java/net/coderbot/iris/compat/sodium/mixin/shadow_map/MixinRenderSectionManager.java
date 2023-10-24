@@ -97,7 +97,7 @@ public class MixinRenderSectionManager implements SwappableRenderSectionManager 
         needsUpdateSwap = needsUpdateTmp;
     }
 
-    @Inject(method = "update", at = @At("RETURN"))
+    @Inject(method = "update", at = @At("RETURN"), remap = false)
 	private void iris$captureVisibleBlockEntities(Camera camera, Frustum frustum, int frame, boolean spectator, CallbackInfo ci) {
 		if (ShadowRenderingState.areShadowsCurrentlyBeingRendered()) {
 			ShadowRenderer.visibleBlockEntities = visibleBlockEntities;

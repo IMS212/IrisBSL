@@ -57,7 +57,7 @@ public class MixinShaderChunkRenderer implements ShaderChunkRendererExt {
         irisChunkProgramOverrides = new IrisChunkProgramOverrides();
     }
 
-	@Redirect(method = "createShader", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/gl/shader/ShaderLoader;loadShader(Lme/jellysquid/mods/sodium/client/gl/shader/ShaderType;Lnet/minecraft/resources/ResourceLocation;Lme/jellysquid/mods/sodium/client/gl/shader/ShaderConstants;)Lme/jellysquid/mods/sodium/client/gl/shader/GlShader;", ordinal = 0))
+	@Redirect(method = "createShader", remap = false, at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/gl/shader/ShaderLoader;loadShader(Lme/jellysquid/mods/sodium/client/gl/shader/ShaderType;Lnet/minecraft/resources/ResourceLocation;Lme/jellysquid/mods/sodium/client/gl/shader/ShaderConstants;)Lme/jellysquid/mods/sodium/client/gl/shader/GlShader;", ordinal = 0))
 	private GlShader iris$redirectOriginalShader(ShaderType type, ResourceLocation name, ShaderConstants constants) {
 		if (this.vertexType == IrisModelVertexFormats.MODEL_VERTEX_XHFP) {
 			String shader = ShaderParser.parseShader(ShaderLoader.getShaderSource(name), constants);

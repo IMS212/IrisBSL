@@ -18,7 +18,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -66,29 +68,30 @@ public class MixinParticleEngine implements PhasedParticleEngine {
 		);
 	}
 
-	@Redirect(method = "render", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;setShader(Ljava/util/function/Supplier;)V"))
+	@Redirect(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/culling/Frustum;)V", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;setShader(Ljava/util/function/Supplier;)V"))
 	private void iris$changeParticleShader(Supplier<ShaderInstance> pSupplier0) {
 		RenderSystem.setShader(phase == ParticleRenderingPhase.TRANSLUCENT ? ShaderAccess::getParticleTranslucentShader : pSupplier0);
 	}
 
-	@Redirect(method = "render", at = @At(value = "FIELD", target = "Lnet/minecraft/client/particle/ParticleEngine;RENDER_ORDER:Ljava/util/List;"))
-	private List<ParticleRenderType> iris$selectParticlesToRender() {
+	@Redirect(remap = false, method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/culling/Frustum;)V",
+		at = @At(value = "INVOKE", target = "Ljava/util/Set;iterator()Ljava/util/Iterator;"))
+	private Iterator<ParticleRenderType> iris$selectParticlesToRender(Set<ParticleRenderType> instance) {
 		if (phase == ParticleRenderingPhase.TRANSLUCENT) {
 			// Create a copy of the list
 			//
 			// We re-copy the list every time in case someone has added new particle texture sheets behind our back.
-			List<ParticleRenderType> toRender = new ArrayList<>(RENDER_ORDER);
+			List<ParticleRenderType> toRender = new ArrayList<>(instance);
 
 			// Remove all known opaque particle texture sheets.
 			toRender.removeAll(OPAQUE_PARTICLE_RENDER_TYPES);
 
-			return toRender;
+			return toRender.iterator();
 		} else if (phase == ParticleRenderingPhase.OPAQUE) {
 			// Render only opaque particle sheets
-			return OPAQUE_PARTICLE_RENDER_TYPES;
+			return OPAQUE_PARTICLE_RENDER_TYPES.iterator();
 		} else {
 			// Don't override particle rendering
-			return RENDER_ORDER;
+			return instance.iterator();
 		}
 	}
 
