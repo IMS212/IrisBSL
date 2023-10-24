@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * A simple optimization to avoid redundant glBindFramebuffer calls, works in principle the same as things like
  * glBindTexture in GlStateManager.
  */
-@Mixin(GlStateManager.class)
+@Mixin(value = GlStateManager.class, remap = false)
 public class MixinGlStateManager_FramebufferBinding {
 	private static int iris$drawFramebuffer = 0;
 	private static int iris$readFramebuffer = 0;

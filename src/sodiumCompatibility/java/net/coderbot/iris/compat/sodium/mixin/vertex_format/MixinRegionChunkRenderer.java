@@ -11,6 +11,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.ChunkVertexTy
 import net.coderbot.iris.block_rendering.BlockRenderingSettings;
 import net.coderbot.iris.compat.sodium.impl.IrisChunkShaderBindingPoints;
 import net.coderbot.iris.compat.sodium.impl.vertex_format.IrisChunkMeshAttributes;
+import net.coderbot.iris.compat.sodium.impl.vertex_format.terrain_xhfp.XHFPModelVertexType;
 import org.apache.commons.lang3.ArrayUtils;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -34,25 +35,26 @@ public abstract class MixinRegionChunkRenderer extends ShaderChunkRenderer {
 			return TessellationBinding.forVertexBuffer(buffer, attributes);
 		}
 
+
 		attributes = new GlVertexAttributeBinding[]{
 			new GlVertexAttributeBinding(IrisChunkShaderBindingPoints.ATTRIBUTE_POSITION_ID,
-				vertexFormat.getAttribute(IrisChunkMeshAttributes.POSITION_MATERIAL_MESH)),
+				XHFPModelVertexType.VERTEX_FORMAT.getAttribute(IrisChunkMeshAttributes.POSITION_MATERIAL_MESH)),
 			new GlVertexAttributeBinding(IrisChunkShaderBindingPoints.ATTRIBUTE_COLOR,
-				vertexFormat.getAttribute(IrisChunkMeshAttributes.COLOR_SHADE)),
+				XHFPModelVertexType.VERTEX_FORMAT.getAttribute(IrisChunkMeshAttributes.COLOR_SHADE)),
 			new GlVertexAttributeBinding(IrisChunkShaderBindingPoints.ATTRIBUTE_BLOCK_TEXTURE,
-				vertexFormat.getAttribute(IrisChunkMeshAttributes.BLOCK_TEXTURE)),
+				XHFPModelVertexType.VERTEX_FORMAT.getAttribute(IrisChunkMeshAttributes.BLOCK_TEXTURE)),
 			new GlVertexAttributeBinding(IrisChunkShaderBindingPoints.ATTRIBUTE_LIGHT_TEXTURE,
-				vertexFormat.getAttribute(IrisChunkMeshAttributes.LIGHT_TEXTURE)),
+				XHFPModelVertexType.VERTEX_FORMAT.getAttribute(IrisChunkMeshAttributes.LIGHT_TEXTURE)),
 			new GlVertexAttributeBinding(IrisChunkShaderBindingPoints.MID_BLOCK,
-				vertexFormat.getAttribute(IrisChunkMeshAttributes.MID_BLOCK)),
+				XHFPModelVertexType.VERTEX_FORMAT.getAttribute(IrisChunkMeshAttributes.MID_BLOCK)),
 			new GlVertexAttributeBinding(IrisChunkShaderBindingPoints.BLOCK_ID,
-				vertexFormat.getAttribute(IrisChunkMeshAttributes.BLOCK_ID)),
+				XHFPModelVertexType.VERTEX_FORMAT.getAttribute(IrisChunkMeshAttributes.BLOCK_ID)),
 			new GlVertexAttributeBinding(IrisChunkShaderBindingPoints.MID_TEX_COORD,
-				vertexFormat.getAttribute(IrisChunkMeshAttributes.MID_TEX_COORD)),
+				XHFPModelVertexType.VERTEX_FORMAT.getAttribute(IrisChunkMeshAttributes.MID_TEX_COORD)),
 			new GlVertexAttributeBinding(IrisChunkShaderBindingPoints.TANGENT,
-				vertexFormat.getAttribute(IrisChunkMeshAttributes.TANGENT)),
+				XHFPModelVertexType.VERTEX_FORMAT.getAttribute(IrisChunkMeshAttributes.TANGENT)),
 			new GlVertexAttributeBinding(IrisChunkShaderBindingPoints.NORMAL,
-				vertexFormat.getAttribute(IrisChunkMeshAttributes.NORMAL))
+				XHFPModelVertexType.VERTEX_FORMAT.getAttribute(IrisChunkMeshAttributes.NORMAL))
 		};
 
 		return TessellationBinding.forVertexBuffer(buffer, attributes);

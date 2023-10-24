@@ -1,6 +1,5 @@
 package net.coderbot.iris.compat.sodium.mixin;
 
-import net.coderbot.iris.compat.sodium.SodiumVersionCheck;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;

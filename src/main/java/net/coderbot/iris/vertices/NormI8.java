@@ -1,6 +1,6 @@
 package net.coderbot.iris.vertices;
 
-import net.coderbot.iris.vendored.joml.Vector3f;
+import org.joml.Vector3f;
 import net.minecraft.util.Mth;
 
 /**

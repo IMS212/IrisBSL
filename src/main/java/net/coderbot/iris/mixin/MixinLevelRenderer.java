@@ -3,7 +3,6 @@ package net.coderbot.iris.mixin;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import net.fabricmc.loader.api.FabricLoader;
 import org.joml.Matrix4f;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.fantastic.WrappingMultiBufferSource;
@@ -74,11 +73,6 @@ public class MixinLevelRenderer {
 	private void iris$setupPipeline(PoseStack poseStack, float tickDelta, long startTime, boolean renderBlockOutline,
 									   Camera camera, GameRenderer gameRenderer, LightTexture lightTexture,
 									   Matrix4f projection, CallbackInfo callback) {
-		if (Iris.isSodiumInvalid() && !FabricLoader.getInstance().isDevelopmentEnvironment()) {
-			throw new IllegalStateException("An invalid version of Sodium is installed, and the warning screen somehow" +
-				" didn't work. This is a bug! Please report it to the Iris developers.");
-		}
-
 		CapturedRenderingState.INSTANCE.setGbufferModelView(poseStack.last().pose());
 		CapturedRenderingState.INSTANCE.setGbufferProjection(projection);
 		CapturedRenderingState.INSTANCE.setTickDelta(tickDelta);

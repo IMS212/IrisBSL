@@ -18,4 +18,11 @@ public class MixinRenderRegionArenas {
 	private ChunkVertexType iris$useExtendedStride() {
 		return BlockRenderingSettings.INSTANCE.shouldUseExtendedVertexFormat() ? IrisModelVertexFormats.MODEL_VERTEX_XHFP : ChunkMeshFormats.COMPACT;
 	}
+	@Redirect(method = "<init>", remap = false,
+			at = @At(value = "FIELD",
+					target = "Lme/jellysquid/mods/sodium/client/render/chunk/vertex/format/ChunkMeshFormats;VANILLA_LIKE:Lme/jellysquid/mods/sodium/client/render/chunk/vertex/format/ChunkVertexType;",
+					remap = false))
+	private ChunkVertexType iris$useExtendedStride2() {
+		return BlockRenderingSettings.INSTANCE.shouldUseExtendedVertexFormat() ? IrisModelVertexFormats.MODEL_VERTEX_XHFP : ChunkMeshFormats.VANILLA_LIKE;
+	}
 }
