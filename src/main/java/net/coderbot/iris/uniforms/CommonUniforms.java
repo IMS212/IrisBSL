@@ -132,6 +132,8 @@ public final class CommonUniforms {
 			.uniform1b(PER_FRAME, "hideGUI", () -> client.options.hideGui)
 			.uniform1i(PER_FRAME, "isEyeInWater", CommonUniforms::isEyeInWater)
 			.uniform1f(PER_FRAME, "blindness", CommonUniforms::getBlindness)
+			.uniform1f(PER_FRAME, "darknessFactor", CommonUniforms::getDarknessFactor)
+			.uniform1f(PER_FRAME, "darknessLightFactor", CapturedRenderingState.INSTANCE::getDarknessLightFactor)
 			.uniform1f(PER_FRAME, "nightVision", CommonUniforms::getNightVision)
 			.uniform1b(PER_FRAME, "is_sneaking", CommonUniforms::isSneaking)
 			.uniform1b(PER_FRAME, "is_sprinting", CommonUniforms::isSprinting)
@@ -141,7 +143,7 @@ public final class CommonUniforms {
 			.uniform1b(PER_FRAME, "is_on_ground", CommonUniforms::isOnGround)
 			// TODO: Do we need to clamp this to avoid fullbright breaking shaders? Or should shaders be able to detect
 			//       that the player is trying to turn on fullbright?
-			.uniform1f(PER_FRAME, "screenBrightness", () -> client.options.gamma)
+			.uniform1f(PER_FRAME, "screenBrightness", () -> client.options.gamma().get())
 			// just a dummy value for shaders where entityColor isn't supplied through a vertex attribute (and thus is
 			// not available) - suppresses warnings. See AttributeShaderTransformer for the actual entityColor code.
 			.uniform4f(ONCE, "entityColor", () -> new Vector4f(0, 0, 0, 0))
@@ -222,6 +224,20 @@ public final class CommonUniforms {
 				// Guessing that this is what OF uses, based on how vanilla calculates the fog value in FogRenderer
 				// TODO: Add this to ShaderDoc
 				return Math.clamp(0.0F, 1.0F, blindness.getDuration() / 20.0F);
+			}
+		}
+
+		return 0.0F;
+	}
+
+	static float getDarknessFactor() {
+		Entity cameraEntity = client.getCameraEntity();
+
+		if (cameraEntity instanceof LivingEntity) {
+			MobEffectInstance darkness = ((LivingEntity) cameraEntity).getEffect(MobEffects.DARKNESS);
+
+			if (darkness != null && darkness.getFactorData().isPresent()) {
+				return darkness.getFactorData().get().getFactor((LivingEntity) cameraEntity, CapturedRenderingState.INSTANCE.getTickDelta());
 			}
 		}
 

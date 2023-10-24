@@ -11,7 +11,7 @@ import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextColor;
-import net.minecraft.network.chat.TextComponent;
+
 
 import java.util.List;
 
@@ -41,9 +41,9 @@ public class StringElementWidget extends BaseOptionElementWidget<OptionMenuStrin
 		this.appliedValue = this.element.getAppliedOptionValues().getStringValueOrDefault(this.option.getName());
 
 		// Do not use I18n, it'll cause issues with packs trying to use % as prefixes/suffixes.
-		this.prefix = new TextComponent(Language.getInstance().has("prefix." + this.option.getName()) ? Language.getInstance().getOrDefault("prefix." + this.option.getName()) : "");
-		this.suffix = new TextComponent(Language.getInstance().has("suffix." + this.option.getName()) ? Language.getInstance().getOrDefault("suffix." + this.option.getName()) : "");
-		this.setLabel(GuiUtil.translateOrDefault(new TextComponent(this.option.getName()), "option." + this.option.getName()));
+		this.prefix = Component.literal(Language.getInstance().has("prefix." + this.option.getName()) ? Language.getInstance().getOrDefault("prefix." + this.option.getName()) : "");
+		this.suffix = Component.literal(Language.getInstance().has("suffix." + this.option.getName()) ? Language.getInstance().getOrDefault("suffix." + this.option.getName()) : "");
+		this.setLabel(GuiUtil.translateOrDefault(Component.literal(this.option.getName()), "option." + this.option.getName()));
 
 		List<String> values = this.option.getAllowedValues();
 
@@ -68,7 +68,7 @@ public class StringElementWidget extends BaseOptionElementWidget<OptionMenuStrin
 	@Override
 	protected Component createValueLabel() {
 		return prefix.copy().append(GuiUtil.translateOrDefault(
-				new TextComponent(getValue()),
+			Component.literal(getValue()),
 				"value." + this.option.getName() + "." + getValue())).append(suffix).withStyle(style -> style.withColor(TextColor.fromRgb(0x6688ff)));
 	}
 
