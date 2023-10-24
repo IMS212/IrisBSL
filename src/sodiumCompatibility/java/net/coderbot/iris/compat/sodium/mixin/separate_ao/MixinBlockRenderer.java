@@ -1,8 +1,8 @@
 package net.coderbot.iris.compat.sodium.mixin.separate_ao;
 
 import me.jellysquid.mods.sodium.client.render.chunk.compile.buffers.ChunkModelBuilder;
-import me.jellysquid.mods.sodium.client.render.pipeline.BlockRenderer;
-import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
+import me.jellysquid.mods.sodium.client.render.chunk.compile.pipeline.BlockRenderContext;
+import me.jellysquid.mods.sodium.client.render.chunk.compile.pipeline.BlockRenderer;
 import net.coderbot.iris.block_rendering.BlockRenderingSettings;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.model.BakedModel;
@@ -16,6 +16,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
@@ -26,24 +27,4 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class MixinBlockRenderer {
     @Unique
     private boolean useSeparateAo;
-
-    @Inject(method = "renderModel", remap = false, at = @At("HEAD"))
-    private void renderModel(BlockAndTintGetter world, BlockState state, BlockPos pos, BlockPos origin, BakedModel model, ChunkModelBuilder buffers, boolean cull, long seed, ModelData modelData, RenderType layer, RandomSource random, CallbackInfoReturnable<Boolean> cir) {
-        this.useSeparateAo = BlockRenderingSettings.INSTANCE.shouldUseSeparateAo();
-    }
-
-    @Redirect(method = "renderQuad", remap = false,
-            at = @At(value = "INVOKE",
-                    target = "me/jellysquid/mods/sodium/client/util/color/ColorABGR.mul (IF)I",
-                    remap = false))
-    private int iris$applySeparateAo(int color, float ao) {
-        if (useSeparateAo) {
-            color &= 0x00FFFFFF;
-            color |= ((int) (ao * 255.0f)) << 24;
-        } else {
-            color = ColorABGR.mul(color, ao);
-        }
-
-        return color;
-    }
 }

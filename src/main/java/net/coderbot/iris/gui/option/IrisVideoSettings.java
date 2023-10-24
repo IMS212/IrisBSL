@@ -7,6 +7,7 @@ import net.coderbot.iris.pipeline.WorldRenderingPipeline;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.Options;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 
@@ -19,9 +20,8 @@ import java.util.List;
 public class IrisVideoSettings {
 	public static int shadowDistance = 32;
 
-	// TODO: Tell the user to check in the shader options once that's supported.
-	private static final Component DISABLED_TOOLTIP = Component.translatable("options.iris.shadowDistance.disabled");
-	private static final Component ENABLED_TOOLTIP = Component.translatable("options.iris.shadowDistance.enabled");
+	private static final Tooltip DISABLED_TOOLTIP = Tooltip.create(Component.translatable("options.iris.shadowDistance.disabled"));
+	private static final Tooltip ENABLED_TOOLTIP = Tooltip.create(Component.translatable("options.iris.shadowDistance.enabled"));
 	public static ColorSpace colorSpace = ColorSpace.SRGB;
 
     public static int getOverriddenShadowDistance(int base) {
@@ -37,11 +37,11 @@ public class IrisVideoSettings {
 	}
 	// TODO 22w12a fix this
 
-	public static final OptionInstance<Integer> RENDER_DISTANCE = new ShadowDistanceOption<>("options.iris.shadowDistance",
+	public static final OptionInstance<Integer> RENDER_DISTANCE = new ShadowDistanceOption<Integer>("options.iris.shadowDistance",
 		mc -> {
 			WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();
 
-			Component tooltip;
+			Tooltip tooltip;
 
 			if (pipeline != null) {
 				if (pipeline.getForcedShadowRenderDistanceChunksForDisplay().isPresent()) {
@@ -53,7 +53,7 @@ public class IrisVideoSettings {
 				tooltip = ENABLED_TOOLTIP;
 			}
 
-			return aDouble -> Minecraft.getInstance().font.split(tooltip, 200);
+			return tooltip;
 		},
 		(arg, d) -> {
 			WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();

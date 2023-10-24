@@ -78,6 +78,10 @@ public class ShaderAttributeInputs {
 		return newLines;
 	}
 
+	public boolean isGlint() {
+		return glint;
+	}
+
 	public InputAvailability toAvailability() {
 		return new InputAvailability(tex, light, overlay);
 	}
@@ -117,6 +121,8 @@ public class ShaderAttributeInputs {
 		if (normal != other.normal)
 			return false;
 		if (newLines != other.newLines)
+			return false;
+		if (glint != other.glint)
 			return false;
 		if (text != other.text)
 			return false;

@@ -4,7 +4,7 @@ import net.coderbot.iris.gl.uniform.UniformHolder;
 import net.coderbot.iris.gl.uniform.UniformUpdateFrequency;
 import net.coderbot.iris.mixin.DimensionTypeAccessor;
 import net.coderbot.iris.uniforms.transforms.SmoothedFloat;
-import net.coderbot.iris.vendored.joml.Math;
+import org.joml.Math;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -126,7 +126,7 @@ public class HardcodedCustomUniforms {
 
 		Vec3 feet = client.cameraEntity.position();
 		Vec3 eyes = new Vec3(feet.x, client.cameraEntity.getEyeY(), feet.z);
-		BlockPos eyeBlockPos = new BlockPos(eyes);
+		BlockPos eyeBlockPos = BlockPos.containing(eyes);
 
 		int skyLight = client.level.getBrightness(LightLayer.SKY, eyeBlockPos);
 
@@ -184,7 +184,7 @@ public class HardcodedCustomUniforms {
 		if (storedBiome == null) {
 			return 0;
 		}
-		Biome.Precipitation precipitation = storedBiome.value().getPrecipitation();
+		Biome.Precipitation precipitation = storedBiome.value().getPrecipitationAt(Minecraft.getInstance().cameraEntity.blockPosition());
 		switch (precipitation) {
 			case RAIN:
 				return 1;

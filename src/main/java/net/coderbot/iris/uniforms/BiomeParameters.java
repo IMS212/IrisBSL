@@ -9,7 +9,7 @@ import net.coderbot.iris.parsing.ExtendedBiome;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Holder;
-import net.minecraft.data.BuiltinRegistries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BiomeTags;
@@ -33,9 +33,9 @@ public class BiomeParameters {
 
 		uniforms
 				.uniform1i(PER_TICK, "biome", playerI(player ->
-					biomeMap.getInt(player.level.getBiome(player.blockPosition()).unwrapKey().orElse(null))))
+					biomeMap.getInt(player.level().getBiome(player.blockPosition()).unwrapKey().orElse(null))))
 				.uniform1i(PER_TICK, "biome_category", playerI(player -> {
-					Holder<Biome> holder = player.level.getBiome(player.blockPosition());
+					Holder<Biome> holder = player.level().getBiome(player.blockPosition());
 					ExtendedBiome extendedBiome = ((ExtendedBiome) (Object) holder.value());
 					if (extendedBiome.getBiomeCategory() == -1) {
 						extendedBiome.setBiomeCategory(getBiomeCategory(holder).ordinal());
@@ -45,7 +45,7 @@ public class BiomeParameters {
 					}
 				}))
 				.uniform1i(PER_TICK, "biome_precipitation", playerI(player -> {
-					Biome.Precipitation precipitation = player.level.getBiome(player.blockPosition()).value().getPrecipitation();
+					Biome.Precipitation precipitation = player.level().getBiome(player.blockPosition()).value().getPrecipitationAt(player.blockPosition());
 					switch (precipitation){
 						case NONE: return 0;
 						case RAIN: return 1;
@@ -54,9 +54,9 @@ public class BiomeParameters {
 					throw new IllegalStateException("Unknown precipitation type:" + precipitation);
 				}))
 				.uniform1f(PER_TICK, "rainfall", playerF(player ->
-						player.level.getBiome(player.blockPosition()).value().getDownfall()))
+					((ExtendedBiome) (Object) player.level().getBiome(player.blockPosition()).value()).getDownfall()))
 				.uniform1f(PER_TICK, "temperature", playerF(player ->
-						player.level.getBiome(player.blockPosition()).value().getBaseTemperature()))
+						player.level().getBiome(player.blockPosition()).value().getBaseTemperature()))
 
 
 			.uniform1i(ONCE, "PPT_NONE", () -> 0)

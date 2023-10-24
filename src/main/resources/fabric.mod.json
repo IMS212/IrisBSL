@@ -33,7 +33,6 @@
     "mixins.iris.fantastic.json",
     "mixins.iris.vertexformat.json",
     "mixins.iris.bettermipmaps.json",
-    "mixins.iris.optimized-stitching.json",
     "mixins.iris.compat.indigo.json",
     "mixins.iris.compat.sodium.json",
     "mixins.iris.compat.indium.json",
@@ -45,7 +44,8 @@
 
   "depends": {
     "fabricloader": ">=0.12.3",
-    "minecraft": ["1.19", "1.19.1", "1.19.2"]
+    "minecraft": "1.20.x",
+    "sodium": "0.5.3"
   },
 
   "breaks": {
@@ -62,7 +62,9 @@
 
   "custom": {
     "sodium:options": {
-      "mixin.features.sky": false
+      "mixin.features.render.world.sky": false,
+      "mixin.features.render.entity": false,
+      "mixin.features.render.gui.font": false
     }
   }
 }

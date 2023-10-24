@@ -30,7 +30,7 @@ public class BoxCuller {
 				(float) aabb.maxX, (float) aabb.maxY, (float) aabb.maxZ);
 	}
 
-	public boolean isCulled(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
+	public boolean isCulled(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
 		if (maxX < this.minAllowedX || minX > this.maxAllowedX) {
 			return true;
 		}
@@ -40,6 +40,22 @@ public class BoxCuller {
 		}
 
 		if (maxZ < this.minAllowedZ || minZ > this.maxAllowedZ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	public boolean isCulledSodium(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
+		if (maxX < -this.maxDistance || minX > this.maxDistance) {
+			return true;
+		}
+
+		if (maxY < -this.maxDistance || minY > this.maxDistance) {
+			return true;
+		}
+
+		if (maxZ < -this.maxDistance || minZ > this.maxDistance) {
 			return true;
 		}
 

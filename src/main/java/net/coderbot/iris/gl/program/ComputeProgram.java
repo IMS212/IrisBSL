@@ -7,8 +7,8 @@ import net.coderbot.iris.gl.GlResource;
 import net.coderbot.iris.gl.IrisRenderSystem;
 import net.coderbot.iris.pipeline.WorldRenderingPipeline;
 import net.coderbot.iris.uniforms.custom.CustomUniforms;
-import net.coderbot.iris.vendored.joml.Vector2f;
-import net.coderbot.iris.vendored.joml.Vector3i;
+import org.joml.Vector2f;
+import org.joml.Vector3i;
 import org.lwjgl.opengl.GL43C;
 
 public final class ComputeProgram extends GlResource {
@@ -44,7 +44,6 @@ public final class ComputeProgram extends GlResource {
 			if (this.absoluteWorkGroups != null) {
 				this.cachedWorkGroups = this.absoluteWorkGroups;
 			} else if (relativeWorkGroups != null) {
-				// TODO: This is my best guess at what Optifine does. Can this be confirmed?
 				// Do not use actual localSize here, apparently that's not what we want.
 				this.cachedWorkGroups = new Vector3i((int) Math.ceil(Math.ceil((width * relativeWorkGroups.x)) / localSize[0]), (int) Math.ceil(Math.ceil((height * relativeWorkGroups.y)) / localSize[1]), 1);
 			} else {

@@ -8,6 +8,7 @@ import net.coderbot.iris.gui.screen.ShaderPackScreen;
 import net.coderbot.iris.shaderpack.option.BooleanOption;
 import net.coderbot.iris.shaderpack.option.menu.OptionMenuBooleanOptionElement;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
 
@@ -47,11 +48,11 @@ public class BooleanElementWidget extends BaseOptionElementWidget<OptionMenuBool
 	}
 
 	@Override
-	public void render(PoseStack poseStack, int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
-		this.updateRenderParams(width, 28);
+	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float tickDelta, boolean hovered) {
+		this.updateRenderParams(28);
 
-		this.renderOptionWithValue(poseStack, x, y, width, height, hovered);
-		this.tryRenderTooltip(poseStack, mouseX, mouseY, hovered);
+		this.renderOptionWithValue(guiGraphics, hovered || isFocused());
+		this.tryRenderTooltip(guiGraphics, mouseX, mouseY, hovered);
 	}
 
 	@Override

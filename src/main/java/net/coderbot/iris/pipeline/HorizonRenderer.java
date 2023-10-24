@@ -6,10 +6,10 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.math.Matrix4f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
+import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 /**
@@ -64,7 +64,7 @@ public class HorizonRenderer {
 		buildHorizon(currentRenderDistance * 16, buffer);
 		BufferBuilder.RenderedBuffer renderedBuffer = buffer.end();
 
-		this.buffer = new VertexBuffer();
+		this.buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
 		this.buffer.bind();
 		this.buffer.upload(renderedBuffer);
 		VertexBuffer.unbind();

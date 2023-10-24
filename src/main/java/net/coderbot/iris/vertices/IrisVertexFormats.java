@@ -16,6 +16,8 @@ public class IrisVertexFormats {
 
 	public static final VertexFormat TERRAIN;
 	public static final VertexFormat ENTITY;
+	public static final VertexFormat GLYPH;
+	public static final VertexFormat CLOUDS;
 
 	static {
 		ENTITY_ELEMENT = new VertexFormatElement(11, VertexFormatElement.Type.SHORT, VertexFormatElement.Usage.GENERIC, 2);
@@ -27,6 +29,8 @@ public class IrisVertexFormats {
 
 		ImmutableMap.Builder<String, VertexFormatElement> terrainElements = ImmutableMap.builder();
 		ImmutableMap.Builder<String, VertexFormatElement> entityElements = ImmutableMap.builder();
+		ImmutableMap.Builder<String, VertexFormatElement> glyphElements = ImmutableMap.builder();
+		ImmutableMap.Builder<String, VertexFormatElement> cloudsElements = ImmutableMap.builder();
 
 		terrainElements.put("Position", DefaultVertexFormat.ELEMENT_POSITION); // 12
 		terrainElements.put("Color", DefaultVertexFormat.ELEMENT_COLOR); // 16
@@ -52,12 +56,30 @@ public class IrisVertexFormats {
 		entityElements.put("at_tangent", TANGENT_ELEMENT); // 52
 		entityElements.put("Padding2", PADDING_SHORT); // 52
 
+		glyphElements.put("Position", DefaultVertexFormat.ELEMENT_POSITION); // 12
+		glyphElements.put("Color", DefaultVertexFormat.ELEMENT_COLOR); // 16
+		glyphElements.put("UV0", DefaultVertexFormat.ELEMENT_UV0); // 24
+		glyphElements.put("UV2", DefaultVertexFormat.ELEMENT_UV2); // 28
+		glyphElements.put("Normal", DefaultVertexFormat.ELEMENT_NORMAL); // 31
+		glyphElements.put("Padding", DefaultVertexFormat.ELEMENT_PADDING); // 32
+		glyphElements.put("iris_Entity", ENTITY_ID_ELEMENT); // 38
+		glyphElements.put("mc_midTexCoord", MID_TEXTURE_ELEMENT); // 46
+		glyphElements.put("at_tangent", TANGENT_ELEMENT); // 50
+		glyphElements.put("Padding2", PADDING_SHORT); // 52
+
+		cloudsElements.put("Position", DefaultVertexFormat.ELEMENT_POSITION); // 12
+		cloudsElements.put("Color", DefaultVertexFormat.ELEMENT_COLOR); // 16
+		cloudsElements.put("Normal", DefaultVertexFormat.ELEMENT_NORMAL); // 31
+		cloudsElements.put("Padding", DefaultVertexFormat.ELEMENT_PADDING); // 32
+
 		TERRAIN = new VertexFormat(terrainElements.build());
 		ENTITY = new VertexFormat(entityElements.build());
+		GLYPH = new VertexFormat(glyphElements.build());
+		CLOUDS = new VertexFormat(cloudsElements.build());
 	}
 
 	private static void debug(VertexFormat format) {
-		Iris.logger.info("Vertex format: " + format);
+		Iris.logger.info("Vertex format: " + format + " with byte size " + format.getVertexSize());
 		int byteIndex = 0;
 		for (VertexFormatElement element : format.getElements()) {
 			Iris.logger.info(element + " @ " + byteIndex + " is " + element.getType() + " " + element.getUsage());

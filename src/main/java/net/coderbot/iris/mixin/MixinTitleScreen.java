@@ -2,7 +2,7 @@ package net.coderbot.iris.mixin;
 
 import com.google.common.collect.ImmutableList;
 import net.coderbot.iris.Iris;
-import net.coderbot.iris.compat.sodium.SodiumVersionCheck;
+import net.coderbot.iris.gui.debug.DebugLoadFailedGridScreen;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.GraphicsStatus;
@@ -71,7 +71,7 @@ public class MixinTitleScreen extends Screen {
 		}
 		iris$hasFirstInit = true;
 
-		Minecraft.getInstance().setScreen(new ConfirmScreen(
+		/*Minecraft.getInstance().setScreen(new ConfirmScreen(
 				(boolean accepted) -> {
 					if (accepted) {
 						try {
@@ -80,12 +80,16 @@ public class MixinTitleScreen extends Screen {
 							throw new IllegalStateException(e);
 						}
 					} else {
-						Minecraft.getInstance().stop();
+						if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
+							Minecraft.getInstance().setScreen(this);
+						} else {
+							Minecraft.getInstance().stop();
+						}
 					}
 				},
 				Component.translatable("iris.sodium.failure.title").withStyle(ChatFormatting.RED),
 				Component.translatable(reason),
 				Component.translatable("iris.sodium.failure.download"),
-				Component.translatable("menu.quit")));
+				FabricLoader.getInstance().isDevelopmentEnvironment() ? Component.literal("Continue (Development)") : Component.translatable("menu.quit")));*/
 	}
 }

@@ -25,6 +25,7 @@ import net.coderbot.iris.gl.program.ProgramBuilder;
 import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.program.ProgramUniforms;
 import net.coderbot.iris.gl.sampler.SamplerLimits;
+import net.coderbot.iris.gl.shader.ShaderCompileException;
 import net.coderbot.iris.gl.texture.TextureAccess;
 import net.coderbot.iris.pipeline.DeferredWorldRenderingPipeline;
 import net.coderbot.iris.pipeline.WorldRenderingPipeline;
@@ -340,6 +341,7 @@ public class CompositeRenderer {
 														   Supplier<ShadowRenderTargets> shadowTargetsSupplier) {
 		// TODO: Properly handle empty shaders
 		Map<PatchShaderType, String> transformed = TransformPatcher.patchComposite(
+			source.getName(),
 			source.getVertexSource().orElseThrow(NullPointerException::new),
 			source.getGeometrySource().orElse(null),
 			source.getFragmentSource().orElseThrow(NullPointerException::new), textureStage, pipeline.getTextureMap());
@@ -355,6 +357,8 @@ public class CompositeRenderer {
 		try {
 			builder = ProgramBuilder.begin(source.getName(), vertex, geometry, fragment,
 					IrisSamplers.COMPOSITE_RESERVED_TEXTURE_UNITS);
+		} catch (ShaderCompileException e) {
+			throw e;
 		} catch (RuntimeException e) {
 			// TODO: Better error handling
 			throw new RuntimeException("Shader compilation failed for " + source.getName() + "!", e);
@@ -405,11 +409,13 @@ public class CompositeRenderer {
 				ProgramBuilder builder;
 
 				try {
-					String transformed =  TransformPatcher.patchCompute(source.getSource().orElse(null), textureStage, pipeline.getTextureMap());
+					String transformed =  TransformPatcher.patchCompute(source.getName(), source.getSource().orElse(null), textureStage, pipeline.getTextureMap());
 
 					ShaderPrinter.printProgram(source.getName()).addSource(PatchShaderType.COMPUTE, transformed).print();
 
 					builder = ProgramBuilder.beginCompute(source.getName(), transformed, IrisSamplers.COMPOSITE_RESERVED_TEXTURE_UNITS);
+				} catch (ShaderCompileException e) {
+					throw e;
 				} catch (RuntimeException e) {
 					// TODO: Better error handling
 					throw new RuntimeException("Shader compilation failed for compute " + source.getName() + "!", e);

@@ -1,6 +1,7 @@
 package net.coderbot.iris.gui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.MultiLineLabel;
 import net.minecraft.client.gui.screens.ErrorScreen;
@@ -24,14 +25,14 @@ public class FeatureMissingErrorScreen extends Screen {
 	protected void init() {
 		super.init();
 		this.message = MultiLineLabel.create(this.font, messageTemp, this.width - 50);
-		this.addRenderableWidget(new Button(this.width / 2 - 100, 140, 200, 20, CommonComponents.GUI_BACK, arg -> this.minecraft.setScreen(parent)));
+		this.addRenderableWidget(Button.builder(CommonComponents.GUI_BACK, arg -> this.minecraft.setScreen(parent)).bounds(this.width / 2 - 100, 140, 200, 20).build());
 	}
 
 	@Override
-	public void render(PoseStack poseStack, int mouseX, int mouseY, float delta) {
-		this.renderBackground(poseStack);
-		ErrorScreen.drawCenteredString(poseStack, this.font, this.title, this.width / 2, 90, 0xFFFFFF);
-		message.renderCentered(poseStack, this.width / 2, 110, 9, 0xFFFFFF);
-		super.render(poseStack, mouseX, mouseY, delta);
+	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+		this.renderBackground(guiGraphics);
+		guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 90, 0xFFFFFF);
+		message.renderCentered(guiGraphics, this.width / 2, 110, 9, 0xFFFFFF);
+		super.render(guiGraphics, mouseX, mouseY, delta);
 	}
 }

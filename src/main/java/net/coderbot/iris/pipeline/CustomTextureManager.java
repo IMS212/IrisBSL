@@ -151,7 +151,6 @@ public class CustomTextureManager {
 				//     and we could end up holding on to a deleted texture unless we added special code to handle resource
 				//     reloads. Re-fetching the texture from the TextureManager every time is the most robust approach for
 				//     now.
-				// TODO: Should we give something else if the texture isn't there? This will need some thought
 				return new TextureWrapper(() -> {
 					AbstractTexture texture = textureManager.getTexture(textureLocation);
 					return texture != null ? texture.getId() : MissingTextureAtlasSprite.getTexture().getId();
@@ -180,7 +179,7 @@ public class CustomTextureManager {
 
 						TextureFormat textureFormat = TextureFormatLoader.getFormat();
 						if (textureFormat != null) {
-							int previousBinding = RenderSystem.getTextureId(GlStateManagerAccessor.getActiveTexture());
+							int previousBinding = GlStateManagerAccessor.getTEXTURES()[GlStateManagerAccessor.getActiveTexture()].binding;
 							GlStateManager._bindTexture(pbrTexture.getId());
 							textureFormat.setupTextureParameters(pbrType, pbrTexture);
 							GlStateManager._bindTexture(previousBinding);

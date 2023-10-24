@@ -12,6 +12,7 @@ import net.coderbot.iris.shaderpack.option.menu.OptionMenuProfileElement;
 import net.coderbot.iris.shaderpack.option.values.OptionValues;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
@@ -50,10 +51,10 @@ public class ProfileElementWidget extends BaseOptionElementWidget<OptionMenuProf
 	}
 
 	@Override
-	public void render(PoseStack poseStack, int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
-		this.updateRenderParams(width, width - (Minecraft.getInstance().font.width(PROFILE_LABEL) + 16));
+	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float tickDelta, boolean hovered) {
+		this.updateRenderParams(bounds.width() - (Minecraft.getInstance().font.width(PROFILE_LABEL) + 16));
 
-		this.renderOptionWithValue(poseStack, x, y, width, height, hovered);
+		this.renderOptionWithValue(guiGraphics, hovered || isFocused());
 	}
 
 	@Override

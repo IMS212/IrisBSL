@@ -3,10 +3,11 @@ package net.coderbot.iris;
 import com.google.common.base.Throwables;
 import com.mojang.blaze3d.platform.GlDebug;
 import com.mojang.blaze3d.platform.InputConstants;
-import net.coderbot.iris.compat.sodium.SodiumVersionCheck;
 import net.coderbot.iris.config.IrisConfig;
 import net.coderbot.iris.gl.GLDebug;
+import net.coderbot.iris.gl.shader.ShaderCompileException;
 import net.coderbot.iris.gl.shader.StandardMacros;
+import net.coderbot.iris.gui.debug.DebugLoadFailedGridScreen;
 import net.coderbot.iris.gui.screen.ShaderPackScreen;
 import net.coderbot.iris.pipeline.FixedFunctionWorldRenderingPipeline;
 import net.coderbot.iris.pipeline.PipelineManager;
@@ -24,10 +25,12 @@ import net.coderbot.iris.shaderpack.option.values.MutableOptionValues;
 import net.coderbot.iris.shaderpack.option.values.OptionValues;
 import net.coderbot.iris.texture.pbr.PBRTextureManager;
 import net.minecraft.ChatFormatting;
+import net.minecraft.SharedConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
@@ -76,6 +79,7 @@ public class Iris {
 
 	private static ShaderPack currentPack;
 	private static String currentPackName;
+	private static Optional<Exception> storedError = Optional.empty();
 	private static boolean sodiumInvalid;
 	private static boolean hasNEC;
 	private static boolean sodiumInstalled;
@@ -123,6 +127,10 @@ public class Iris {
 		reloadKeybind = new KeyMapping("iris.keybind.reload", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, "iris.keybinds");
 		toggleShadersKeybind = new KeyMapping("iris.keybind.toggleShaders", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, "iris.keybinds");
 		shaderpackScreenKeybind = new KeyMapping("iris.keybind.shaderPackSelection", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_O, "iris.keybinds");
+
+		reloadKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping("iris.keybind.reload", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, "iris.keybinds"));
+		toggleShadersKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping("iris.keybind.toggleShaders", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, "iris.keybinds"));
+		shaderpackScreenKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping("iris.keybind.shaderPackSelection", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_O, "iris.keybinds"));
 
 		try {
 			if (!Files.exists(getShaderpacksDirectory())) {
@@ -663,6 +671,15 @@ public class Iris {
 		try {
 			return new NewWorldRenderingPipeline(programs);
 		} catch (Exception e) {
+			if (irisConfig.areDebugOptionsEnabled()) {
+				Minecraft.getInstance().setScreen(new DebugLoadFailedGridScreen(Minecraft.getInstance().screen, Component.literal(e instanceof ShaderCompileException ? "Failed to compile shaders" : "Exception"), e));
+			} else {
+				if (Minecraft.getInstance().player != null) {
+					Minecraft.getInstance().player.displayClientMessage(Component.translatable(e instanceof ShaderCompileException ? "iris.load.failure.shader" : "iris.load.failure.generic").append(Component.literal("Copy Info").withStyle(arg -> arg.withUnderlined(true).withColor(ChatFormatting.BLUE).withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, e.getMessage())))), false);
+				} else {
+					storedError = Optional.of(e);
+				}
+			}
 			logger.error("Failed to create shader rendering pipeline, disabling shaders!", e);
 			// TODO: This should be reverted if a dimension change causes shaders to compile again
 			fallback = true;
@@ -678,6 +695,12 @@ public class Iris {
 		}
 
 		return pipelineManager;
+	}
+
+	public static Optional<Exception> getStoredError() {
+		Optional<Exception> stored = Iris.storedError;
+		storedError = Optional.empty();
+		return stored;
 	}
 
 	@NotNull
@@ -725,6 +748,19 @@ public class Iris {
 		}
 
 		return color + version;
+	}
+
+	/**
+	 * Gets the current release target. Since 1.19.3, Mojang no longer stores this information, so we must manually provide it for snapshots.
+	 * @return Release target
+	 */
+	public static String getReleaseTarget() {
+		// If this is a snapshot, you must change backupVersionNumber!
+		return SharedConstants.getCurrentVersion().isStable() ? SharedConstants.getCurrentVersion().getName() : backupVersionNumber;
+	}
+
+	public static String getBackupVersionNumber() {
+		return backupVersionNumber;
 	}
 
 	public static boolean isSodiumInvalid() {

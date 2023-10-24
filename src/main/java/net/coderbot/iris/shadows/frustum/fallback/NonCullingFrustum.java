@@ -1,17 +1,12 @@
 package net.coderbot.iris.shadows.frustum.fallback;
 
-import com.mojang.math.Matrix4f;
+import org.joml.Matrix4f;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.phys.AABB;
 
 public class NonCullingFrustum extends Frustum {
 	public NonCullingFrustum() {
 		super(new Matrix4f(), new Matrix4f());
-	}
-
-	// for Sodium
-	public int fastAabbTest(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
-		return 1;
 	}
 
 	// For Immersive Portals

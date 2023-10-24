@@ -8,7 +8,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import net.coderbot.iris.block_rendering.BlockRenderingSettings;
-import net.coderbot.iris.vendored.joml.Vector3f;
+import org.joml.Vector3f;
 import net.coderbot.iris.vertices.NormI8;
 import org.jetbrains.annotations.NotNull;
 import net.coderbot.iris.uniforms.CapturedRenderingState;
@@ -19,7 +19,6 @@ import net.coderbot.iris.vertices.ExtendingBufferBuilder;
 import net.coderbot.iris.vertices.IrisVertexFormats;
 import net.coderbot.iris.vertices.NormalHelper;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.opengl.GL11;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -129,6 +128,9 @@ public abstract class MixinBufferBuilder extends DefaultedVertexConsumer impleme
 			if (format == DefaultVertexFormat.BLOCK) {
 				this.switchFormat(IrisVertexFormats.TERRAIN);
 				this.iris$isTerrain = true;
+			} else if (format == DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP) {
+				this.switchFormat(IrisVertexFormats.GLYPH);
+				this.iris$isTerrain = false;
 			} else {
 				this.switchFormat(IrisVertexFormats.ENTITY);
 				this.iris$isTerrain = false;
@@ -139,25 +141,27 @@ public abstract class MixinBufferBuilder extends DefaultedVertexConsumer impleme
 
 	@Override
 	public @NotNull VertexConsumer uv2(int pBufferVertexConsumer0, int pInt1) {
-		if (injectNormalAndUV1 && currentElement == DefaultVertexFormat.ELEMENT_UV1) {
-			this.putShort(0, (short) 0);
-			this.putShort(2, (short) 10);
-			this.nextElement();
-		}
+
 		return BufferVertexConsumer.super.uv2(pBufferVertexConsumer0, pInt1);
 	}
 
 	@ModifyArg(method = "begin", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/BufferBuilder;switchFormat(Lcom/mojang/blaze3d/vertex/VertexFormat;)V"))
 	private VertexFormat iris$afterBeginSwitchFormat(VertexFormat arg) {
 		if (extending) {
-			if (format == DefaultVertexFormat.NEW_ENTITY) {
-				return IrisVertexFormats.ENTITY;
+			if (format == DefaultVertexFormat.BLOCK) {
+				this.switchFormat(IrisVertexFormats.TERRAIN);
+				this.iris$isTerrain = true;
+			} else if (format == DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP) {
+				this.switchFormat(IrisVertexFormats.GLYPH);
+				this.iris$isTerrain = false;
 			} else {
-				return IrisVertexFormats.TERRAIN;
+				this.switchFormat(IrisVertexFormats.ENTITY);
+				this.iris$isTerrain = false;
 			}
 		}
 		return arg;
 	}
+
 
 
 	@Inject(method = "discard()V", at = @At("HEAD"))

@@ -2,9 +2,9 @@ package net.coderbot.iris.shadows.frustum.advanced;
 
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.shadows.frustum.BoxCuller;
-import net.coderbot.iris.vendored.joml.Matrix4f;
-import net.coderbot.iris.vendored.joml.Vector3f;
 import net.minecraft.world.phys.AABB;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 public class ReversedAdvancedShadowCullingFrustum extends AdvancedShadowCullingFrustum {
 	private final BoxCuller distanceCuller;
@@ -46,5 +46,17 @@ public class ReversedAdvancedShadowCullingFrustum extends AdvancedShadowCullingF
 		}
 
 		return isVisible(minX, minY, minZ, maxX, maxY, maxZ);
+	}
+
+	public boolean testAab(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
+		if (distanceCuller != null && distanceCuller.isCulledSodium(minX, minY, minZ, maxX, maxY, maxZ)) {
+			return false;
+		}
+
+		if (boxCuller != null && !boxCuller.isCulledSodium(minX, minY, minZ, maxX, maxY, maxZ)) {
+			return true;
+		}
+
+		return this.checkCornerVisibility(minX, minY, minZ, maxX, maxY, maxZ) > 0;
 	}
 }

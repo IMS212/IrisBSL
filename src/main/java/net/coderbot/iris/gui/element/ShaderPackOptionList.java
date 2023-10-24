@@ -1,5 +1,7 @@
 package net.coderbot.iris.gui.element;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.gui.FileDialogUtil;
@@ -13,12 +15,19 @@ import net.coderbot.iris.shaderpack.option.menu.OptionMenuContainer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.ObjectSelectionList;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.gui.navigation.ScreenDirection;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.util.Mth;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -30,7 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-public class ShaderPackOptionList extends IrisObjectSelectionList<ShaderPackOptionList.BaseEntry> {
+public class ShaderPackOptionList extends IrisContainerObjectSelectionList<ShaderPackOptionList.BaseEntry> {
 	private final List<AbstractElementWidget<?>> elementWidgets = new ArrayList<>();
 	private final ShaderPackScreen screen;
 	private final NavigationController navigation;
@@ -93,7 +102,7 @@ public class ShaderPackOptionList extends IrisObjectSelectionList<ShaderPackOpti
 		return navigation;
 	}
 
-	public abstract static class BaseEntry extends ObjectSelectionList.Entry<BaseEntry> {
+	public abstract static class BaseEntry extends ContainerObjectSelectionList.Entry<BaseEntry> {
 		protected final NavigationController navigation;
 
 		protected BaseEntry(NavigationController navigation) {
@@ -153,50 +162,57 @@ public class ShaderPackOptionList extends IrisObjectSelectionList<ShaderPackOpti
 		}
 
 		@Override
-		public void render(PoseStack poseStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+		public void render(GuiGraphics guiGraphics, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
 			// Draw dividing line
-			fill(poseStack, x - 3, (y + entryHeight) - 2, x + entryWidth, (y + entryHeight) - 1, 0x66BEBEBE);
+			guiGraphics.fill(x - 3, (y + entryHeight) - 2, x + entryWidth, (y + entryHeight) - 1, 0x66BEBEBE);
 
 			Font font = Minecraft.getInstance().font;
 
 			// Draw header text
-			drawCenteredString(poseStack, font, text, x + (int)(entryWidth * 0.5), y + 5, 0xFFFFFF);
+			guiGraphics.drawCenteredString(font, text, x + (int)(entryWidth * 0.5), y + 5, 0xFFFFFF);
 
 			GuiUtil.bindIrisWidgetsTexture();
 
 			// Draw back button if present
 			if (this.backButton != null) {
-				backButton.render(poseStack, x, y, BUTTON_HEIGHT, mouseX, mouseY, tickDelta, hovered);
+				backButton.render(guiGraphics, x, y, BUTTON_HEIGHT, mouseX, mouseY, tickDelta, hovered);
 			}
 
 			boolean shiftDown = Screen.hasShiftDown();
 
 			// Set the appearance of the reset button
-			this.resetButton.disabled = !shiftDown;
-			this.resetButton.text = shiftDown ? RESET_BUTTON_TEXT_ACTIVE : RESET_BUTTON_TEXT_INACTIVE;
+			this.resetButton.disabled = !shiftDown && !resetButton.isFocused();
+			this.resetButton.text = !resetButton.disabled ? RESET_BUTTON_TEXT_ACTIVE : RESET_BUTTON_TEXT_INACTIVE;
 
 			// Draw the utility buttons
-			this.utilityButtons.renderRightAligned(poseStack, (x + entryWidth) - 3, y, BUTTON_HEIGHT, mouseX, mouseY, tickDelta, hovered);
+			this.utilityButtons.renderRightAligned(guiGraphics, (x + entryWidth) - 3, y, BUTTON_HEIGHT, mouseX, mouseY, tickDelta, hovered);
 
 			// Draw the reset button's tooltip
-			if (this.resetButton.isHovered()) {
-				Component tooltip = shiftDown ? RESET_TOOLTIP : RESET_HOLD_SHIFT_TOOLTIP;
-				queueBottomRightAnchoredTooltip(poseStack, mouseX, mouseY, font, tooltip);
+			if (this.resetButton.isHovered() || this.resetButton.isFocused()) {
+				Component tooltip = !resetButton.disabled ? RESET_TOOLTIP : RESET_HOLD_SHIFT_TOOLTIP;
+				queueBottomRightAnchoredTooltip(guiGraphics, this.resetButton.getRectangle().getBoundInDirection(ScreenDirection.RIGHT), this.resetButton.getRectangle().position().y(), font, tooltip);
 			}
 			// Draw the import/export button tooltips
-			if (this.importButton.isHovered()) {
-				queueBottomRightAnchoredTooltip(poseStack, mouseX, mouseY, font, IMPORT_TOOLTIP);
+			if (this.importButton.isHovered() || this.importButton.isFocused()) {
+				queueBottomRightAnchoredTooltip(guiGraphics, this.importButton.getRectangle().getBoundInDirection(ScreenDirection.RIGHT), this.importButton.getRectangle().position().y(), font, IMPORT_TOOLTIP);
 			}
-			if (this.exportButton.isHovered()) {
-				queueBottomRightAnchoredTooltip(poseStack, mouseX, mouseY, font, EXPORT_TOOLTIP);
+			if (this.exportButton.isHovered() || this.exportButton.isFocused()) {
+				queueBottomRightAnchoredTooltip(guiGraphics, this.exportButton.getRectangle().getBoundInDirection(ScreenDirection.RIGHT), this.exportButton.getRectangle().position().y(), font, EXPORT_TOOLTIP);
 			}
 		}
 
-		private void queueBottomRightAnchoredTooltip(PoseStack poseStack, int x, int y, Font font, Component text) {
+		private void queueBottomRightAnchoredTooltip(GuiGraphics guiGraphics, int x, int y, Font font, Component text) {
 			ShaderPackScreen.TOP_LAYER_RENDER_QUEUE.add(() -> GuiUtil.drawTextPanel(
-					font, poseStack, text,
+					font, guiGraphics, text,
 					x - (font.width(text) + 10), y - 16
 			));
+		}
+
+		@Override
+		public List<? extends GuiEventListener> children() {
+			if (backButton != null)
+				return ImmutableList.copyOf(Iterables.concat(utilityButtons.children(), backButton.children()));
+			return ImmutableList.copyOf(utilityButtons.children());
 		}
 
 		@Override
@@ -205,6 +221,20 @@ public class ShaderPackOptionList extends IrisObjectSelectionList<ShaderPackOpti
 			boolean utilButtonResult = utilityButtons.mouseClicked(mouseX, mouseY, button);
 
 			return backButtonResult || utilButtonResult;
+		}
+
+		@Override
+		public boolean keyPressed(int keycode, int scancode, int modifiers) {
+			if (backButton != null && backButton.keyPressed(keycode, scancode, modifiers)) {
+				return true;
+			}
+
+			return utilityButtons.keyPressed(keycode, scancode, modifiers);
+		}
+
+		@Override
+		public List<? extends NarratableEntry> narratables() {
+			return ImmutableList.of();
 		}
 
 		private boolean backButtonClicked(IrisElementRow.TextButtonElement button) {
@@ -315,11 +345,6 @@ public class ShaderPackOptionList extends IrisObjectSelectionList<ShaderPackOpti
 
 			return true;
 		}
-
-		@Override
-		public Component getNarration() {
-			return Component.translatable("narrator.select", text);
-		}
 	}
 
 	public static class ElementRowEntry extends BaseEntry {
@@ -337,7 +362,7 @@ public class ShaderPackOptionList extends IrisObjectSelectionList<ShaderPackOpti
 		}
 
 		@Override
-		public void render(PoseStack poseStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+		public void render(GuiGraphics guiGraphics, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
 			this.cachedWidth = entryWidth;
 			this.cachedPosX = x;
 
@@ -351,8 +376,10 @@ public class ShaderPackOptionList extends IrisObjectSelectionList<ShaderPackOpti
 
 			for (int i = 0; i < widgets.size(); i++) {
 				AbstractElementWidget<?> widget = widgets.get(i);
-				boolean widgetHovered = hovered && (getHoveredWidget(mouseX) == i);
-				widget.render(poseStack, x + (int)((singleWidgetWidth + 2) * i), y, (int) singleWidgetWidth, entryHeight + 2, mouseX, mouseY, tickDelta, widgetHovered);
+				boolean widgetHovered = (hovered && (getHoveredWidget(mouseX) == i)) || getFocused() == widget;
+
+				widget.bounds = new ScreenRectangle(x + (int)((singleWidgetWidth + 2) * i), y, (int) singleWidgetWidth, entryHeight + 2);
+				widget.render(guiGraphics, mouseX, mouseY, tickDelta, widgetHovered);
 
 				screen.setElementHoveredStatus(widget, widgetHovered);
 			}
@@ -375,8 +402,13 @@ public class ShaderPackOptionList extends IrisObjectSelectionList<ShaderPackOpti
 		}
 
 		@Override
-		public Component getNarration() {
-			return Component.translatable("narrator.select");
+		public @NotNull List<? extends GuiEventListener> children() {
+			return ImmutableList.copyOf(widgets);
+		}
+
+		@Override
+		public @NotNull List<? extends NarratableEntry> narratables() {
+			return ImmutableList.copyOf(widgets);
 		}
 	}
 }

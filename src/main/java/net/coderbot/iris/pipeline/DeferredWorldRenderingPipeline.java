@@ -30,6 +30,7 @@ import net.coderbot.iris.gl.program.Program;
 import net.coderbot.iris.gl.program.ProgramBuilder;
 import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramSamplers;
+import net.coderbot.iris.gl.shader.ShaderCompileException;
 import net.coderbot.iris.gl.texture.TextureType;
 import net.coderbot.iris.helpers.Tri;
 import net.coderbot.iris.pipeline.newshader.FogMode;
@@ -73,8 +74,8 @@ import net.coderbot.iris.uniforms.CapturedRenderingState;
 import net.coderbot.iris.uniforms.custom.CustomUniforms;
 import net.coderbot.iris.uniforms.CommonUniforms;
 import net.coderbot.iris.uniforms.FrameUpdateNotifier;
-import net.coderbot.iris.vendored.joml.Vector3d;
-import net.coderbot.iris.vendored.joml.Vector4f;
+import org.joml.Vector3d;
+import org.joml.Vector4f;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
@@ -679,11 +680,7 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 
 	private Pass createPass(ProgramSource source, InputAvailability availability, boolean shadow, ProgramId id) {
 		// TODO: Properly handle empty shaders?
-		Map<PatchShaderType, String> transformed = TransformPatcher.patchAttributes(
-			source.getVertexSource().orElseThrow(NullPointerException::new),
-			source.getGeometrySource().orElse(null),
-			source.getFragmentSource().orElseThrow(NullPointerException::new),
-			availability, customTextureMap);
+		Map<PatchShaderType, String> transformed = null; // 1.16 is the zombie haunting us all
 		String vertex = transformed.get(PatchShaderType.VERTEX);
 		String geometry = transformed.get(PatchShaderType.GEOMETRY);
 		String fragment = transformed.get(PatchShaderType.FRAGMENT);
@@ -1065,6 +1062,8 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 
 				try {
 					builder = ProgramBuilder.beginCompute(source.getName(), source.getSource().orElse(null), IrisSamplers.WORLD_RESERVED_TEXTURE_UNITS);
+				} catch (ShaderCompileException e) {
+					throw e;
 				} catch (RuntimeException e) {
 					// TODO: Better error handling
 					throw new RuntimeException("Shader compilation failed!", e);
@@ -1246,7 +1245,6 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 		DimensionSpecialEffects.SkyType skyType = Minecraft.getInstance().level.effects().skyType();
 
 		if (skyType == DimensionSpecialEffects.SkyType.NORMAL) {
-			RenderSystem.disableTexture();
 			RenderSystem.depthMask(false);
 
 			Vector3d fogColor = CapturedRenderingState.INSTANCE.getFogColor();
@@ -1255,7 +1253,6 @@ public class DeferredWorldRenderingPipeline implements WorldRenderingPipeline, R
 			horizonRenderer.renderHorizon(CapturedRenderingState.INSTANCE.getGbufferModelView(), CapturedRenderingState.INSTANCE.getGbufferProjection(), GameRenderer.getPositionShader());
 
 			RenderSystem.depthMask(true);
-			RenderSystem.enableTexture();
 		}
 	}
 

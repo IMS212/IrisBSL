@@ -1,10 +1,10 @@
 package net.coderbot.iris.shadows.frustum.advanced;
 
-import net.coderbot.iris.vendored.joml.Math;
+import org.joml.Math;
 import net.coderbot.iris.shadows.frustum.BoxCuller;
-import net.coderbot.iris.vendored.joml.Matrix4f;
-import net.coderbot.iris.vendored.joml.Vector3f;
-import net.coderbot.iris.vendored.joml.Vector4f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.phys.AABB;
 
@@ -63,9 +63,9 @@ public class AdvancedShadowCullingFrustum extends Frustum {
 	private int planeCount = 0;
 
 	// The center coordinates of this frustum.
-	private double x;
-	private double y;
-	private double z;
+    public double x;
+	public double y;
+	public double z;
 
 	private final Vector3f shadowLightVectorFromOrigin;
 	protected final BoxCuller boxCuller;
@@ -73,7 +73,7 @@ public class AdvancedShadowCullingFrustum extends Frustum {
 	public AdvancedShadowCullingFrustum(Matrix4f playerView, Matrix4f playerProjection, Vector3f shadowLightVectorFromOrigin,
 										BoxCuller boxCuller) {
 		// We're overriding all of the methods, don't pass any matrices down.
-		super(new com.mojang.math.Matrix4f(), new com.mojang.math.Matrix4f());
+		super(new org.joml.Matrix4f(), new org.joml.Matrix4f());
 
 		this.shadowLightVectorFromOrigin = shadowLightVectorFromOrigin;
 		BaseClippingPlanes baseClippingPlanes = new BaseClippingPlanes(playerView, playerProjection);
@@ -278,6 +278,7 @@ public class AdvancedShadowCullingFrustum extends Frustum {
 		this.z = cameraZ;
 	}
 
+	@Override
 	public boolean isVisible(AABB aabb) {
 		if (boxCuller != null && boxCuller.isCulled(aabb)) {
 			return false;
@@ -287,7 +288,6 @@ public class AdvancedShadowCullingFrustum extends Frustum {
 	}
 
 	// For Sodium
-	// TODO: change this to respect intersections on 1.18+!
 	public int fastAabbTest(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
 		if (boxCuller != null && boxCuller.isCulled(minX, minY, minZ, maxX, maxY, maxZ)) {
 			return 0;
@@ -358,5 +358,26 @@ public class AdvancedShadowCullingFrustum extends Frustum {
 		}
 
 		return 2;
+	}
+
+
+	/**
+	 * Checks corner visibility.
+	 * @param minX Minimum X value of the AABB.
+	 * @param minY Minimum Y value of the AABB.
+	 * @param minZ Minimum Z value of the AABB.
+	 * @param maxX Maximum X value of the AABB.
+	 * @param maxY Maximum Y value of the AABB.
+	 * @param maxZ Maximum Z value of the AABB.
+	 * @return true if visible, false if not.
+	 */
+	public boolean checkCornerVisibilityBool(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
+		for (int i = 0; i < planeCount; ++i) {
+			if (planes[i].x * (planes[i].x < 0 ? minX : maxX) + planes[i].y * (planes[i].y < 0 ? minY : maxY) + planes[i].z * (planes[i].z < 0 ? minZ : maxZ) < -planes[i].w) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 }

@@ -31,6 +31,8 @@ import net.coderbot.iris.gl.program.ProgramBuilder;
 import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.program.ProgramSamplers;
 import net.coderbot.iris.gl.sampler.SamplerHolder;
+import net.coderbot.iris.gl.shader.ShaderCompileException;
+import net.coderbot.iris.gl.state.StateUpdateNotifiers;
 import net.coderbot.iris.gl.sampler.SamplerLimits;
 import net.coderbot.iris.gl.texture.DepthBufferFormat;
 import net.coderbot.iris.gl.texture.TextureType;
@@ -84,8 +86,6 @@ import net.coderbot.iris.uniforms.CapturedRenderingState;
 import net.coderbot.iris.uniforms.CommonUniforms;
 import net.coderbot.iris.uniforms.FrameUpdateNotifier;
 import net.coderbot.iris.uniforms.custom.CustomUniforms;
-import net.coderbot.iris.vendored.joml.Vector3d;
-import net.coderbot.iris.vendored.joml.Vector4f;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
@@ -94,6 +94,8 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3d;
+import org.joml.Vector4f;
 import org.lwjgl.opengl.ARBClearTexture;
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL20C;
@@ -426,6 +428,9 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 				} else {
 					return createShader(key.getName(), resolver.resolve(key.getProgram()), key);
 				}
+			} catch (FakeChainedJsonException e) {
+				destroyShaders();
+				throw e.getTrueException();
 			} catch (IOException e) {
 				destroyShaders();
 				throw new RuntimeException(e);
@@ -480,8 +485,6 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 			this.shadowRenderer = null;
 		}
 
-		// TODO: Create fallback Sodium shaders if the pack doesn't provide terrain shaders
-		//       Currently we use Sodium's shaders but they don't support EXP2 fog underwater.
 		this.sodiumTerrainPipeline = new SodiumTerrainPipeline(this, programSet, createTerrainSamplers,
 			shadowRenderTargets == null ? null : createShadowTerrainSamplers, createTerrainImages, createShadowTerrainImages, renderTargets, flippedAfterPrepare, flippedAfterTranslucent,
 			shadowRenderTargets != null ? shadowRenderTargets.createShadowFramebuffer(ImmutableSet.of(), programSet.getShadow().filter(source -> !source.getDirectives().hasUnknownDrawBuffers()).map(source -> source.getDirectives().getDrawBuffers()).orElse(new int[]{0, 1})) : null, customUniforms);
@@ -554,11 +557,13 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 				ProgramBuilder builder;
 
 				try {
-					String transformed = TransformPatcher.patchCompute(source.getSource().orElse(null), TextureStage.GBUFFERS_AND_SHADOW, customTextureMap);
+					String transformed = TransformPatcher.patchCompute(source.getName(), source.getSource().orElse(null), TextureStage.GBUFFERS_AND_SHADOW, customTextureMap);
 
 					ShaderPrinter.printProgram(source.getName()).addSource(PatchShaderType.COMPUTE, transformed).print();
 
 					builder = ProgramBuilder.beginCompute(source.getName(), transformed, IrisSamplers.WORLD_RESERVED_TEXTURE_UNITS);
+				} catch (ShaderCompileException e) {
+					throw e;
 				} catch (RuntimeException e) {
 					// TODO: Better error handling
 					throw new RuntimeException("Shader compilation failed for compute " + source.getName() + "!", e);
@@ -616,7 +621,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 				ProgramBuilder builder;
 
 				try {
-					String transformed = TransformPatcher.patchCompute(source.getSource().orElse(null), stage, customTextureMap);
+					String transformed = TransformPatcher.patchCompute(source.getName(), source.getSource().orElse(null), stage, customTextureMap);
 
 					ShaderPrinter.printProgram(source.getName()).addSource(PatchShaderType.COMPUTE, transformed).print();
 
@@ -851,7 +856,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 
 			TextureFormat textureFormat = TextureFormatLoader.getFormat();
 			if (textureFormat != null) {
-				int previousBinding = RenderSystem.getTextureId(GlStateManagerAccessor.getActiveTexture());
+				int previousBinding = GlStateManagerAccessor.getTEXTURES()[GlStateManagerAccessor.getActiveTexture()].binding;
 				textureFormat.setupTextureParameters(PBRType.NORMAL, pbrHolder.getNormalTexture());
 				textureFormat.setupTextureParameters(PBRType.SPECULAR, pbrHolder.getSpecularTexture());
 				GlStateManager._bindTexture(previousBinding);
@@ -1012,7 +1017,6 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		DimensionSpecialEffects.SkyType skyType = Minecraft.getInstance().level.effects().skyType();
 
 		if (skyType == DimensionSpecialEffects.SkyType.NORMAL) {
-			RenderSystem.disableTexture();
 			RenderSystem.depthMask(false);
 
 			RenderSystem.setShaderColor(fogColor.x, fogColor.y, fogColor.z, fogColor.w);
@@ -1020,7 +1024,8 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 			horizonRenderer.renderHorizon(CapturedRenderingState.INSTANCE.getGbufferModelView(), CapturedRenderingState.INSTANCE.getGbufferProjection(), GameRenderer.getPositionShader());
 
 			RenderSystem.depthMask(true);
-			RenderSystem.enableTexture();
+
+			RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 	}
 

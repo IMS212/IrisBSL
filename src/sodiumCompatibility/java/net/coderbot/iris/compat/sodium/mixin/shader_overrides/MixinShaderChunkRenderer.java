@@ -8,10 +8,10 @@ import me.jellysquid.mods.sodium.client.gl.shader.ShaderConstants;
 import me.jellysquid.mods.sodium.client.gl.shader.ShaderLoader;
 import me.jellysquid.mods.sodium.client.gl.shader.ShaderParser;
 import me.jellysquid.mods.sodium.client.gl.shader.ShaderType;
-import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
 import me.jellysquid.mods.sodium.client.render.chunk.ShaderChunkRenderer;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
 import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkShaderInterface;
+import me.jellysquid.mods.sodium.client.render.chunk.terrain.TerrainRenderPass;
+import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.ChunkVertexType;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.compat.sodium.impl.shader_overrides.IrisChunkShaderInterface;
 import net.coderbot.iris.compat.sodium.impl.shader_overrides.ShaderChunkRendererExt;
@@ -77,7 +77,7 @@ public class MixinShaderChunkRenderer implements ShaderChunkRendererExt {
 	}
 
 	@Inject(method = "begin", at = @At("HEAD"), cancellable = true, remap = false)
-	private void iris$begin(BlockRenderPass pass, CallbackInfo ci) {
+	private void iris$begin(TerrainRenderPass pass, CallbackInfo ci) {
 		this.override = irisChunkProgramOverrides.getProgramOverride(pass, this.vertexType);
 
 		irisChunkProgramOverrides.bindFramebuffer(pass);
@@ -98,12 +98,14 @@ public class MixinShaderChunkRenderer implements ShaderChunkRendererExt {
 			RenderSystem.disableCull();
 		}
 
+		pass.startDrawing();
+
 		override.bind();
-		override.getInterface().setup();
+		override.getInterface().setupState();
 	}
 
     @Inject(method = "end", at = @At("HEAD"), remap = false, cancellable = true)
-    private void iris$onEnd(CallbackInfo ci) {
+    private void iris$onEnd(TerrainRenderPass pass, CallbackInfo ci) {
         ProgramUniforms.clearActiveUniforms();
 		ProgramSamplers.clearActiveSamplers();
 		irisChunkProgramOverrides.unbindFramebuffer();
@@ -111,6 +113,8 @@ public class MixinShaderChunkRenderer implements ShaderChunkRendererExt {
         if (override != null) {
 			override.getInterface().restore();
 			override.unbind();
+			pass.endDrawing();
+
 			override = null;
 			ci.cancel();
 		}

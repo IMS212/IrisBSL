@@ -21,12 +21,18 @@ import net.coderbot.iris.uniforms.CommonUniforms;
 import net.coderbot.iris.uniforms.FrameUpdateNotifier;
 import net.coderbot.iris.uniforms.VanillaUniforms;
 import net.coderbot.iris.uniforms.builtin.BuiltinReplacementUniforms;
+import net.fabricmc.loader.api.FabricLoader;
 import net.coderbot.iris.uniforms.custom.CustomUniforms;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.FilePackResources;
+import net.minecraft.server.packs.PathPackResources;
+import net.minecraft.server.packs.resources.IoSupplier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceProvider;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraftforge.fml.loading.FMLPaths;
+import org.apache.commons.io.IOUtils;
+
 import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
@@ -49,6 +55,7 @@ public class NewShaderTests {
 		BlendModeOverride blendModeOverride = source.getDirectives().getBlendModeOverride().orElse(programId.getBlendModeOverride());
 
 		Map<PatchShaderType, String> transformed = TransformPatcher.patchVanilla(
+			name,
 			source.getVertexSource().orElseThrow(RuntimeException::new),
 			source.getGeometrySource().orElse(null),
 			source.getFragmentSource().orElseThrow(RuntimeException::new),
@@ -82,6 +89,7 @@ public class NewShaderTests {
 			"        { \"name\": \"iris_NormalMat\", \"type\": \"matrix3x3\", \"count\": 9, \"values\": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0 ] },\n" +
 			"        { \"name\": \"iris_ChunkOffset\", \"type\": \"float\", \"count\": 3, \"values\": [ 0.0, 0.0, 0.0 ] },\n" +
 			"        { \"name\": \"iris_ColorModulator\", \"type\": \"float\", \"count\": 4, \"values\": [ 1.0, 1.0, 1.0, 1.0 ] },\n" +
+			"        { \"name\": \"iris_GlintAlpha\", \"type\": \"float\", \"count\": 1, \"values\": [ 1.0 ] },\n" +
 			"        { \"name\": \"iris_FogStart\", \"type\": \"float\", \"count\": 1, \"values\": [ 0.0 ] },\n" +
 			"        { \"name\": \"iris_FogEnd\", \"type\": \"float\", \"count\": 1, \"values\": [ 1.0 ] },\n" +
 			"        { \"name\": \"iris_FogColor\", \"type\": \"float\", \"count\": 4, \"values\": [ 0.0, 0.0, 0.0, 0.0 ] }\n" +
@@ -149,6 +157,7 @@ public class NewShaderTests {
 			"        { \"name\": \"ProjMat\", \"type\": \"matrix4x4\", \"count\": 16, \"values\": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },\n" +
 			"        { \"name\": \"ChunkOffset\", \"type\": \"float\", \"count\": 3, \"values\": [ 0.0, 0.0, 0.0 ] },\n" +
 			"        { \"name\": \"ColorModulator\", \"type\": \"float\", \"count\": 4, \"values\": [ 1.0, 1.0, 1.0, 1.0 ] },\n" +
+			"        { \"name\": \"GlintAlpha\", \"type\": \"float\", \"count\": 1, \"values\": [ 1.0 ] },\n" +
 			"        { \"name\": \"Light0_Direction\", \"type\": \"float\", \"count\": 3, \"values\": [0.0, 0.0, 0.0] },\n" +
 			"        { \"name\": \"Light1_Direction\", \"type\": \"float\", \"count\": 3, \"values\": [0.0, 0.0, 0.0] },\n" +
 			"        { \"name\": \"FogStart\", \"type\": \"float\", \"count\": 1, \"values\": [ 0.0 ] },\n" +
@@ -213,9 +222,14 @@ public class NewShaderTests {
 		private final String content;
 
 		private StringResource(ResourceLocation id, String content) {
-			super("<iris shaderpack shaders>", (IoSupplier<InputStream>) () -> new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
+			super(new PathPackResources("<iris shaderpack shaders>", FabricLoader.getInstance().getConfigDir(), true), (IoSupplier<InputStream>) () -> new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
 			this.id = id;
 			this.content = content;
+		}
+
+		@Override
+		public InputStream open() throws IOException {
+			return IOUtils.toInputStream(content, StandardCharsets.UTF_8);
 		}
 	}
 }
