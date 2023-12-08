@@ -35,3 +35,18 @@ A modern shaders mod for Minecraft intended to be compatible with existing OptiF
 "mixin.features.render.world.sky"=false
 "mixin.features.render.entity"=false
 "mixin.features.render.gui.font"=false
+
+[[dependencies.iris]]
+modId="embeddium"
+mandatory=true
+versionRange="[0.2.12,0.3)"
+ordering="NONE"
+side="BOTH"
+
+[[mods]]
+modId = "oculus"
+version = "${version}"
+displayName = "Oculus (Iris)"
+description = '''
+Stub, to allow mods detecting Oculus to function as expected.
+'''
