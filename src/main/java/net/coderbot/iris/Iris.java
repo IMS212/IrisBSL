@@ -14,6 +14,7 @@ import net.coderbot.iris.pipeline.PipelineManager;
 import net.coderbot.iris.pipeline.WorldRenderingPipeline;
 import net.coderbot.iris.pipeline.newshader.NewWorldRenderingPipeline;
 import net.coderbot.iris.shaderpack.DimensionId;
+import net.coderbot.iris.shaderpack.IrisDefines;
 import net.coderbot.iris.shaderpack.OptionalBoolean;
 import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ShaderPack;
@@ -80,9 +81,6 @@ public class Iris {
 	private static ShaderPack currentPack;
 	private static String currentPackName;
 	private static Optional<Exception> storedError = Optional.empty();
-	private static boolean sodiumInvalid;
-	private static boolean hasNEC;
-	private static boolean sodiumInstalled;
 	private static boolean initialized;
 
 	private static PipelineManager pipelineManager;
@@ -215,7 +213,6 @@ public class Iris {
 			return;
 		}
 
-		hasNEC = ModList.get().isLoaded("notenoughcrashes");
 
 		ModContainer iris = ModList.get().getModContainerById(MODID)
 			.orElseThrow(() -> new IllegalStateException("Couldn't find the mod container for Iris"));
@@ -757,18 +754,6 @@ public class Iris {
 
 	public static String getBackupVersionNumber() {
 		return backupVersionNumber;
-	}
-
-	public static boolean isSodiumInvalid() {
-		return false;
- 	}
-
-	public static boolean isSodiumInstalled() {
-		return true;
-	}
-
-	public static boolean hasNotEnoughCrashes() {
-		return hasNEC;
 	}
 
 	public static Path getShaderpacksDirectory() {
