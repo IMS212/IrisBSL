@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraftforge.client.ChunkRenderTypeSet;
 
 import java.util.HashMap;
 import java.util.List;
@@ -35,8 +36,8 @@ public class BlockMaterialMapping {
 		return blockStateIds;
 	}
 
-	public static Map<Block, RenderType> createBlockTypeMap(Map<NamespacedId, BlockRenderType> blockPropertiesMap) {
-		Map<Block, RenderType> blockTypeIds = new Reference2ReferenceOpenHashMap<>();
+	public static Map<Block, ChunkRenderTypeSet> createBlockTypeMap(Map<NamespacedId, BlockRenderType> blockPropertiesMap) {
+		Map<Block, ChunkRenderTypeSet> blockTypeIds = new Reference2ReferenceOpenHashMap<>();
 
 		blockPropertiesMap.forEach((id, blockType) -> {
 			ResourceLocation resourceLocation = new ResourceLocation(id.getNamespace(), id.getName());
@@ -49,16 +50,21 @@ public class BlockMaterialMapping {
 		return blockTypeIds;
 	}
 
-	private static RenderType convertBlockToRenderType(BlockRenderType type) {
+	private static ChunkRenderTypeSet SOLID = ChunkRenderTypeSet.of(RenderType.solid());
+	private static ChunkRenderTypeSet CUTOUT = ChunkRenderTypeSet.of(RenderType.cutout());
+	private static ChunkRenderTypeSet CUTOUT_MIPPED = ChunkRenderTypeSet.of(RenderType.cutoutMipped());
+	private static ChunkRenderTypeSet TRANSLUCENT = ChunkRenderTypeSet.of(RenderType.translucent());
+
+	private static ChunkRenderTypeSet convertBlockToRenderType(BlockRenderType type) {
 		if (type == null) {
 			return null;
 		}
 
 		switch (type) {
-			case SOLID: return RenderType.solid();
-			case CUTOUT: return RenderType.cutout();
-			case CUTOUT_MIPPED: return RenderType.cutoutMipped();
-			case TRANSLUCENT: return RenderType.translucent();
+			case SOLID: return BlockMaterialMapping.SOLID;
+			case CUTOUT: return BlockMaterialMapping.CUTOUT;
+			case CUTOUT_MIPPED: return BlockMaterialMapping.CUTOUT_MIPPED;
+			case TRANSLUCENT: return BlockMaterialMapping.TRANSLUCENT;
 			default: return null;
 		}
 	}

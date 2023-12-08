@@ -121,6 +121,7 @@ dependencies {
     implementation "org.anarres:jcpp:1.4.14"
     forgeRuntimeLibrary "org.anarres:jcpp:1.4.14"
     include "org.anarres:jcpp:1.4.14"
+    compileOnly("maven.modrinth:distanthorizons:2.0.0-a-1.19.4")
     // choose what mappings you want to use here
     // leave this uncommented if you want to use
     // mojang's official mappings, or feel free

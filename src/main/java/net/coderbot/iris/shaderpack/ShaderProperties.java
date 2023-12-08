@@ -29,7 +29,7 @@ import net.coderbot.iris.shaderpack.option.ShaderPackOptions;
 import net.coderbot.iris.shaderpack.preprocessor.PropertiesPreprocessor;
 import net.coderbot.iris.shaderpack.texture.TextureStage;
 import net.coderbot.iris.uniforms.custom.CustomUniforms;
-import net.fabricmc.loader.api.FabricLoader;
+import net.minecraftforge.fml.loading.FMLPaths;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -118,8 +118,8 @@ public class ShaderProperties {
 
 		if (Iris.getIrisConfig().areDebugOptionsEnabled()) {
 			try {
-				Files.writeString(FabricLoader.getInstance().getGameDir().resolve("preprocessed.properties"), preprocessedContents);
-				Files.writeString(FabricLoader.getInstance().getGameDir().resolve("original.properties"), contents);
+				Files.writeString(FMLPaths.GAMEDIR.get().resolve("preprocessed.properties"), preprocessedContents);
+				Files.writeString(FMLPaths.GAMEDIR.get().resolve("original.properties"), contents);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
