@@ -32,4 +32,8 @@ public class IrisMultiPlatImpl {
     public static void drawParticles(ParticleEngine particleEngine, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, LightTexture lightTexture, Camera camera, float f, Frustum cullingFrustum) {
 		particleEngine.render(poseStack, bufferSource, lightTexture, camera, f);
     }
+
+	public static boolean isDevEnv() {
+		return FabricLoader.getInstance().isDevelopmentEnvironment();
+	}
 }

@@ -61,6 +61,7 @@ import net.irisshaders.iris.samplers.IrisImages;
 import net.irisshaders.iris.samplers.IrisSamplers;
 import net.irisshaders.iris.shaderpack.CloudSetting;
 import net.irisshaders.iris.shaderpack.ComputeSource;
+import net.irisshaders.iris.shaderpack.FilledIndirectPointer;
 import net.irisshaders.iris.shaderpack.ImageInformation;
 import net.irisshaders.iris.shaderpack.OptionalBoolean;
 import net.irisshaders.iris.shaderpack.PackDirectives;

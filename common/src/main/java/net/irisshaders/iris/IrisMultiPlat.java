@@ -40,4 +40,9 @@ public class IrisMultiPlat {
     public static void drawParticles(ParticleEngine particleEngine, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, LightTexture lightTexture, Camera camera, float f, Frustum cullingFrustum) {
 		throw new AssertionError();
     }
+
+	@ExpectPlatform
+    public static boolean isDevEnv() {
+		throw new AssertionError();
+    }
 }

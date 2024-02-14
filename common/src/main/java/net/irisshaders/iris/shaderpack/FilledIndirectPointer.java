@@ -1,6 +1,6 @@
-package net.coderbot.iris.shaderpack;
+package net.irisshaders.iris.shaderpack;
 
-import net.coderbot.iris.gl.buffer.ShaderStorageBufferHolder;
+import net.irisshaders.iris.gl.buffer.ShaderStorageBufferHolder;
 
 public record FilledIndirectPointer(int buffer, long offset) {
 	public static FilledIndirectPointer basedOff(ShaderStorageBufferHolder holder, IndirectPointer pointer) {

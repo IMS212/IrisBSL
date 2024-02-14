@@ -733,9 +733,8 @@ public class Iris {
 		ChatFormatting color;
 		String version = getVersion();
 
-		if (version.endsWith("-development-environment")) {
+		if (IrisMultiPlat.isDevEnv()) {
 			color = ChatFormatting.GOLD;
-			version = version.replace("-development-environment", " (Development Environment)");
 		} else if (version.endsWith("-dirty") || version.contains("unknown") || version.endsWith("-nogit")) {
 			color = ChatFormatting.RED;
 		} else if (version.contains("+rev.")) {

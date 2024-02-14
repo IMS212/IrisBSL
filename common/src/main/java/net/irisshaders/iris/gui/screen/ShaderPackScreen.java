@@ -2,6 +2,7 @@ package net.irisshaders.iris.gui.screen;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.irisshaders.iris.Iris;
+import net.irisshaders.iris.IrisMultiPlat;
 import net.irisshaders.iris.gui.GuiUtil;
 import net.irisshaders.iris.gui.NavigationController;
 import net.irisshaders.iris.gui.OldImageButton;
@@ -89,9 +90,8 @@ public class ShaderPackScreen extends Screen implements HudHideable {
 
 		String irisName = Iris.MODNAME + " " + Iris.getVersion();
 
-		if (irisName.contains("-development-environment")) {
+		if (IrisMultiPlat.isDevEnv()) {
 			this.developmentComponent = Component.literal("Development Environment").withStyle(ChatFormatting.GOLD);
-			irisName = irisName.replace("-development-environment", "");
 		}
 
 		this.irisTextComponent = Component.literal(irisName).withStyle(ChatFormatting.GRAY);
