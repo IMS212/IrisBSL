@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.irisshaders.iris.neoforge.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "client": [
+    "MixinItemBlockRenderTypes"
+  ],
+  "injectors": {
+    "defaultRequire": 1,
+    "maxShiftBy": 2
+  }
+}
