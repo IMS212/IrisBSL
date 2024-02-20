@@ -1,15 +1,15 @@
-package net.irisshaders.iris.neoforge;
+package net.irisshaders.iris.forge;
 
 import net.irisshaders.iris.Iris;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.common.Mod;
 
 @Mod(Iris.MODID)
 public final class IrisNeoForge {
-    public IrisNeoForge(IEventBus event) {
+    public IrisNeoForge() {
         // Run our common setup.
-		event.addListener(this::registerKeys);
+		//event.addListener(this::registerKeys);
     }
 
 	public void registerKeys(RegisterKeyMappingsEvent event) {

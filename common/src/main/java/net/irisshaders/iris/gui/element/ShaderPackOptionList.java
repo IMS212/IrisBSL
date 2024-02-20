@@ -2,6 +2,7 @@ package net.irisshaders.iris.gui.element;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gui.FileDialogUtil;
 import net.irisshaders.iris.gui.GuiUtil;
@@ -16,6 +17,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
+import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.navigation.ScreenDirection;
@@ -45,10 +47,9 @@ public class ShaderPackOptionList extends IrisContainerObjectSelectionList<Shade
 	private OptionMenuContainer container;
 
 	public ShaderPackOptionList(ShaderPackScreen screen, NavigationController navigation, ShaderPack pack, Minecraft client, int width, int height, int top, int bottom, int left, int right) {
-		super(client, width, bottom, top, bottom, left, right, 24);
+		super(client, width, height, top, bottom, left, right, 24);
 		this.navigation = navigation;
 		this.screen = screen;
-		this.setRenderBackground(false);
 
 		applyShaderPack(pack);
 	}
@@ -58,12 +59,12 @@ public class ShaderPackOptionList extends IrisContainerObjectSelectionList<Shade
 		// Renders top/bottom dirt
 		int lvInt9 = 32;
 		pAbstractSelectionList0.setColor(0.25F, 0.25F, 0.25F, 1.0F);
-		pAbstractSelectionList0.blit(Screen.BACKGROUND_LOCATION, this.getX(), 0, 0.0F, 0.0F, this.width, this.getY(), 32, 32);
-		pAbstractSelectionList0.blit(Screen.BACKGROUND_LOCATION, this.getX(), this.getBottom(), 0.0F, 0.0F, this.width, this.height, 32, 32);
+		pAbstractSelectionList0.blit(Screen.BACKGROUND_LOCATION, this.x0, 0, 0.0F, 0.0F, this.width, this.y0, 32, 32);
+		pAbstractSelectionList0.blit(Screen.BACKGROUND_LOCATION, this.x0, this.y1, 0.0F, (float)this.y1, this.width, this.height - this.y1, 32, 32);
 		pAbstractSelectionList0.setColor(1.0F, 1.0F, 1.0F, 1.0F);
 		int lvInt10 = 4;
-		pAbstractSelectionList0.fillGradient(RenderType.guiOverlay(), this.getX(), this.getY(), this.getRight(), this.getY() + 4, -16777216, 0, 0);
-		pAbstractSelectionList0.fillGradient(RenderType.guiOverlay(), this.getX(), this.getBottom() - 4, this.getRight(), this.getBottom(), 0, -16777216, 0);
+		pAbstractSelectionList0.fillGradient(RenderType.guiOverlay(), this.x0, this.y0, this.x1, this.y0 + 4, -16777216, 0, 0);
+		pAbstractSelectionList0.fillGradient(RenderType.guiOverlay(), this.x0, this.y1 - 4, this.x1, this.y1, 0, -16777216, 0);
 		super.renderDecorations(pAbstractSelectionList0, pInt1, pInt2);
 	}
 
@@ -132,9 +133,9 @@ public class ShaderPackOptionList extends IrisContainerObjectSelectionList<Shade
 		public static final MutableComponent RESET_HOLD_SHIFT_TOOLTIP = Component.translatable("options.iris.reset.tooltip.holdShift").withStyle(ChatFormatting.GOLD);
 		public static final MutableComponent RESET_TOOLTIP = Component.translatable("options.iris.reset.tooltip").withStyle(ChatFormatting.RED);
 		public static final MutableComponent IMPORT_TOOLTIP = Component.translatable("options.iris.importSettings.tooltip")
-				.withStyle(style -> style.withColor(TextColor.fromRgb(0x4da6ff)));
+			.withStyle(style -> style.withColor(TextColor.fromRgb(0x4da6ff)));
 		public static final MutableComponent EXPORT_TOOLTIP = Component.translatable("options.iris.exportSettings.tooltip")
-				.withStyle(style -> style.withColor(TextColor.fromRgb(0xfc7d3d)));
+			.withStyle(style -> style.withColor(TextColor.fromRgb(0xfc7d3d)));
 
 		private static final int MIN_SIDE_BUTTON_WIDTH = 42;
 		private static final int BUTTON_HEIGHT = 16;
@@ -152,24 +153,24 @@ public class ShaderPackOptionList extends IrisContainerObjectSelectionList<Shade
 
 			if (hasBackButton) {
 				this.backButton = new IrisElementRow().add(
-						new IrisElementRow.TextButtonElement(BACK_BUTTON_TEXT, this::backButtonClicked),
-						Math.max(MIN_SIDE_BUTTON_WIDTH, Minecraft.getInstance().font.width(BACK_BUTTON_TEXT) + 8)
+					new IrisElementRow.TextButtonElement(BACK_BUTTON_TEXT, this::backButtonClicked),
+					Math.max(MIN_SIDE_BUTTON_WIDTH, Minecraft.getInstance().font.width(BACK_BUTTON_TEXT) + 8)
 				);
 			} else {
 				this.backButton = null;
 			}
 
 			this.resetButton = new IrisElementRow.TextButtonElement(
-					RESET_BUTTON_TEXT_INACTIVE, this::resetButtonClicked);
+				RESET_BUTTON_TEXT_INACTIVE, this::resetButtonClicked);
 			this.importButton = new IrisElementRow.IconButtonElement(
-					GuiUtil.Icon.IMPORT, GuiUtil.Icon.IMPORT_COLORED, this::importSettingsButtonClicked);
+				GuiUtil.Icon.IMPORT, GuiUtil.Icon.IMPORT_COLORED, this::importSettingsButtonClicked);
 			this.exportButton = new IrisElementRow.IconButtonElement(
-					GuiUtil.Icon.EXPORT, GuiUtil.Icon.EXPORT_COLORED, this::exportSettingsButtonClicked);
+				GuiUtil.Icon.EXPORT, GuiUtil.Icon.EXPORT_COLORED, this::exportSettingsButtonClicked);
 
 			this.utilityButtons
-					.add(this.importButton, 15)
-					.add(this.exportButton, 15)
-					.add(this.resetButton, Math.max(MIN_SIDE_BUTTON_WIDTH, Minecraft.getInstance().font.width(RESET_BUTTON_TEXT_INACTIVE) + 8));
+				.add(this.importButton, 15)
+				.add(this.exportButton, 15)
+				.add(this.resetButton, Math.max(MIN_SIDE_BUTTON_WIDTH, Minecraft.getInstance().font.width(RESET_BUTTON_TEXT_INACTIVE) + 8));
 
 			this.screen = screen;
 			this.text = text;
@@ -217,8 +218,8 @@ public class ShaderPackOptionList extends IrisContainerObjectSelectionList<Shade
 
 		private void queueBottomRightAnchoredTooltip(GuiGraphics guiGraphics, int x, int y, Font font, Component text) {
 			ShaderPackScreen.TOP_LAYER_RENDER_QUEUE.add(() -> GuiUtil.drawTextPanel(
-					font, guiGraphics, text,
-					x - (font.width(text) + 10), y - 16
+				font, guiGraphics, text,
+				x - (font.width(text) + 10), y - 16
 			));
 		}
 
@@ -292,18 +293,18 @@ public class ShaderPackOptionList extends IrisContainerObjectSelectionList<Shade
 			FileDialogUtil.fileSelectDialog(
 					FileDialogUtil.DialogType.OPEN, "Import Shader Settings from File",
 					Iris.getShaderpacksDirectory().resolve(Iris.getCurrentPackName() + ".txt"),
-					 "Shader Pack Settings (.txt)", "*.txt")
-			.whenComplete((path, err) -> {
-				if (err != null) {
-					Iris.logger.error("Error selecting shader settings from file", err);
+					"Shader Pack Settings (.txt)", "*.txt")
+				.whenComplete((path, err) -> {
+					if (err != null) {
+						Iris.logger.error("Error selecting shader settings from file", err);
 
-					return;
-				}
+						return;
+					}
 
-				if (Minecraft.getInstance().screen == originalScreen) {
-					path.ifPresent(originalScreen::importPackOptions);
-				}
-			});
+					if (Minecraft.getInstance().screen == originalScreen) {
+						path.ifPresent(originalScreen::importPackOptions);
+					}
+				});
 
 			return true;
 		}
@@ -329,33 +330,33 @@ public class ShaderPackOptionList extends IrisContainerObjectSelectionList<Shade
 					FileDialogUtil.DialogType.SAVE, "Export Shader Settings to File",
 					Iris.getShaderpacksDirectory().resolve(Iris.getCurrentPackName() + ".txt"),
 					"Shader Pack Settings (.txt)", "*.txt")
-			.whenComplete((path, err) -> {
-				if (err != null) {
-					Iris.logger.error("Error selecting file to export shader settings", err);
+				.whenComplete((path, err) -> {
+					if (err != null) {
+						Iris.logger.error("Error selecting file to export shader settings", err);
 
-					return;
-				}
-
-				path.ifPresent(p -> {
-					Properties toSave = new Properties();
-
-					// Dirty way of getting the currently applied settings as a Properties, directly
-					// opens and copies out of the saved settings file if it is present
-					Path sourceTxtPath = Iris.getShaderpacksDirectory().resolve(Iris.getCurrentPackName() + ".txt");
-					if (Files.exists(sourceTxtPath)) {
-						try (InputStream in = Files.newInputStream(sourceTxtPath)) {
-							toSave.load(in);
-						} catch (IOException ignored) {}
+						return;
 					}
 
-					// Save properties to user determined file
-					try (OutputStream out = Files.newOutputStream(p)) {
-						toSave.store(out, null);
-					} catch (IOException e) {
-						Iris.logger.error("Error saving properties to \"" + p + "\"", e);
-					}
+					path.ifPresent(p -> {
+						Properties toSave = new Properties();
+
+						// Dirty way of getting the currently applied settings as a Properties, directly
+						// opens and copies out of the saved settings file if it is present
+						Path sourceTxtPath = Iris.getShaderpacksDirectory().resolve(Iris.getCurrentPackName() + ".txt");
+						if (Files.exists(sourceTxtPath)) {
+							try (InputStream in = Files.newInputStream(sourceTxtPath)) {
+								toSave.load(in);
+							} catch (IOException ignored) {}
+						}
+
+						// Save properties to user determined file
+						try (OutputStream out = Files.newOutputStream(p)) {
+							toSave.store(out, null);
+						} catch (IOException e) {
+							Iris.logger.error("Error saving properties to \"" + p + "\"", e);
+						}
+					});
 				});
-			});
 
 			return true;
 		}

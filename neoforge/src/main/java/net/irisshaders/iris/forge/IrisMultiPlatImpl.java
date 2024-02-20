@@ -1,4 +1,4 @@
-package net.irisshaders.iris.neoforge;
+package net.irisshaders.iris.forge;
 
 import com.github.zafarkhaja.semver.Version;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -8,8 +8,8 @@ import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.culling.Frustum;
-import net.neoforged.fml.loading.FMLLoader;
-import net.neoforged.fml.loading.FMLPaths;
+import net.minecraftforge.fml.loading.FMLLoader;
+import net.minecraftforge.fml.loading.FMLPaths;
 
 import java.nio.file.Path;
 
@@ -32,5 +32,9 @@ public class IrisMultiPlatImpl {
 
 	public static void drawParticles(ParticleEngine particleEngine, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, LightTexture lightTexture, Camera camera, float f, Frustum cullingFrustum) {
 		particleEngine.render(poseStack, bufferSource, lightTexture, camera, f, cullingFrustum);
+	}
+
+	public static boolean isDevEnv() {
+		return !FMLLoader.isProduction();
 	}
 }

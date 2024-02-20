@@ -207,7 +207,6 @@ public class MixinGameRenderer {
 		"getRendertypeEntityTranslucentShader",
 		"getRendertypeEntityTranslucentCullShader",
 		"getRendertypeItemEntityTranslucentCullShader",
-		"getRendertypeBreezeWindShader",
 		"getRendertypeEntityNoOutlineShader"
 	}, at = @At("HEAD"), cancellable = true)
 	private static void iris$overrideEntityTranslucentShader(CallbackInfoReturnable<ShaderInstance> cir) {

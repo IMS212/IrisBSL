@@ -3,7 +3,6 @@ package net.irisshaders.iris.mixin;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import net.minecraft.world.TickRateManager;
 import org.joml.Matrix4f;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gl.IrisRenderSystem;
@@ -77,11 +76,9 @@ public class MixinLevelRenderer {
 		IrisTimeUniforms.updateTime();
 		CapturedRenderingState.INSTANCE.setGbufferModelView(poseStack.last().pose());
 		CapturedRenderingState.INSTANCE.setGbufferProjection(projection);
-		TickRateManager lvTickRateManager10 = this.minecraft.level.tickRateManager();
-		float fakeTickDelta = lvTickRateManager10.runsNormally() ? tickDelta : 1.0F;
-		CapturedRenderingState.INSTANCE.setTickDelta(fakeTickDelta);
+		CapturedRenderingState.INSTANCE.setTickDelta(tickDelta);
 		CapturedRenderingState.INSTANCE.setRealTickDelta(tickDelta);
-		CapturedRenderingState.INSTANCE.setCloudTime((ticks + fakeTickDelta) * 0.03F);
+		CapturedRenderingState.INSTANCE.setCloudTime((ticks + tickDelta) * 0.03F);
 		SystemTimeUniforms.COUNTER.beginFrame();
 		SystemTimeUniforms.TIMER.beginFrame(startTime);
 
@@ -203,12 +200,12 @@ public class MixinLevelRenderer {
 	}
 
 
-	@Inject(method = "renderSectionLayer", at = @At("HEAD"))
+	@Inject(method = "renderChunkLayer", at = @At("HEAD"))
 	private void iris$beginTerrainLayer(RenderType renderType, PoseStack poseStack, double d, double e, double f, Matrix4f projectionMatrix, CallbackInfo ci) {
 		pipeline.setPhase(WorldRenderingPhase.fromTerrainRenderType(renderType));
 	}
 
-	@Inject(method = "renderSectionLayer", at = @At("RETURN"))
+	@Inject(method = "renderChunkLayer", at = @At("RETURN"))
 	private void iris$endTerrainLayer(RenderType renderType, PoseStack poseStack, double d, double e, double f, Matrix4f projectionMatrix, CallbackInfo ci) {
 		pipeline.setPhase(WorldRenderingPhase.NONE);
 	}

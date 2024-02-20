@@ -15,9 +15,9 @@ dependencies {
     modImplementation("net.fabricmc:fabric-loader:${project.property("fabric_loader_version")}")
 
     if (rootProject.property("custom_sodium")!!.equals("true")) {
-        modCompileOnly(files(rootProject.projectDir.resolve("custom_sodium").resolve(rootProject.property("sodium_version").toString())))
+        modImplementation(files(rootProject.projectDir.resolve("custom_sodium").resolve(rootProject.property("sodium_fabric_version").toString())))
     } else {
-        modCompileOnly("maven.modrinth:sodium:" + rootProject.property("sodium_version"))
+        modImplementation("maven.modrinth:sodium:" + rootProject.property("sodium_version"))
     }
     modCompileOnly("maven.modrinth:distanthorizons:2.0.0-a-1.18.2")
     modImplementation("io.github.douira:glsl-transformer:2.0.0-pre13")

@@ -1,5 +1,9 @@
 package net.irisshaders.iris.gui.element;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gui.GuiUtil;
 import net.irisshaders.iris.gui.screen.ShaderPackScreen;
@@ -9,12 +13,17 @@ import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSelectionList;
+import net.minecraft.client.gui.components.ContainerObjectSelectionList;
+import net.minecraft.client.gui.components.ObjectSelectionList;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextColor;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
@@ -25,6 +34,7 @@ import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
@@ -39,10 +49,9 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 	private ShaderPackEntry applied = null;
 
 	public ShaderPackSelectionList(ShaderPackScreen screen, Minecraft client, int width, int height, int top, int bottom, int left, int right) {
-		super(client, width, bottom, top, bottom, left, right, 20);
+		super(client, width, height, top, bottom, left, right, 20);
 		WatchKey key1;
 		WatchService watcher1;
-		this.setRenderBackground(false);
 
 		this.screen = screen;
 		this.topButtonRow = new TopButtonRowEntry(this, Iris.getIrisConfig().areShadersEnabled());
@@ -75,7 +84,7 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 	}
 
 	@Override
-	public void renderWidget(GuiGraphics pAbstractSelectionList0, int pInt1, int pInt2, float pFloat3) {
+	public void render(GuiGraphics pAbstractSelectionList0, int pInt1, int pInt2, float pFloat3) {
 		if (keyValid) {
 			for (WatchEvent<?> event : key.pollEvents()) {
 				if (event.kind() == StandardWatchEventKinds.OVERFLOW) continue;
@@ -87,7 +96,7 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 			keyValid = key.reset();
 		}
 
-		super.renderWidget(pAbstractSelectionList0, pInt1, pInt2, pFloat3);
+		super.render(pAbstractSelectionList0, pInt1, pInt2, pFloat3);
 	}
 
 	public void close() throws IOException {
@@ -123,16 +132,16 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 			// We're just trying to get more information on a seemingly untraceable bug:
 			// - https://github.com/IrisShaders/Iris/issues/785
 			this.addLabelEntries(
-					Component.empty(),
-					Component.literal("There was an error reading your shaderpacks directory")
-							.withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
-					Component.empty(),
-					Component.literal("Check your logs for more information."),
-					Component.literal("Please file an issue report including a log file."),
-					Component.literal("If you are able to identify the file causing this, " +
-											 "please include it in your report as well."),
-					Component.literal("Note that this might be an issue with folder " +
-											 "permissions; ensure those are correct first.")
+				Component.empty(),
+				Component.literal("There was an error reading your shaderpacks directory")
+					.withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
+				Component.empty(),
+				Component.literal("Check your logs for more information."),
+				Component.literal("Please file an issue report including a log file."),
+				Component.literal("If you are able to identify the file causing this, " +
+					"please include it in your report as well."),
+				Component.literal("Note that this might be an issue with folder " +
+					"permissions; ensure those are correct first.")
 			);
 
 			return;
@@ -174,13 +183,13 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 		// Renders top/bottom dirt
 		int lvInt9 = 32;
 		pAbstractSelectionList0.setColor(0.25F, 0.25F, 0.25F, 1.0F);
-		pAbstractSelectionList0.blit(Screen.BACKGROUND_LOCATION, this.getX(), 0, 0.0F, 0.0F, this.width, this.getY(), 32, 32);
-		pAbstractSelectionList0.blit(Screen.BACKGROUND_LOCATION, this.getX(), this.getBottom(), 0.0F, 0.0F, this.width, this.height, 32, 32);
+		pAbstractSelectionList0.blit(Screen.BACKGROUND_LOCATION, this.x0, 0, 0.0F, 0.0F, this.width, this.y0, 32, 32);
+		pAbstractSelectionList0.blit(Screen.BACKGROUND_LOCATION, this.x0, this.y1, 0.0F, (float)this.y1, this.width, this.height - this.y1, 32, 32);
 		pAbstractSelectionList0.setColor(1.0F, 1.0F, 1.0F, 1.0F);
 		int lvInt10 = 4;
-		pAbstractSelectionList0.fillGradient(RenderType.guiOverlay(), this.getX(), this.getY(), this.getRight(), this.getY() + 4, -16777216, 0, 0);
-		pAbstractSelectionList0.fillGradient(RenderType.guiOverlay(), this.getX(), this.getBottom() - 4, this.getRight(), this.getBottom(), 0, -16777216, 0);
-
+		pAbstractSelectionList0.fillGradient(RenderType.guiOverlay(), this.x0, this.y0, this.x1, this.y0 + 4, -16777216, 0, 0);
+		pAbstractSelectionList0.fillGradient(RenderType.guiOverlay(), this.x0, this.y1 - 4, this.x1, this.y1, 0, -16777216, 0);
+		super.renderDecorations(pAbstractSelectionList0, pInt1, pInt2);
 	}
 
 	public void addLabelEntries(Component ... lines) {

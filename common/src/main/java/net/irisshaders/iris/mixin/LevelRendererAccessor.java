@@ -20,7 +20,7 @@ public interface LevelRendererAccessor {
 	@Accessor("entityRenderDispatcher")
 	EntityRenderDispatcher getEntityRenderDispatcher();
 
-	@Invoker("renderSectionLayer")
+	@Invoker("renderChunkLayer")
 	void invokeRenderSectionLayer(RenderType terrainLayer, PoseStack modelView, double cameraX, double cameraY, double cameraZ, Matrix4f projectionMatrix);
 
 	@Invoker("setupRender")

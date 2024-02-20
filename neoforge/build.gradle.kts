@@ -4,17 +4,17 @@ plugins {
 
 architectury {
     platformSetupLoomIde()
-    neoForge()
+    forge()
 }
 
 val common: Configuration by configurations.creating
 val shadowCommon: Configuration by configurations.creating
-val developmentNeoForge: Configuration by configurations.getting
+val developmentForge: Configuration by configurations.getting
 
 configurations {
     compileOnly.configure { extendsFrom(common) }
     runtimeOnly.configure { extendsFrom(common) }
-    developmentNeoForge.extendsFrom(common)
+    developmentForge.extendsFrom(common)
 }
 
 loom {
@@ -23,6 +23,20 @@ loom {
     silentMojangMappingsLicense()
 
     accessWidenerPath = file("../common/src/main/resources/iris.accesswidener")
+
+    forge {
+        convertAccessWideners = true
+
+        mixinConfigs(
+                "mixins.iris.json",
+                "mixins.iris.neoforge.json",
+                "mixins.iris.fantastic.json",
+                "mixins.iris.fixes.maxfpscrash.json",
+                "mixins.iris.vertexformat.json",
+                "mixins.iris.compat.sodium.json",
+                "iris-batched-entity-rendering.mixins.json"
+        )
+    }
 }
 
 repositories {
@@ -55,23 +69,33 @@ fun modImplementationInclude(s : String) {
     dependencies.include(s)
 }
 
+fun modImplementationInclude(s : ConfigurableFileCollection) {
+    dependencies.modImplementation(s)
+    dependencies.forgeRuntimeLibrary(s)
+    dependencies.include(s)
+}
+
 dependencies {
-    neoForge("net.neoforged:neoforge:${rootProject.property("neoforge_version")}")
+    forge("net.neoforged:forge:${rootProject.property("neoforge_version")}")
 
     if (rootProject.property("custom_sodium")!!.equals("true")) {
         modImplementation(files(rootProject.projectDir.resolve("custom_sodium").resolve(rootProject.property("sodium_version").toString())))
     } else {
         modImplementation("maven.modrinth:sodium:" + rootProject.property("sodium_version"))
     }
-    modCompileOnly("maven.modrinth:distanthorizons:2.0.0-a-1.18.2")
+    implementation(group = "com.lodborg", name = "interval-tree", version = "1.0.0")
+    forgeRuntimeLibrary(group = "com.lodborg", name = "interval-tree", version = "1.0.0")
 
-    modImplementationInclude("io.github.douira:glsl-transformer:2.0.0-pre13")
-    modImplementationInclude("org.antlr:antlr4-runtime:4.11.1")
+    modCompileOnly("maven.modrinth:distanthorizons:2.0.0-a-1.18.2")
+    compileOnly("io.github.llamalad7:mixinextras-common:0.3.5")
+    annotationProcessor("io.github.llamalad7:mixinextras-common:0.3.5")
+    implementation("io.github.llamalad7:mixinextras-forge:0.3.5")
+    modImplementationInclude(files("glsl-transformer-2.0.0.jar"))
     modImplementationInclude("org.anarres:jcpp:1.4.14")
     modImplementationInclude("com.github.zafarkhaja:java-semver:0.10.2")
 
     common(project(":common", "namedElements")) { isTransitive = false }
-    shadowCommon(project(":common", "transformProductionNeoForge")) { isTransitive = false }
+    shadowCommon(project(":common", "transformProductionForge")) { isTransitive = false }
 
 }
 
