@@ -334,7 +334,9 @@ public class IrisRenderSystem {
 	}
 
 	public static void setShadowProjection(Matrix4f shadowProjection) {
-		backupProjection = RenderSystem.getProjectionMatrix();
+		if (backupProjection == null) {
+			backupProjection = RenderSystem.getProjectionMatrix();
+		}
 		RenderSystem.setProjectionMatrix(shadowProjection, VertexSorting.ORTHOGRAPHIC_Z);
 	}
 

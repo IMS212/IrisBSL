@@ -49,12 +49,14 @@ import org.lwjgl.opengl.ARBTextureSwizzle;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL30C;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
 public class ShadowRenderer {
+	public static final int CASCADE_COUNT = 4;
 	public static boolean ACTIVE = false;
 	public static List<BlockEntity> visibleBlockEntities;
 	public static int renderDistance;
@@ -91,6 +93,7 @@ public class ShadowRenderer {
 	private String debugStringTerrain = "(unavailable)";
 	private int renderedShadowEntities = 0;
 	private int renderedShadowBlockEntities = 0;
+	private CelestialUniforms celestial;
 
 	public ShadowRenderer(ProgramSource shadow, PackDirectives directives,
 						  ShadowRenderTargets shadowRenderTargets, ShadowCompositeRenderer compositeRenderer, CustomUniforms customUniforms, boolean separateHardwareSamplers) {
@@ -116,6 +119,7 @@ public class ShadowRenderer {
 		this.shouldRenderLightBlockEntities = shadowDirectives.shouldRenderLightBlockEntities();
 		this.shouldRenderDH = shadowDirectives.isDhShadowEnabled().orElse(false);
 
+
 		this.compositeRenderer = compositeRenderer;
 
 		debugStringOverall = "half plane = " + halfPlaneLength + " meters @ " + resolution + "x" + resolution;
@@ -137,6 +141,7 @@ public class ShadowRenderer {
 		}
 
 		this.sunPathRotation = directives.getSunPathRotation();
+		this.celestial = new CelestialUniforms(sunPathRotation);
 
 		int processors = Runtime.getRuntime().availableProcessors();
 		int threads = Minecraft.getInstance().is64Bit() ? processors : Math.min(processors, 4);
@@ -329,7 +334,7 @@ public class ShadowRenderer {
 
 			cullingInfo = (isReversed ? "Reversed" : "Advanced") + " Frustum Culling enabled";
 
-			Vector4f shadowLightPosition = new CelestialUniforms(sunPathRotation).getShadowLightPositionInWorldSpace();
+			Vector4f shadowLightPosition = celestial.getShadowLightPositionInWorldSpace();
 
 			Vector3f shadowLightVectorFromOrigin =
 				new Vector3f(shadowLightPosition.x(), shadowLightPosition.y(), shadowLightPosition.z());
@@ -352,6 +357,8 @@ public class ShadowRenderer {
 		// Set up the viewport
 		RenderSystem.viewport(0, 0, resolution, resolution);
 	}
+
+	public static int cSplit = 0;
 
 	public void renderShadows(LevelRendererAccessor levelRenderer, Camera playerCamera) {
 		if (IrisVideoSettings.getOverriddenShadowDistance(IrisVideoSettings.shadowDistance) == 0) {
@@ -380,8 +387,14 @@ public class ShadowRenderer {
 		setupShadowViewport();
 
 		// Create our camera
-		PoseStack modelView = createShadowModelView(this.sunPathRotation, this.intervalSize);
-		MODELVIEW = new Matrix4f(modelView.last().pose());
+		PoseStack modelView = new PoseStack();
+
+		Vector4f norm3 = celestial.getShadowLightPositionInWorldSpace().normalize3();
+
+		CascadeSplit[] splits = ShadowMatrices.updateCascadeShadows(CapturedRenderingState.INSTANCE.getGbufferModelView(), CapturedRenderingState.INSTANCE.getGbufferProjection(),
+			new Vector3f(norm3.x, norm3.y, norm3.z));
+		MODELVIEW = splits[cSplit].modelView();
+		modelView.mulPoseMatrix(splits[cSplit].modelView());
 
 		levelRenderer.getLevel().getProfiler().push("terrain_setup");
 
@@ -435,18 +448,9 @@ public class ShadowRenderer {
 		levelRenderer.getLevel().getProfiler().popPush("terrain");
 
 
-		// Set up our orthographic projection matrix and load it into RenderSystem
-		Matrix4f shadowProjection;
-		if (this.fov != null) {
-			// If FOV is not null, the pack wants a perspective based projection matrix. (This is to support legacy packs)
-			shadowProjection = ShadowMatrices.createPerspectiveMatrix(this.fov);
-		} else {
-			shadowProjection = ShadowMatrices.createOrthoMatrix(halfPlaneLength, nearPlane < 0 ? -DHCompat.getRenderDistance() : nearPlane, farPlane < 0 ? DHCompat.getRenderDistance() : farPlane);
-		}
+		IrisRenderSystem.setShadowProjection(splits[cSplit].projection());
 
-		IrisRenderSystem.setShadowProjection(shadowProjection);
-
-		PROJECTION = shadowProjection;
+		PROJECTION = splits[cSplit].projection();
 
 		// Disable backface culling
 		// This partially works around an issue where if the front face of a mountain isn't visible, it casts no
@@ -456,13 +460,6 @@ public class ShadowRenderer {
 		//
 		// TODO: Better way of preventing light from leaking into places where it shouldn't
 		RenderSystem.disableCull();
-
-		// Render all opaque terrain unless pack requests not to
-		if (shouldRenderTerrain) {
-			levelRenderer.invokeRenderSectionLayer(RenderType.solid(), modelView, cameraX, cameraY, cameraZ, shadowProjection);
-			levelRenderer.invokeRenderSectionLayer(RenderType.cutout(), modelView, cameraX, cameraY, cameraZ, shadowProjection);
-			levelRenderer.invokeRenderSectionLayer(RenderType.cutoutMipped(), modelView, cameraX, cameraY, cameraZ, shadowProjection);
-		}
 
 		// Reset our viewport in case Sodium overrode it
 		RenderSystem.viewport(0, 0, resolution, resolution);
@@ -533,8 +530,25 @@ public class ShadowRenderer {
 		// TODO: Prevent these calls from scheduling translucent sorting...
 		// It doesn't matter a ton, since this just means that they won't be sorted in the normal rendering pass.
 		// Just something to watch out for, however...
-		if (shouldRenderTranslucent) {
-			levelRenderer.invokeRenderSectionLayer(RenderType.translucent(), modelView, cameraX, cameraY, cameraZ, shadowProjection);
+
+
+		PoseStack mView = new PoseStack();
+		// Render all opaque terrain unless pack requests not to
+		for (int i = 0; i < CASCADE_COUNT; i++) {
+			mView.pushPose();
+			PROJECTION = splits[i].projection();
+			IrisRenderSystem.setShadowProjection(PROJECTION);
+			mView.mulPoseMatrix(splits[i].modelView());
+			if (shouldRenderTerrain) {
+				levelRenderer.invokeRenderSectionLayer(RenderType.solid(), mView, cameraX, cameraY, cameraZ, PROJECTION);
+				levelRenderer.invokeRenderSectionLayer(RenderType.cutout(), mView, cameraX, cameraY, cameraZ, PROJECTION);
+				levelRenderer.invokeRenderSectionLayer(RenderType.cutoutMipped(), mView, cameraX, cameraY, cameraZ, PROJECTION);
+			}
+
+			if (shouldRenderTranslucent) {
+				levelRenderer.invokeRenderSectionLayer(RenderType.translucent(), mView, cameraX, cameraY, cameraZ, PROJECTION);
+			}
+			mView.popPose();
 		}
 
 		// Note: Apparently tripwire isn't rendered in the shadow pass.
