@@ -3,6 +3,7 @@ package net.irisshaders.iris.shadows;
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexSorting;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.irisshaders.batchedentityrendering.impl.BatchingDebugMessageHelper;
 import net.irisshaders.batchedentityrendering.impl.DrawCallTrackingRenderBuffers;
@@ -14,6 +15,7 @@ import net.irisshaders.iris.compat.dh.DHCompat;
 import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gui.option.IrisVideoSettings;
 import net.irisshaders.iris.mixin.LevelRendererAccessor;
+import net.irisshaders.iris.pipeline.IrisRenderingPipeline;
 import net.irisshaders.iris.shaderpack.programs.ProgramSource;
 import net.irisshaders.iris.shaderpack.properties.PackDirectives;
 import net.irisshaders.iris.shaderpack.properties.PackShadowDirectives;
@@ -61,6 +63,7 @@ public class ShadowRenderer {
 	public static Matrix4f MODELVIEW;
 	public static Matrix4f PROJECTION;
 	public static Frustum FRUSTUM;
+	public static int CURRENT_CASCADE;
 	private final float halfPlaneLength;
 	private final float nearPlane, farPlane;
 	private final float voxelDistance;
@@ -91,6 +94,7 @@ public class ShadowRenderer {
 	private String debugStringTerrain = "(unavailable)";
 	private int renderedShadowEntities = 0;
 	private int renderedShadowBlockEntities = 0;
+	private CelestialUniforms celestial;
 
 	public ShadowRenderer(ProgramSource shadow, PackDirectives directives,
 						  ShadowRenderTargets shadowRenderTargets, ShadowCompositeRenderer compositeRenderer, CustomUniforms customUniforms, boolean separateHardwareSamplers) {
@@ -138,6 +142,7 @@ public class ShadowRenderer {
 
 		this.sunPathRotation = directives.getSunPathRotation();
 
+		this.celestial = new CelestialUniforms(sunPathRotation);
 		int processors = Runtime.getRuntime().availableProcessors();
 		int threads = Minecraft.getInstance().is64Bit() ? processors : Math.min(processors, 4);
 		this.buffers = new RenderBuffers(threads);
@@ -329,7 +334,7 @@ public class ShadowRenderer {
 
 			cullingInfo = (isReversed ? "Reversed" : "Advanced") + " Frustum Culling enabled";
 
-			Vector4f shadowLightPosition = new CelestialUniforms(sunPathRotation).getShadowLightPositionInWorldSpace();
+			Vector4f shadowLightPosition = celestial.getShadowLightPositionInWorldSpace();
 
 			Vector3f shadowLightVectorFromOrigin =
 				new Vector3f(shadowLightPosition.x(), shadowLightPosition.y(), shadowLightPosition.z());
@@ -369,6 +374,7 @@ public class ShadowRenderer {
 			renderDistance = IrisVideoSettings.shadowDistance;
 		}
 
+		IrisRenderSystem.backupPlayerProjection();
 
 		visibleBlockEntities = new ArrayList<>();
 
@@ -444,7 +450,8 @@ public class ShadowRenderer {
 			shadowProjection = ShadowMatrices.createOrthoMatrix(halfPlaneLength, nearPlane < 0 ? -DHCompat.getRenderDistance() : nearPlane, farPlane < 0 ? DHCompat.getRenderDistance() : farPlane);
 		}
 
-		IrisRenderSystem.setShadowProjection(shadowProjection);
+		Matrix4f[] output = ShadowMatrices.updateCascadeShadows(celestial.getShadowLightPositionInWorldSpace());
+
 
 		PROJECTION = shadowProjection;
 
@@ -458,11 +465,18 @@ public class ShadowRenderer {
 		RenderSystem.disableCull();
 
 		// Render all opaque terrain unless pack requests not to
-		if (shouldRenderTerrain) {
-			levelRenderer.invokeRenderSectionLayer(RenderType.solid(), modelView, cameraX, cameraY, cameraZ, shadowProjection);
-			levelRenderer.invokeRenderSectionLayer(RenderType.cutout(), modelView, cameraX, cameraY, cameraZ, shadowProjection);
-			levelRenderer.invokeRenderSectionLayer(RenderType.cutoutMipped(), modelView, cameraX, cameraY, cameraZ, shadowProjection);
+		for (int i = 0; i < IrisRenderingPipeline.CASCADE_COUNT; i++) {
+			if (shouldRenderTerrain) {
+				RenderSystem.setProjectionMatrix(output[i], VertexSorting.ORTHOGRAPHIC_Z);
+
+				ShadowRenderer.CURRENT_CASCADE = i;
+				levelRenderer.invokeRenderSectionLayer(RenderType.solid(), modelView, cameraX, cameraY, cameraZ, output[i]);
+				levelRenderer.invokeRenderSectionLayer(RenderType.cutout(), modelView, cameraX, cameraY, cameraZ, output[i]);
+				levelRenderer.invokeRenderSectionLayer(RenderType.cutoutMipped(), modelView, cameraX, cameraY, cameraZ, output[i]);
+			}
 		}
+
+		RenderSystem.setProjectionMatrix(output[0], VertexSorting.ORTHOGRAPHIC_Z);
 
 		// Reset our viewport in case Sodium overrode it
 		RenderSystem.viewport(0, 0, resolution, resolution);

@@ -213,7 +213,7 @@ public class RenderTargets {
 			depthSourceFb.bindAsReadBuffer();
 			IrisRenderSystem.copyTexImage2D(GL20C.GL_TEXTURE_2D, 0, currentDepthFormat.getGlInternalFormat(), 0, 0, cachedWidth, cachedHeight, 0);
 		} else {
-			copyStrategy.copy(depthSourceFb, getDepthTexture(), noTranslucentsDestFb, noTranslucents.getTextureId(),
+			copyStrategy.copy(depthSourceFb, GL20C.GL_TEXTURE_2D, getDepthTexture(), noTranslucentsDestFb, noTranslucents.getTextureId(),
 				getCurrentWidth(), getCurrentHeight());
 		}
 	}
@@ -225,7 +225,7 @@ public class RenderTargets {
 			depthSourceFb.bindAsReadBuffer();
 			IrisRenderSystem.copyTexImage2D(GL20C.GL_TEXTURE_2D, 0, currentDepthFormat.getGlInternalFormat(), 0, 0, cachedWidth, cachedHeight, 0);
 		} else {
-			copyStrategy.copy(depthSourceFb, getDepthTexture(), noHandDestFb, noHand.getTextureId(),
+			copyStrategy.copy(depthSourceFb, GL20C.GL_TEXTURE_2D, getDepthTexture(), noHandDestFb, noHand.getTextureId(),
 				getCurrentWidth(), getCurrentHeight());
 		}
 	}
@@ -327,6 +327,11 @@ public class RenderTargets {
 		GlFramebuffer framebuffer = createColorFramebuffer(stageWritesToMain, drawBuffers);
 
 		framebuffer.addDepthAttachment(currentDepthTexture);
+
+		int status = framebuffer.getStatus();
+		if (status != GL30C.GL_FRAMEBUFFER_COMPLETE) {
+			throw new IllegalStateException("Unexpected error while creating framebuffer: " + " Status: " + status);
+		}
 
 		return framebuffer;
 	}

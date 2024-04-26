@@ -39,7 +39,7 @@ public interface DepthCopyStrategy {
 	 * @param destFb The destination framebuffer. If {@link #needsDestFramebuffer()} returns false, then this param
 	 *               will not be used, and it can be null.
 	 */
-	void copy(GlFramebuffer sourceFb, int sourceTexture, GlFramebuffer destFb, int destTexture, int width, int height);
+	void copy(GlFramebuffer sourceFb, int target, int sourceTexture, GlFramebuffer destFb, int destTexture, int width, int height);
 
 	// FB -> T
 	class Gl20CopyTexture implements DepthCopyStrategy {
@@ -53,7 +53,7 @@ public interface DepthCopyStrategy {
 		}
 
 		@Override
-		public void copy(GlFramebuffer sourceFb, int sourceTexture, GlFramebuffer destFb, int destTexture, int width, int height) {
+		public void copy(GlFramebuffer sourceFb, int target, int sourceTexture, GlFramebuffer destFb, int destTexture, int width, int height) {
 			sourceFb.bindAsReadBuffer();
 
 			int previousTexture = GlStateManagerAccessor.getTEXTURES()[GlStateManagerAccessor.getActiveTexture()].binding;
@@ -89,7 +89,7 @@ public interface DepthCopyStrategy {
 		}
 
 		@Override
-		public void copy(GlFramebuffer sourceFb, int sourceTexture, GlFramebuffer destFb, int destTexture, int width, int height) {
+		public void copy(GlFramebuffer sourceFb, int target, int sourceTexture, GlFramebuffer destFb, int destTexture, int width, int height) {
 			IrisRenderSystem.blitFramebuffer(sourceFb.getId(), destFb.getId(), 0, 0, width, height,
 				0, 0, width, height,
 				GL30C.GL_DEPTH_BUFFER_BIT | GL30C.GL_STENCIL_BUFFER_BIT,
@@ -110,16 +110,16 @@ public interface DepthCopyStrategy {
 		}
 
 		@Override
-		public void copy(GlFramebuffer sourceFb, int sourceTexture, GlFramebuffer destFb, int destTexture, int width, int height) {
+		public void copy(GlFramebuffer sourceFb, int target, int sourceTexture, GlFramebuffer destFb, int destTexture, int width, int height) {
 			GL43C.glCopyImageSubData(
 				sourceTexture,
-				GL43C.GL_TEXTURE_2D,
+				target,
 				0,
 				0,
 				0,
 				0,
 				destTexture,
-				GL43C.GL_TEXTURE_2D,
+				target,
 				0,
 				0,
 				0,

@@ -249,7 +249,7 @@ public class DHCompatInternal {
 			dhTerrainFramebuffer.bindAsReadBuffer();
 			IrisRenderSystem.copyTexImage2D(GL20C.GL_TEXTURE_2D, 0, DepthBufferFormat.DEPTH32F.getGlInternalFormat(), 0, 0, width, height, 0);
 		} else {
-			DepthCopyStrategy.fastest(false).copy(dhTerrainFramebuffer, storedDepthTex, null, depthTexNoTranslucent.getTextureId(), width, height);
+			DepthCopyStrategy.fastest(false).copy(dhTerrainFramebuffer, GL20C.GL_TEXTURE_2D, storedDepthTex, null, depthTexNoTranslucent.getTextureId(), width, height);
 		}
 	}
 

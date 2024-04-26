@@ -39,6 +39,7 @@ import org.joml.Vector2i;
 import org.joml.Vector3d;
 import org.joml.Vector4f;
 import org.joml.Vector4i;
+import org.lwjgl.opengl.GL30C;
 
 import static net.irisshaders.iris.gl.uniform.UniformUpdateFrequency.ONCE;
 import static net.irisshaders.iris.gl.uniform.UniformUpdateFrequency.PER_FRAME;
@@ -89,7 +90,7 @@ public final class CommonUniforms {
 		uniforms.uniform2i("gtextureSize", () -> {
 			int glId = GlStateManagerAccessor.getTEXTURES()[0].binding;
 
-			TextureInfo info = TextureInfoCache.INSTANCE.getInfo(glId);
+			TextureInfo info = TextureInfoCache.INSTANCE.getInfo(GL30C.GL_TEXTURE_2D, glId);
 			return new Vector2i(info.getWidth(), info.getHeight());
 
 		}, StateUpdateNotifiers.bindTextureNotifier);

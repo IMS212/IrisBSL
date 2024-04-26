@@ -7,6 +7,7 @@ import net.irisshaders.iris.gl.GlResource;
 import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.texture.DepthBufferFormat;
 import net.irisshaders.iris.texture.TextureInfoCache;
+import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL30C;
 
 public class GlFramebuffer extends GlResource {
@@ -25,7 +26,7 @@ public class GlFramebuffer extends GlResource {
 	}
 
 	public void addDepthAttachment(int texture) {
-		int internalFormat = TextureInfoCache.INSTANCE.getInfo(texture).getInternalFormat();
+		int internalFormat = TextureInfoCache.INSTANCE.getInfo(GL20C.GL_TEXTURE_2D, texture).getInternalFormat();
 		DepthBufferFormat depthBufferFormat = DepthBufferFormat.fromGlEnumOrDefault(internalFormat);
 
 		int fb = getGlId();
@@ -39,10 +40,33 @@ public class GlFramebuffer extends GlResource {
 		this.hasDepthAttachment = true;
 	}
 
+	public void addDepthAttachmentLayered(int texture, int layer) {
+		int internalFormat = TextureInfoCache.INSTANCE.getInfo(GL30C.GL_TEXTURE_2D_ARRAY, texture).getInternalFormat();
+		DepthBufferFormat depthBufferFormat = DepthBufferFormat.fromGlEnumOrDefault(internalFormat);
+
+		int fb = getGlId();
+
+		// TODO
+		if (depthBufferFormat.isCombinedStencil()) {
+			IrisRenderSystem.framebufferTextureLayer(fb, GL30C.GL_FRAMEBUFFER, GL30C.GL_DEPTH_STENCIL_ATTACHMENT, GL30C.GL_TEXTURE_2D, texture, 0, layer);
+		} else {
+			IrisRenderSystem.framebufferTextureLayer(fb, GL30C.GL_FRAMEBUFFER, GL30C.GL_DEPTH_ATTACHMENT, GL30C.GL_TEXTURE_2D, texture, 0, layer);
+		}
+
+		this.hasDepthAttachment = true;
+	}
+
 	public void addColorAttachment(int index, int texture) {
 		int fb = getGlId();
 
 		IrisRenderSystem.framebufferTexture2D(fb, GL30C.GL_FRAMEBUFFER, GL30C.GL_COLOR_ATTACHMENT0 + index, GL30C.GL_TEXTURE_2D, texture, 0);
+		attachments.put(index, texture);
+	}
+
+	public void addColorAttachmentLayered(int index, int texture, int layer) {
+		int fb = getGlId();
+
+		IrisRenderSystem.framebufferTextureLayer(fb, GL30C.GL_FRAMEBUFFER, GL30C.GL_COLOR_ATTACHMENT0 + index, GL30C.GL_TEXTURE_2D, texture, 0, layer);
 		attachments.put(index, texture);
 	}
 

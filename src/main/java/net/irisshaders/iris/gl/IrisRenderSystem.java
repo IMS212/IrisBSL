@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.VertexSorting;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gl.sampler.SamplerLimits;
 import net.irisshaders.iris.mixin.GlStateManagerAccessor;
+import net.irisshaders.iris.texture.TextureInfoCache;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3i;
@@ -97,6 +98,7 @@ public class IrisRenderSystem {
 		RenderSystem.assertOnRenderThreadOrInit();
 		IrisRenderSystem.bindTextureForSetup(target, texture);
 		GL30C.glTexImage3D(target, level, internalformat, width, height, depth, border, format, type, pixels);
+		TextureInfoCache.INSTANCE.onTexImage3D(target, texture, level, internalformat, width, height, depth, border, format, type);
 	}
 
 	public static void uniformMatrix4fv(int location, boolean transpose, FloatBuffer matrix) {
@@ -236,6 +238,10 @@ public class IrisRenderSystem {
 		dsaState.framebufferTexture2D(fb, fbtarget, attachment, target, texture, levels);
 	}
 
+	public static void framebufferTextureLayer(int fb, int fbtarget, int attachment, int target, int texture, int levels, int layer) {
+		dsaState.framebufferTextureLayer(fb, fbtarget, attachment, target, texture, levels, layer);
+	}
+
 	public static int getTexParameteri(int texture, int target, int pname) {
 		RenderSystem.assertOnRenderThreadOrInit();
 		return dsaState.getTexParameteri(texture, target, pname);
@@ -336,6 +342,11 @@ public class IrisRenderSystem {
 	public static void setShadowProjection(Matrix4f shadowProjection) {
 		backupProjection = RenderSystem.getProjectionMatrix();
 		RenderSystem.setProjectionMatrix(shadowProjection, VertexSorting.ORTHOGRAPHIC_Z);
+	}
+
+	public static void backupPlayerProjection() {
+		backupProjection = RenderSystem.getProjectionMatrix();
+
 	}
 
 	public static void restorePlayerProjection() {
@@ -479,6 +490,8 @@ public class IrisRenderSystem {
 
 		void framebufferTexture2D(int fb, int fbtarget, int attachment, int target, int texture, int levels);
 
+		void framebufferTextureLayer(int fb, int fbtarget, int attachment, int target, int texture, int levels, int layer);
+
 		int createFramebuffer();
 
 		int createTexture(int target);
@@ -564,6 +577,11 @@ public class IrisRenderSystem {
 		@Override
 		public void framebufferTexture2D(int fb, int fbtarget, int attachment, int target, int texture, int levels) {
 			ARBDirectStateAccess.glNamedFramebufferTexture(fb, attachment, texture, levels);
+		}
+
+		@Override
+		public void framebufferTextureLayer(int fb, int fbtarget, int attachment, int target, int texture, int levels, int layer) {
+			ARBDirectStateAccess.glNamedFramebufferTextureLayer(fb, attachment, texture, levels, layer);
 		}
 
 		@Override
@@ -657,6 +675,12 @@ public class IrisRenderSystem {
 		public void framebufferTexture2D(int fb, int fbtarget, int attachment, int target, int texture, int levels) {
 			GlStateManager._glBindFramebuffer(fbtarget, fb);
 			GL32C.glFramebufferTexture2D(fbtarget, attachment, target, texture, levels);
+		}
+
+		@Override
+		public void framebufferTextureLayer(int fb, int fbtarget, int attachment, int target, int texture, int levels, int layer) {
+			GlStateManager._glBindFramebuffer(fbtarget, fb);
+			GL32C.glFramebufferTextureLayer(fbtarget, attachment, texture, levels, layer);
 		}
 
 		@Override

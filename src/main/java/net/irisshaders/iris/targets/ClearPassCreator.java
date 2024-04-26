@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.platform.GlStateManager;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import net.irisshaders.iris.pipeline.IrisRenderingPipeline;
 import net.irisshaders.iris.shaderpack.properties.PackRenderTargetDirectives;
 import net.irisshaders.iris.shaderpack.properties.PackShadowDirectives;
 import net.irisshaders.iris.shadows.ShadowRenderTargets;
@@ -117,12 +118,13 @@ public class ClearPassCreator {
 					startIndex++;
 				}
 
-				// No need to clear the depth buffer, since we're using Minecraft's depth buffer.
-				clearPasses.add(new ClearPass(clearColor, renderTargets::getResolution, renderTargets::getResolution,
-					renderTargets.createFramebufferWritingToAlt(clearBuffers), GL21C.GL_COLOR_BUFFER_BIT));
+				for (int i = 0; i < IrisRenderingPipeline.CASCADE_COUNT; i++) {
+					clearPasses.add(new ClearPass(clearColor, renderTargets::getResolution, renderTargets::getResolution,
+						renderTargets.createFramebufferWritingToAlt(clearBuffers, i), GL21C.GL_COLOR_BUFFER_BIT));
 
-				clearPasses.add(new ClearPass(clearColor, renderTargets::getResolution, renderTargets::getResolution,
-					renderTargets.createFramebufferWritingToMain(clearBuffers), GL21C.GL_COLOR_BUFFER_BIT));
+					clearPasses.add(new ClearPass(clearColor, renderTargets::getResolution, renderTargets::getResolution,
+						renderTargets.createFramebufferWritingToMain(clearBuffers, i), GL21C.GL_COLOR_BUFFER_BIT));
+				}
 			}
 		});
 

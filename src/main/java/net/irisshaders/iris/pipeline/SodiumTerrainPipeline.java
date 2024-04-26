@@ -223,7 +223,7 @@ public class SodiumTerrainPipeline {
 	Optional<String> shadowTessEval;
 	Optional<String> shadowFragment;
 	Optional<String> shadowCutoutFragment;
-	GlFramebuffer shadowFramebuffer;
+	GlFramebuffer[] shadowFramebuffer;
 	BlendModeOverride shadowBlendOverride = BlendModeOverride.OFF;
 	List<BufferBlendOverride> shadowBufferOverrides;
 	Optional<AlphaTest> shadowAlpha;
@@ -233,7 +233,7 @@ public class SodiumTerrainPipeline {
 								 IntFunction<ProgramSamplers> createShadowSamplers, IntFunction<ProgramImages> createTerrainImages, IntFunction<ProgramImages> createShadowImages,
 								 RenderTargets targets,
 								 ImmutableSet<Integer> flippedAfterPrepare,
-								 ImmutableSet<Integer> flippedAfterTranslucent, GlFramebuffer shadowFramebuffer, CustomUniforms customUniforms) {
+								 ImmutableSet<Integer> flippedAfterTranslucent, IntFunction<GlFramebuffer> shadowFramebuffer, CustomUniforms customUniforms) {
 		this.parent = Objects.requireNonNull(parent);
 		this.customUniforms = customUniforms;
 
@@ -242,7 +242,12 @@ public class SodiumTerrainPipeline {
 		Optional<ProgramSource> translucentSource = first(programSet.getGbuffersWater(), terrainCutoutSource);
 
 		this.programSet = programSet;
-		this.shadowFramebuffer = shadowFramebuffer;
+		this.shadowFramebuffer = new GlFramebuffer[IrisRenderingPipeline.CASCADE_COUNT];
+
+		for (int i = 0; i < IrisRenderingPipeline.CASCADE_COUNT; i++) {
+			this.shadowFramebuffer[i] = shadowFramebuffer.apply(i);
+		}
+
 
 		terrainSolidSource.ifPresent(sources -> terrainSolidFramebuffer = targets.createGbufferFramebuffer(flippedAfterPrepare,
 			sources.getDirectives().getDrawBuffers()));
@@ -595,8 +600,8 @@ public class SodiumTerrainPipeline {
 		return shadowCutoutFragment;
 	}
 
-	public GlFramebuffer getShadowFramebuffer() {
-		return shadowFramebuffer;
+	public GlFramebuffer getShadowFramebuffer(int currentCascade) {
+		return shadowFramebuffer[currentCascade];
 	}
 
 	public BlendModeOverride getShadowBlendOverride() {
