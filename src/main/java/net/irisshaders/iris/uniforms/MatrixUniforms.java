@@ -2,7 +2,9 @@ package net.irisshaders.iris.uniforms;
 
 import net.irisshaders.iris.compat.dh.DHCompat;
 import net.irisshaders.iris.gl.uniform.UniformHolder;
+import net.irisshaders.iris.pipeline.IrisRenderingPipeline;
 import net.irisshaders.iris.shaderpack.properties.PackDirectives;
+import net.irisshaders.iris.shadows.ShadowCascade;
 import net.irisshaders.iris.shadows.ShadowMatrices;
 import net.irisshaders.iris.shadows.ShadowRenderer;
 import org.joml.Matrix4f;
@@ -15,15 +17,29 @@ public final class MatrixUniforms {
 	private MatrixUniforms() {
 	}
 
-	public static void addMatrixUniforms(UniformHolder uniforms, PackDirectives directives) {
+	private static ShadowCascade[] matrices;
+
+	public static void addMatrixUniforms(UniformHolder uniforms, PackDirectives directives, FrameUpdateNotifier updateNotifier) {
 		addMatrix(uniforms, "ModelView", CapturedRenderingState.INSTANCE::getGbufferModelView);
 		addMatrix(uniforms, "Projection", CapturedRenderingState.INSTANCE::getGbufferProjection);
 		addDHMatrix(uniforms, "Projection", DHCompat::getProjection);
 		addShadowMatrix(uniforms, "ModelView", () ->
 			new Matrix4f(ShadowRenderer.createShadowModelView(directives.getSunPathRotation(), directives.getShadowDirectives().getIntervalSize()).last().pose()));
-		addShadowMatrix(uniforms, "Projection", () -> ShadowMatrices.createOrthoMatrix(directives.getShadowDirectives().getDistance(),
-			directives.getShadowDirectives().getNearPlane() < 0 ? -DHCompat.getRenderDistance() : directives.getShadowDirectives().getNearPlane(),
-			directives.getShadowDirectives().getFarPlane() < 0 ? DHCompat.getRenderDistance() : directives.getShadowDirectives().getFarPlane()));
+		addShadowMatrices(uniforms, "Projection", new CelestialUniforms(directives.getSunPathRotation()), () -> matrices, updateNotifier);
+	}
+
+	private static void addShadowMatrices(UniformHolder uniforms, String name, CelestialUniforms celestial, Supplier<ShadowCascade[]> supplier, FrameUpdateNotifier updateNotifier) {
+		updateNotifier.addListener(() -> {
+			matrices = ShadowMatrices.updateCascadeShadows(celestial.getShadowLightPositionInWorldSpace());
+		});
+
+		for (int i = 0; i < IrisRenderingPipeline.CASCADE_COUNT; i++) {
+			int finalI = i;
+			uniforms
+				.uniformMatrix(PER_FRAME, "shadow" + name + "[" + i + "]", () -> matrices[finalI].projection())
+				.uniform1f(PER_FRAME, "shadow" + name + "SplitDistance" + "[" + i + "]", () -> matrices[finalI].splitDistance())
+				.uniformMatrix(PER_FRAME, "shadow" + name + "Inverse" + "[" + i + "]", new Inverted(() -> matrices[finalI].projection()));
+		}
 	}
 
 	private static void addMatrix(UniformHolder uniforms, String name, Supplier<Matrix4f> supplier) {

@@ -221,7 +221,7 @@ public class ShadowRenderTargets {
 		return inverted.build();
 	}
 
-	private GlFramebuffer createEmptyFramebuffer() {
+	public GlFramebuffer createEmptyFramebuffer() {
 		GlFramebuffer framebuffer = new GlFramebuffer();
 		ownedFramebuffers.add(framebuffer);
 

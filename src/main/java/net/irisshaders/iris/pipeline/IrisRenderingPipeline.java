@@ -65,6 +65,7 @@ import net.irisshaders.iris.shaderpack.properties.PackDirectives;
 import net.irisshaders.iris.shaderpack.properties.PackShadowDirectives;
 import net.irisshaders.iris.shaderpack.properties.ParticleRenderingSettings;
 import net.irisshaders.iris.shaderpack.texture.TextureStage;
+import net.irisshaders.iris.shadows.SDSMManager;
 import net.irisshaders.iris.shadows.ShadowCompositeRenderer;
 import net.irisshaders.iris.shadows.ShadowRenderTargets;
 import net.irisshaders.iris.shadows.ShadowRenderer;
@@ -163,6 +164,7 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 	private final Set<GlImage> customImages;
 	private final GlImage[] clearImages;
 	private final ShaderPack pack;
+	private final SDSMManager sdsm;
 	private final PackShadowDirectives shadowDirectives;
 	private final DHCompat dhCompat;
 	private final int stackSize = 0;
@@ -203,6 +205,7 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 		this.occlusionCulling = programSet.getPackDirectives().shouldUseOcclusionCulling();
 		this.resolver = new ProgramFallbackResolver(programSet);
 		this.pack = programSet.getPack();
+		this.sdsm = new SDSMManager();
 
 		RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
 		int depthTextureId = main.getDepthTextureId();
@@ -517,6 +520,7 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 		if (hasRun) {
 			ComputeProgram.unbind();
 		}
+		sdsm.setupTextures(main.width, main.height);
 
 		if (programSet.getPackDirectives().supportsColorCorrection()) {
 			colorSpaceConverter = new ColorSpaceConverter() {
@@ -914,6 +918,7 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 			main.height, depthBufferFormat, packDirectives);
 
 		if (changed) {
+			sdsm.setupTextures(main.width, main.height);
 			beginRenderer.recalculateSizes();
 			prepareRenderer.recalculateSizes();
 			deferredRenderer.recalculateSizes();
@@ -1072,6 +1077,8 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 
 	@Override
 	public void finalizeLevelRendering() {
+
+		sdsm.reduceDepth(Minecraft.getInstance().getMainRenderTarget().getDepthTextureId(), CapturedRenderingState.INSTANCE.getGbufferProjection(), 0.05f, Minecraft.getInstance().gameRenderer.getDepthFar());
 		isRenderingWorld = false;
 		compositeRenderer.renderAll();
 		finalPassRenderer.renderFinalPass();

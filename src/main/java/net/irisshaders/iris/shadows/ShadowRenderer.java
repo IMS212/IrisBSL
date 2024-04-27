@@ -50,6 +50,7 @@ import org.joml.Vector4f;
 import org.lwjgl.opengl.ARBTextureSwizzle;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL30C;
+import org.lwjgl.opengl.GL46C;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -436,6 +437,7 @@ public class ShadowRenderer {
 		// chunks during traversal, and break rendering in concerning ways.
 		//worldRenderer.setFrameId(worldRenderer.getFrameId() + 1);
 
+		GL46C.glEnable(GL46C.GL_DEPTH_CLAMP);
 		client.smartCull = wasChunkCullingEnabled;
 
 		levelRenderer.getLevel().getProfiler().popPush("terrain");
@@ -450,7 +452,7 @@ public class ShadowRenderer {
 			shadowProjection = ShadowMatrices.createOrthoMatrix(halfPlaneLength, nearPlane < 0 ? -DHCompat.getRenderDistance() : nearPlane, farPlane < 0 ? DHCompat.getRenderDistance() : farPlane);
 		}
 
-		Matrix4f[] output = ShadowMatrices.updateCascadeShadows(celestial.getShadowLightPositionInWorldSpace());
+		ShadowCascade[] output = ShadowMatrices.updateCascadeShadows(celestial.getShadowLightPositionInWorldSpace());
 
 
 		PROJECTION = shadowProjection;
@@ -467,16 +469,16 @@ public class ShadowRenderer {
 		// Render all opaque terrain unless pack requests not to
 		for (int i = 0; i < IrisRenderingPipeline.CASCADE_COUNT; i++) {
 			if (shouldRenderTerrain) {
-				RenderSystem.setProjectionMatrix(output[i], VertexSorting.ORTHOGRAPHIC_Z);
+				RenderSystem.setProjectionMatrix(output[i].projection(), VertexSorting.ORTHOGRAPHIC_Z);
 
 				ShadowRenderer.CURRENT_CASCADE = i;
-				levelRenderer.invokeRenderSectionLayer(RenderType.solid(), modelView, cameraX, cameraY, cameraZ, output[i]);
-				levelRenderer.invokeRenderSectionLayer(RenderType.cutout(), modelView, cameraX, cameraY, cameraZ, output[i]);
-				levelRenderer.invokeRenderSectionLayer(RenderType.cutoutMipped(), modelView, cameraX, cameraY, cameraZ, output[i]);
+				levelRenderer.invokeRenderSectionLayer(RenderType.solid(), modelView, cameraX, cameraY, cameraZ, output[i].projection());
+				levelRenderer.invokeRenderSectionLayer(RenderType.cutout(), modelView, cameraX, cameraY, cameraZ, output[i].projection());
+				levelRenderer.invokeRenderSectionLayer(RenderType.cutoutMipped(), modelView, cameraX, cameraY, cameraZ, output[i].projection());
 			}
 		}
 
-		RenderSystem.setProjectionMatrix(output[0], VertexSorting.ORTHOGRAPHIC_Z);
+		RenderSystem.setProjectionMatrix(output[0].projection(), VertexSorting.ORTHOGRAPHIC_Z);
 
 		// Reset our viewport in case Sodium overrode it
 		RenderSystem.viewport(0, 0, resolution, resolution);
@@ -552,7 +554,7 @@ public class ShadowRenderer {
 		}
 
 		// Note: Apparently tripwire isn't rendered in the shadow pass.
-		// levelRenderer.invokeRenderChunkLayer(RenderType.tripwire(), modelView, cameraX, cameraY, cameraZ, shadowProjection);
+		// levelRenderer.invokeRenderChunkLayer(RenderType.tripwire(), projection, cameraX, cameraY, cameraZ, shadowProjection);
 
 		if (renderBuffersExt != null) {
 			renderBuffersExt.endLevelRendering();
@@ -586,6 +588,7 @@ public class ShadowRenderer {
 
 		visibleBlockEntities = null;
 		ACTIVE = false;
+		GL46C.glDisable(GL46C.GL_DEPTH_CLAMP);
 
 		levelRenderer.getLevel().getProfiler().pop();
 		levelRenderer.getLevel().getProfiler().popPush("updatechunks");

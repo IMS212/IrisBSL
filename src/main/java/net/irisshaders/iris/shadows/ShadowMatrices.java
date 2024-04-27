@@ -45,11 +45,11 @@ public class ShadowMatrices {
 	// Function are derived from Vulkan examples from Sascha Willems, and licensed under the MIT License:
 	// https://github.com/SaschaWillems/Vulkan/tree/master/examples/shadowmappingcascade, which are based on
 	// https://johanmedestrom.wordpress.com/2016/03/18/opengl-cascaded-shadow-maps/
-	public static Matrix4f[] updateCascadeShadows(Vector4f lightPos) {
+	public static ShadowCascade[] updateCascadeShadows(Vector4f lightPos) {
 		Matrix4f viewMatrix = CapturedRenderingState.INSTANCE.getGbufferModelView();
 		Matrix4f projMatrix = CapturedRenderingState.INSTANCE.getGbufferProjection();
 
-		Matrix4f[] output = new Matrix4f[IrisRenderingPipeline.CASCADE_COUNT];
+		ShadowCascade[] output = new ShadowCascade[IrisRenderingPipeline.CASCADE_COUNT];
 
 		float cascadeSplitLambda = 0.95f;
 
@@ -129,7 +129,7 @@ public class ShadowMatrices {
 
 			// Store split distance and matrix in cascade
 			float splitDistance = (nearClip + splitDist * clipRange) * -1.0f;
-			output[i] = lightOrthoMatrix;
+			output[i] = new ShadowCascade(lightOrthoMatrix, splitDistance);
 
 			lastSplitDist = cascadeSplits[i];
 		}
