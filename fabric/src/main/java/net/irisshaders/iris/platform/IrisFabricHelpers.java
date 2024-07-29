@@ -49,4 +49,14 @@ public class IrisFabricHelpers implements IrisPlatformHelpers {
 	public KeyMapping registerKeyBinding(KeyMapping keyMapping) {
 		return KeyBindingHelper.registerKeyBinding(keyMapping);
 	}
+
+	@Override
+	public void onMixinConfigLoad() {
+		// No-op
+	}
+
+	@Override
+	public boolean shouldShowTainted() {
+		return FabricLoader.getInstance().isModLoaded("embeddium");
+	}
 }

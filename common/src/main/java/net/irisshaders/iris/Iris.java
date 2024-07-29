@@ -641,7 +641,10 @@ public class Iris {
 		ChatFormatting color;
 		String version = getVersion();
 
-		if (IrisPlatformHelpers.getInstance().isDevelopmentEnvironment()) {
+		if (IrisPlatformHelpers.getInstance().shouldShowTainted()) {
+			color = ChatFormatting.RED;
+			version = version + " (Modified)";
+		} else if (IrisPlatformHelpers.getInstance().isDevelopmentEnvironment()) {
 			color = ChatFormatting.GOLD;
 			version = version + " (Development Environment)";
 		} else if (version.endsWith("-dirty") || version.contains("unknown") || version.endsWith("-nogit")) {

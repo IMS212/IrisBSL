@@ -19,6 +19,7 @@ public class IrisSodiumCompatMixinPlugin implements IMixinConfigPlugin {
 
 	@Override
 	public void onLoad(String mixinPackage) {
+		IrisPlatformHelpers.getInstance().onMixinConfigLoad();
 
 		validSodiumVersion = IrisPlatformHelpers.getInstance().isModLoaded("sodium");
 
