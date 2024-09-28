@@ -8,6 +8,7 @@ import net.caffeinemc.mods.sodium.client.render.immediate.model.ModelCuboid;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.mixinterface.ModelPartAccess;
 import net.irisshaders.iris.pipeline.CubePositions;
+import net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
 import net.irisshaders.iris.uniforms.SystemTimeUniforms;
 import net.irisshaders.iris.vertices.NormI8;
@@ -93,8 +94,7 @@ public abstract class MixinEntityRenderer {
 	@Shadow
 	@Final
 	private static int[][] CUBE_VERTICES;
-	@Unique
-	private static final long SCRATCH_BUFFER_IRIS = MemoryUtil.nmemAlignedAlloc(64, NUM_CUBE_FACES * NUM_CUBE_VERTICES * IrisEntityVertex.STRIDE);
+
 
 	@Inject(method = "renderCuboid", at = @At("HEAD"), cancellable = true)
 	private static void redirectToIris(PoseStack.Pose matrices, VertexBufferWriter writer, ModelCuboid cuboid, int light, int overlay, int color, CallbackInfo ci) {
@@ -109,11 +109,12 @@ public abstract class MixinEntityRenderer {
 		prepareVertices(matrices, cuboid);
 		prepareMidCoords(cuboid);
 		prepareTangentsIfChanged(matrices);
+		IrisEntityVertex vertexWriter = WorldRenderingSettings.INSTANCE.getSodiumEntityWriter();
 
-		var vertexCount = emitQuadsIris(cuboid, color, overlay, light);
+		var vertexCount = emitQuadsIris(vertexWriter, cuboid, color, overlay, light);
 
 		try (MemoryStack stack = MemoryStack.stackPush()) {
-			writer.push(stack, SCRATCH_BUFFER_IRIS, vertexCount, IrisEntityVertex.FORMAT);
+			writer.push(stack, vertexWriter.SCRATCH_BUFFER, vertexCount, WorldRenderingSettings.INSTANCE.getEntityFormat());
 		}
 	}
 
@@ -155,7 +156,7 @@ public abstract class MixinEntityRenderer {
 		}
 	}
 
-	private static int emitQuadsIris(ModelCuboid cuboid, int color, int overlay, int light) {
+	private static int emitQuadsIris(IrisEntityVertex vertexWriter, ModelCuboid cuboid, int color, int overlay, int light) {
 		final var positions = cuboid.mirror ? VERTEX_POSITIONS_MIRRORED : VERTEX_POSITIONS;
 		final var textures = cuboid.mirror ? VERTEX_TEXTURES_MIRRORED : VERTEX_TEXTURES;
 		final var normals = cuboid.mirror ? CUBE_NORMALS_MIRRORED :  CUBE_NORMALS;
@@ -165,7 +166,8 @@ public abstract class MixinEntityRenderer {
 
 		var vertexCount = 0;
 
-		long ptr = SCRATCH_BUFFER_IRIS;
+		long ptr = vertexWriter.SCRATCH_BUFFER;
+
 
 		for (int quadIndex = 0; quadIndex < NUM_CUBE_FACES; quadIndex++) {
 			if (!cuboid.shouldDrawFace(quadIndex)) {
@@ -176,20 +178,20 @@ public abstract class MixinEntityRenderer {
 			float midV = MID_TEX_VALUES[quadIndex].y;
 
 			velocity.setAndUpdate(SystemTimeUniforms.COUNTER.getAsInt(), CUBE_VERTICES[quadIndex][0], positions[quadIndex][0].x, positions[quadIndex][0].y, positions[quadIndex][0].z);
-			emitIris(ptr, positions[quadIndex][0], color, textures[quadIndex][0], overlay, light, normals[quadIndex], tangents[quadIndex], velocity.velocityX[CUBE_VERTICES[quadIndex][0]], velocity.velocityY[CUBE_VERTICES[quadIndex][0]], velocity.velocityZ[CUBE_VERTICES[quadIndex][0]], midU, midV);
-			ptr += IrisEntityVertex.STRIDE;
+			emitIris(vertexWriter, ptr, positions[quadIndex][0], color, textures[quadIndex][0], overlay, light, normals[quadIndex], tangents[quadIndex], velocity.velocityX[CUBE_VERTICES[quadIndex][0]], velocity.velocityY[CUBE_VERTICES[quadIndex][0]], velocity.velocityZ[CUBE_VERTICES[quadIndex][0]], midU, midV);
+			ptr += vertexWriter.STRIDE;
 
 			velocity.setAndUpdate(SystemTimeUniforms.COUNTER.getAsInt(), CUBE_VERTICES[quadIndex][1], positions[quadIndex][1].x, positions[quadIndex][1].y, positions[quadIndex][1].z);
-			emitIris(ptr, positions[quadIndex][1], color, textures[quadIndex][1], overlay, light, normals[quadIndex], tangents[quadIndex], velocity.velocityX[CUBE_VERTICES[quadIndex][1]], velocity.velocityY[CUBE_VERTICES[quadIndex][1]], velocity.velocityZ[CUBE_VERTICES[quadIndex][1]], midU, midV);
-			ptr += IrisEntityVertex.STRIDE;
+			emitIris(vertexWriter, ptr, positions[quadIndex][1], color, textures[quadIndex][1], overlay, light, normals[quadIndex], tangents[quadIndex], velocity.velocityX[CUBE_VERTICES[quadIndex][1]], velocity.velocityY[CUBE_VERTICES[quadIndex][1]], velocity.velocityZ[CUBE_VERTICES[quadIndex][1]], midU, midV);
+			ptr += vertexWriter.STRIDE;
 
 			velocity.setAndUpdate(SystemTimeUniforms.COUNTER.getAsInt(), CUBE_VERTICES[quadIndex][2], positions[quadIndex][2].x, positions[quadIndex][2].y, positions[quadIndex][2].z);
-			emitIris(ptr, positions[quadIndex][2], color, textures[quadIndex][2], overlay, light, normals[quadIndex], tangents[quadIndex], velocity.velocityX[CUBE_VERTICES[quadIndex][2]], velocity.velocityY[CUBE_VERTICES[quadIndex][2]], velocity.velocityZ[CUBE_VERTICES[quadIndex][2]], midU, midV);
-			ptr += IrisEntityVertex.STRIDE;
+			emitIris(vertexWriter, ptr, positions[quadIndex][2], color, textures[quadIndex][2], overlay, light, normals[quadIndex], tangents[quadIndex], velocity.velocityX[CUBE_VERTICES[quadIndex][2]], velocity.velocityY[CUBE_VERTICES[quadIndex][2]], velocity.velocityZ[CUBE_VERTICES[quadIndex][2]], midU, midV);
+			ptr += vertexWriter.STRIDE;
 
 			velocity.setAndUpdate(SystemTimeUniforms.COUNTER.getAsInt(), CUBE_VERTICES[quadIndex][3], positions[quadIndex][3].x, positions[quadIndex][3].y, positions[quadIndex][3].z);
-			emitIris(ptr, positions[quadIndex][3], color, textures[quadIndex][3], overlay, light, normals[quadIndex], tangents[quadIndex], velocity.velocityX[CUBE_VERTICES[quadIndex][3]], velocity.velocityY[CUBE_VERTICES[quadIndex][3]], velocity.velocityZ[CUBE_VERTICES[quadIndex][3]], midU, midV);
-			ptr += IrisEntityVertex.STRIDE;
+			emitIris(vertexWriter, ptr, positions[quadIndex][3], color, textures[quadIndex][3], overlay, light, normals[quadIndex], tangents[quadIndex], velocity.velocityX[CUBE_VERTICES[quadIndex][3]], velocity.velocityY[CUBE_VERTICES[quadIndex][3]], velocity.velocityZ[CUBE_VERTICES[quadIndex][3]], midU, midV);
+			ptr += vertexWriter.STRIDE;
 
 			vertexCount += 4;
 		}
@@ -197,8 +199,8 @@ public abstract class MixinEntityRenderer {
 		return vertexCount;
 	}
 
-	private static void emitIris(long ptr, Vector3f pos, int color, Vector2f tex, int overlay, int light, int normal, int tangent,
+	private static void emitIris(IrisEntityVertex vertexWriter, long ptr, Vector3f pos, int color, Vector2f tex, int overlay, int light, int normal, int tangent,
 								 float prevX, float prevY, float prevZ, float midU, float midV) {
-		IrisEntityVertex.write(ptr, pos.x, pos.y, pos.z, prevX, prevY, prevZ, color, tex.x, tex.y, overlay, light, normal, tangent, midU, midV);
+		vertexWriter.write(ptr, pos.x, pos.y, pos.z, prevX, prevY, prevZ, color, tex.x, tex.y, overlay, light, normal, tangent, midU, midV);
 	}
 }

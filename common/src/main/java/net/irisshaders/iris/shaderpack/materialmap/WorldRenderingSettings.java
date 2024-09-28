@@ -1,9 +1,12 @@
 package net.irisshaders.iris.shaderpack.materialmap;
 
+import com.mojang.blaze3d.vertex.VertexFormat;
 import it.unimi.dsi.fastutil.objects.Object2IntFunction;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.caffeinemc.mods.sodium.client.render.chunk.vertex.format.ChunkMeshFormats;
 import net.caffeinemc.mods.sodium.client.render.chunk.vertex.format.ChunkVertexType;
+import net.irisshaders.iris.vertices.IrisVertexFormats;
+import net.irisshaders.iris.vertices.sodium.IrisEntityVertex;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
@@ -25,6 +28,8 @@ public class WorldRenderingSettings {
 	private boolean separateEntityDraws;
 	private boolean voxelizeLightBlocks;
 	private ChunkVertexType chunkVertexFormat;
+	private VertexFormat entityFormat;
+	private IrisEntityVertex sodiumEntityWriter = new IrisEntityVertex(IrisVertexFormats.DEFAULT_ENTITY_FORMAT);
 
 	public WorldRenderingSettings() {
 		reloadRequired = false;
@@ -170,5 +175,18 @@ public class WorldRenderingSettings {
 
 	public boolean hasVillagerConversionId() {
 		return hasVillagerConversionId;
+	}
+
+	public void setEntityFormat(VertexFormat format, IrisEntityVertex sodiumVertex) {
+		this.entityFormat = format;
+		this.sodiumEntityWriter = sodiumVertex;
+	}
+
+	public IrisEntityVertex getSodiumEntityWriter() {
+		return sodiumEntityWriter;
+	}
+
+	public VertexFormat getEntityFormat() {
+		return entityFormat;
 	}
 }

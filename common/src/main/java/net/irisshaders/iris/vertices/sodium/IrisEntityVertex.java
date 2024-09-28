@@ -9,22 +9,39 @@ import net.irisshaders.iris.vertices.IrisVertexFormats;
 import org.lwjgl.system.MemoryUtil;
 
 public final class IrisEntityVertex {
-	public static final VertexFormat FORMAT = IrisVertexFormats.ENTITY;
+	public final VertexFormat FORMAT;
 
-	public static final int STRIDE = IrisVertexFormats.ENTITY.getVertexSize();
+	public final int STRIDE;
+	public final long SCRATCH_BUFFER;
 
-	private static final int OFFSET_POSITION = 0;
-	private static final int OFFSET_COLOR = IrisVertexFormats.ENTITY.getOffset(VertexFormatElement.COLOR);
-	private static final int OFFSET_TEXTURE = IrisVertexFormats.ENTITY.getOffset(VertexFormatElement.UV0);
-	private static final int OFFSET_OVERLAY = IrisVertexFormats.ENTITY.getOffset(VertexFormatElement.UV1);
-	private static final int OFFSET_LIGHT = IrisVertexFormats.ENTITY.getOffset(VertexFormatElement.UV2);
-	private static final int OFFSET_NORMAL = IrisVertexFormats.ENTITY.getOffset(VertexFormatElement.NORMAL);
-	private static final int OFFSET_TANGENT = IrisVertexFormats.ENTITY.getOffset(IrisVertexFormats.TANGENT_ELEMENT);
-	private static final int OFFSET_MID_COORD = IrisVertexFormats.ENTITY.getOffset(IrisVertexFormats.MID_TEXTURE_ELEMENT);
-	private static final int OFFSET_ENTITY_ID = IrisVertexFormats.ENTITY.getOffset(IrisVertexFormats.ENTITY_ID_ELEMENT);
-	private static final int OFFSET_VELOCITY = IrisVertexFormats.ENTITY.getOffset(IrisVertexFormats.VELOCITY_ELEMENT);
+	private final int OFFSET_POSITION = 0;
+	private final int OFFSET_COLOR;
+	private final int OFFSET_TEXTURE;
+	private final int OFFSET_OVERLAY;
+	private final int OFFSET_LIGHT;
+	private final int OFFSET_NORMAL;
+	private final int OFFSET_TANGENT;
+	private final int OFFSET_MID_COORD;
+	private final int OFFSET_ENTITY_ID;
+	private final int OFFSET_VELOCITY;
 
-	public static void write(long ptr,
+	public IrisEntityVertex(VertexFormat currentFormat) {
+		SCRATCH_BUFFER = MemoryUtil.nmemAlignedAlloc(64, 6 * 8 * currentFormat.getVertexSize());
+		OFFSET_COLOR = currentFormat.getOffset(VertexFormatElement.COLOR);
+		OFFSET_TEXTURE = currentFormat.getOffset(VertexFormatElement.UV0);
+		OFFSET_OVERLAY = currentFormat.getOffset(VertexFormatElement.UV1);
+		OFFSET_LIGHT = currentFormat.getOffset(VertexFormatElement.UV2);
+		System.out.println(currentFormat);
+		OFFSET_NORMAL = currentFormat.getOffset(VertexFormatElement.NORMAL);
+		OFFSET_TANGENT = currentFormat.getOffset(IrisVertexFormats.TANGENT_ELEMENT);
+		OFFSET_MID_COORD = currentFormat.getOffset(IrisVertexFormats.MID_TEXTURE_ELEMENT);
+		OFFSET_ENTITY_ID = currentFormat.getOffset(IrisVertexFormats.ENTITY_ID_ELEMENT);
+		OFFSET_VELOCITY = currentFormat.getOffset(IrisVertexFormats.VELOCITY_ELEMENT);
+		STRIDE = currentFormat.getVertexSize();
+		FORMAT = currentFormat;
+	}
+
+	public void write(long ptr,
 							 float x, float y, float z, float velocityX, float velocityY, float velocityZ, int color, float u, float v, int overlay, int light, int normal, int tangent,
 							 float midU, float midV) {
 		PositionAttribute.put(ptr + OFFSET_POSITION, x, y, z);
@@ -32,17 +49,27 @@ public final class IrisEntityVertex {
 		TextureAttribute.put(ptr + OFFSET_TEXTURE, u, v);
 		OverlayAttribute.set(ptr + OFFSET_OVERLAY, overlay);
 		LightAttribute.set(ptr + OFFSET_LIGHT, light);
-		NormalAttribute.set(ptr + OFFSET_NORMAL, normal);
+		if (OFFSET_NORMAL != -1) {
+			NormalAttribute.set(ptr + OFFSET_NORMAL, normal);
+		}
 
-		MemoryUtil.memPutInt(ptr + OFFSET_TANGENT, tangent);
-		MemoryUtil.memPutFloat(ptr + OFFSET_MID_COORD, midU);
-		MemoryUtil.memPutFloat(ptr + OFFSET_MID_COORD + 4, midV);
+		if (OFFSET_TANGENT != -1) {
+			MemoryUtil.memPutInt(ptr + OFFSET_TANGENT, tangent);
+		}
+
+		if (OFFSET_MID_COORD != -1) {
+			MemoryUtil.memPutFloat(ptr + OFFSET_MID_COORD, midU);
+			MemoryUtil.memPutFloat(ptr + OFFSET_MID_COORD + 4, midV);
+		}
+
 		MemoryUtil.memPutShort(ptr + OFFSET_ENTITY_ID, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
 		MemoryUtil.memPutShort(ptr + OFFSET_ENTITY_ID + 2, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
 		MemoryUtil.memPutShort(ptr + OFFSET_ENTITY_ID + 4, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
 
-		MemoryUtil.memPutFloat(ptr + OFFSET_VELOCITY, velocityX);
-		MemoryUtil.memPutFloat(ptr + OFFSET_VELOCITY + 4, velocityY);
-		MemoryUtil.memPutFloat(ptr + OFFSET_VELOCITY + 8, velocityZ);
+		if (OFFSET_VELOCITY != -1) {
+			MemoryUtil.memPutFloat(ptr + OFFSET_VELOCITY, velocityX);
+			MemoryUtil.memPutFloat(ptr + OFFSET_VELOCITY + 4, velocityY);
+			MemoryUtil.memPutFloat(ptr + OFFSET_VELOCITY + 8, velocityZ);
+		}
 	}
 }

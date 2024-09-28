@@ -1,5 +1,6 @@
 package net.irisshaders.iris.pipeline.programs;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.preprocessor.GlslPreprocessor;
 import com.mojang.blaze3d.shaders.Program;
 import com.mojang.blaze3d.shaders.ProgramManager;
@@ -69,6 +70,7 @@ public class ExtendedShader extends ShaderInstance implements ShaderInstanceInte
 	private final float[] tempFloats = new float[16];
 	private final float[] tempFloats2 = new float[9];
 	private Program geometry, tessControl, tessEval;
+	private byte attributeKey;
 
 	public ExtendedShader(ResourceProvider resourceFactory, String name, VertexFormat vertexFormat,
 						  boolean usesTessellation, GlFramebuffer writingToBeforeTranslucent,
@@ -107,6 +109,18 @@ public class ExtendedShader extends ShaderInstance implements ShaderInstanceInte
 		this.modelViewInverse = this.getUniform("ModelViewMatInverse");
 		this.projectionInverse = this.getUniform("ProjMatInverse");
 		this.normalMatrix = this.getUniform("NormalMat");
+
+		int id = this.getId();
+		this.attributeKey = 0;
+		if (GlStateManager._glGetAttribLocation(id, "at_tangent") != -1) {
+			attributeKey |= 1;
+		}
+		if (GlStateManager._glGetAttribLocation(id, "mc_midTexCoord") != -1) {
+			attributeKey |= 2;
+		}
+		if (GlStateManager._glGetAttribLocation(id, "at_velocity") != -1) {
+			attributeKey |= 4;
+		}
 	}
 
 	private void setupDebugNames(String name) {
@@ -294,5 +308,9 @@ public class ExtendedShader extends ShaderInstance implements ShaderInstanceInte
 
 	public boolean hasActiveImages() {
 		return images.getActiveImages() > 0;
+	}
+
+	public byte getAttributeKey() {
+		return attributeKey;
 	}
 }

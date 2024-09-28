@@ -30,6 +30,7 @@ import net.irisshaders.iris.gl.state.ShaderAttributeInputs;
 import net.irisshaders.iris.gl.texture.DepthBufferFormat;
 import net.irisshaders.iris.gl.texture.TextureType;
 import net.irisshaders.iris.gui.option.IrisVideoSettings;
+import net.irisshaders.iris.helpers.ByteReference;
 import net.irisshaders.iris.helpers.FakeChainedJsonException;
 import net.irisshaders.iris.helpers.OptionalBoolean;
 import net.irisshaders.iris.helpers.Tri;
@@ -86,6 +87,8 @@ import net.irisshaders.iris.uniforms.CapturedRenderingState;
 import net.irisshaders.iris.uniforms.CommonUniforms;
 import net.irisshaders.iris.uniforms.FrameUpdateNotifier;
 import net.irisshaders.iris.uniforms.custom.CustomUniforms;
+import net.irisshaders.iris.vertices.IrisVertexFormats;
+import net.irisshaders.iris.vertices.sodium.IrisEntityVertex;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
@@ -380,17 +383,18 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 
 		this.loadedShaders = new HashSet<>();
 
+		ByteReference attributeMap = new ByteReference();
 
 		this.shaderMap = new ShaderMap(key -> {
 			try {
 				if (key.isShadow()) {
 					if (shadowRenderTargets != null) {
-						return createShadowShader(key.getName(), resolver.resolve(key.getProgram()), key);
+						return createShadowShader(key.getName(), resolver.resolve(key.getProgram()), key, attributeMap);
 					} else {
 						return null;
 					}
 				} else {
-					return createShader(key.getName(), resolver.resolve(key.getProgram()), key);
+					return createShader(key.getName(), resolver.resolve(key.getProgram()), key, attributeMap);
 				}
 			} catch (FakeChainedJsonException e) {
 				destroyShaders();
@@ -403,6 +407,20 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 				throw e;
 			}
 		});
+
+		System.out.println("Format key: " + Integer.toBinaryString(attributeMap.getValue()));
+		if ((attributeMap.getValue() & 1) != 0) {
+			System.out.println("We have tangent");
+		}
+		if ((attributeMap.getValue() & 2) != 0) {
+			System.out.println("We have mid tex");
+		}
+		if ((attributeMap.getValue() & 4) != 0) {
+			System.out.println("We have velocity");
+		}
+
+		VertexFormat format = IrisVertexFormats.getOrCreateEntityFormat(attributeMap.getValue());
+		WorldRenderingSettings.INSTANCE.setEntityFormat(format, IrisVertexFormats.getSodiumVertex(attributeMap.getValue(), format));
 
 		initializedBlockIds = false;
 
@@ -627,13 +645,13 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 		return programs;
 	}
 
-	private ShaderInstance createShader(String name, Optional<ProgramSource> source, ShaderKey key) throws IOException {
+	private ShaderInstance createShader(String name, Optional<ProgramSource> source, ShaderKey key, ByteReference attributeMap) throws IOException {
 		if (source.isEmpty()) {
 			return createFallbackShader(name, key);
 		}
 
 		return createShader(name, source.get(), key.getProgram(), key.getAlphaTest(), key.getVertexFormat(), key.getFogMode(),
-			key.isIntensity(), key.shouldIgnoreLightmap(), key.isGlint(), key.isText(), key == ShaderKey.IE_COMPAT);
+			key.isIntensity(), key.shouldIgnoreLightmap(), key.isGlint(), key.isText(), key == ShaderKey.IE_COMPAT, attributeMap);
 	}
 
 	@Override
@@ -643,7 +661,7 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 
 	private ShaderInstance createShader(String name, ProgramSource source, ProgramId programId, AlphaTest fallbackAlpha,
 										VertexFormat vertexFormat, FogMode fogMode,
-										boolean isIntensity, boolean isFullbright, boolean isGlint, boolean isText, boolean isIE) throws IOException {
+										boolean isIntensity, boolean isFullbright, boolean isGlint, boolean isText, boolean isIE, ByteReference attributeMap) throws IOException {
 		GlFramebuffer beforeTranslucent = renderTargets.createGbufferFramebuffer(flippedAfterPrepare, source.getDirectives().getDrawBuffers());
 		GlFramebuffer afterTranslucent = renderTargets.createGbufferFramebuffer(flippedAfterTranslucent, source.getDirectives().getDrawBuffers());
 		boolean isLines = programId == ProgramId.Line && resolver.has(ProgramId.Line);
@@ -658,6 +676,7 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 		ExtendedShader extendedShader = ShaderCreator.create(this, name, source, programId, beforeTranslucent, afterTranslucent,
 			fallbackAlpha, vertexFormat, inputs, updateNotifier, this, flipped, fogMode, isIntensity, isFullbright, false, isLines, customUniforms);
 
+		attributeMap.setValue((byte) (attributeMap.getValue() | extendedShader.getAttributeKey()));
 		loadedShaders.add(extendedShader);
 
 		return extendedShader;
@@ -676,13 +695,13 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 		return shader;
 	}
 
-	private ShaderInstance createShadowShader(String name, Optional<ProgramSource> source, ShaderKey key) throws IOException {
+	private ShaderInstance createShadowShader(String name, Optional<ProgramSource> source, ShaderKey key, ByteReference attributeMap) throws IOException {
 		if (source.isEmpty()) {
 			return createFallbackShadowShader(name, key);
 		}
 
 		return createShadowShader(name, source.get(), key.getProgram(), key.getAlphaTest(), key.getVertexFormat(),
-			key.isIntensity(), key.shouldIgnoreLightmap(), key.isText(), key == ShaderKey.IE_COMPAT_SHADOW);
+			key.isIntensity(), key.shouldIgnoreLightmap(), key.isText(), key == ShaderKey.IE_COMPAT_SHADOW, attributeMap);
 	}
 
 	private ShaderInstance createFallbackShadowShader(String name, ShaderKey key) throws IOException {
@@ -698,7 +717,7 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 	}
 
 	private ShaderInstance createShadowShader(String name, ProgramSource source, ProgramId programId, AlphaTest fallbackAlpha,
-											  VertexFormat vertexFormat, boolean isIntensity, boolean isFullbright, boolean isText, boolean isIE) throws IOException {
+											  VertexFormat vertexFormat, boolean isIntensity, boolean isFullbright, boolean isText, boolean isIE, ByteReference attributeMap) throws IOException {
 		GlFramebuffer framebuffer = shadowRenderTargets.createShadowFramebuffer(ImmutableSet.of(), source.getDirectives().hasUnknownDrawBuffers() ? new int[]{0, 1} : source.getDirectives().getDrawBuffers());
 		boolean isLines = programId == ProgramId.Line && resolver.has(ProgramId.Line);
 
@@ -708,6 +727,8 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 
 		ExtendedShader extendedShader = ShaderCreator.create(this, name, source, programId, framebuffer, framebuffer,
 			fallbackAlpha, vertexFormat, inputs, updateNotifier, this, flipped, FogMode.PER_VERTEX, isIntensity, isFullbright, true, isLines, customUniforms);
+
+		attributeMap.setValue((byte) (attributeMap.getValue() | extendedShader.getAttributeKey()));
 
 		loadedShaders.add(extendedShader);
 

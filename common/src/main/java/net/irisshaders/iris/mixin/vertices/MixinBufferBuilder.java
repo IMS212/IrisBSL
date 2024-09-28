@@ -7,6 +7,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import net.irisshaders.iris.Iris;
+import net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
 import net.irisshaders.iris.vertices.BlockSensitiveBufferBuilder;
 import net.irisshaders.iris.vertices.BufferBuilderPolygonView;
@@ -103,11 +104,11 @@ public abstract class MixinBufferBuilder implements VertexConsumer, BlockSensiti
 			iris$isTerrain = true;
 			injectNormalAndUV1 = false;
 			return IrisVertexFormats.TERRAIN;
-		} else if (format == DefaultVertexFormat.NEW_ENTITY || format == IrisVertexFormats.ENTITY) {
+		} else if (format == DefaultVertexFormat.NEW_ENTITY || format.contains(IrisVertexFormats.ENTITY_ID_ELEMENT)) {
 			extending = true;
 			iris$isTerrain = false;
 			injectNormalAndUV1 = false;
-			return IrisVertexFormats.ENTITY;
+			return WorldRenderingSettings.INSTANCE.getEntityFormat();
 		}  else if (format == DefaultVertexFormat.PARTICLE || format == IrisVertexFormats.PARTICLE) {
 			extending = true;
 			iris$isTerrain = false;
