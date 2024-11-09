@@ -1,0 +1,25 @@
+package net.irisshaders.iris.shaderpack;
+
+public enum ProgramUsage {
+	SHADOW(null),
+	SHADOW_TRANSLUCENT(SHADOW),
+	SHADOW_ENTITIES(SHADOW),
+	BASIC(null),
+	TEXTURED(BASIC),
+	EMISSIVE(TEXTURED),
+	TERRAIN(TEXTURED),
+	SOLID_TERRAIN(TERRAIN),
+	CUTOUT_TERRAIN(SOLID_TERRAIN),
+	TRANSLUCENT_TERRAIN(TERRAIN),
+	SOLID_ENTITIES(TEXTURED),
+	CUTOUT_ENTITIES(SOLID_ENTITIES),
+	TRANSLUCENT_ENTITIES(CUTOUT_ENTITIES),
+	SOLID_HAND(CUTOUT_ENTITIES),
+	TRANSLUCENT_HAND(SOLID_HAND);
+
+	private final ProgramUsage fallback;
+
+	ProgramUsage(ProgramUsage fallback) {
+		this.fallback = fallback;
+	}
+}
