@@ -9,7 +9,6 @@ import net.irisshaders.iris.mixin.LevelRendererAccessor;
 import net.irisshaders.iris.pipeline.programs.SodiumPrograms;
 import net.irisshaders.iris.shaderpack.properties.CloudSetting;
 import net.irisshaders.iris.shaderpack.properties.ParticleRenderingSettings;
-import net.irisshaders.iris.shaderpack.texture.TextureStage;
 import net.irisshaders.iris.uniforms.FrameUpdateNotifier;
 import net.minecraft.client.Camera;
 

@@ -23,9 +23,9 @@ public final class IdMapUniforms {
 	private IdMapUniforms() {
 	}
 
-	public static void addIdMapUniforms(FrameUpdateNotifier notifier, UniformHolder uniforms, IdMap idMap, boolean isOldHandLight) {
-		HeldItemSupplier mainHandSupplier = new HeldItemSupplier(InteractionHand.MAIN_HAND, idMap.getItemIdMap(), isOldHandLight);
-		HeldItemSupplier offHandSupplier = new HeldItemSupplier(InteractionHand.OFF_HAND, idMap.getItemIdMap(), false);
+	public static void addIdMapUniforms(FrameUpdateNotifier notifier, UniformHolder uniforms, IdMap idMap) {
+		HeldItemSupplier mainHandSupplier = new HeldItemSupplier(InteractionHand.MAIN_HAND, idMap.getItemIdMap());
+		HeldItemSupplier offHandSupplier = new HeldItemSupplier(InteractionHand.OFF_HAND, idMap.getItemIdMap());
 		notifier.addListener(mainHandSupplier::update);
 		notifier.addListener(offHandSupplier::update);
 
@@ -45,15 +45,13 @@ public final class IdMapUniforms {
 	private static class HeldItemSupplier {
 		private final InteractionHand hand;
 		private final Object2IntFunction<NamespacedId> itemIdMap;
-		private final boolean applyOldHandLight;
 		private int intID;
 		private int lightValue;
 		private Vector3f lightColor;
 
-		HeldItemSupplier(InteractionHand hand, Object2IntFunction<NamespacedId> itemIdMap, boolean shouldApplyOldHandLight) {
+		HeldItemSupplier(InteractionHand hand, Object2IntFunction<NamespacedId> itemIdMap) {
 			this.hand = hand;
 			this.itemIdMap = itemIdMap;
-			this.applyOldHandLight = shouldApplyOldHandLight && hand == InteractionHand.MAIN_HAND;
 		}
 
 		private void invalidate() {
@@ -90,10 +88,6 @@ public final class IdMapUniforms {
 
 			IrisItemLightProvider lightProvider = (IrisItemLightProvider) heldItem;
 			lightValue = lightProvider.getLightEmission(Minecraft.getInstance().player, heldStack);
-
-			if (applyOldHandLight) {
-				lightProvider = applyOldHandLighting(player, lightProvider);
-			}
 
 			lightColor = lightProvider.getLightColor(Minecraft.getInstance().player, heldStack);
 		}

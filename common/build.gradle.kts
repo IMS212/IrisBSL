@@ -21,6 +21,12 @@ repositories {
     }
 }
 
+gradle.projectsEvaluated {
+    tasks.withType(JavaCompile::class) {
+        options.compilerArgs.addAll(arrayOf("-Xmaxerrs", "1000"))
+    }
+}
+
 val MINECRAFT_VERSION: String by rootProject.extra
 val PARCHMENT_VERSION: String? by rootProject.extra
 val FABRIC_LOADER_VERSION: String by rootProject.extra

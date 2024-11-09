@@ -4,7 +4,6 @@ import com.mojang.blaze3d.platform.NativeImage;
 import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.texture.TextureAccess;
 import net.irisshaders.iris.gl.texture.TextureType;
-import net.irisshaders.iris.shaderpack.texture.CustomTextureData;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL13C;

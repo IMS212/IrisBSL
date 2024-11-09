@@ -17,6 +17,7 @@ import net.irisshaders.iris.pbr.TextureInfoCache;
 import net.irisshaders.iris.pbr.TextureInfoCache.TextureInfo;
 import net.irisshaders.iris.pbr.TextureTracker;
 import net.irisshaders.iris.shaderpack.IdMap;
+import net.irisshaders.iris.shaderpack.ShaderProperties;
 import net.irisshaders.iris.shaderpack.properties.PackDirectives;
 import net.irisshaders.iris.uniforms.transforms.SmoothedFloat;
 import net.irisshaders.iris.uniforms.transforms.SmoothedVec2f;
@@ -108,29 +109,30 @@ public final class CommonUniforms {
 		uniforms.uniform1i("renderStage", () -> GbufferPrograms.getCurrentPhase().ordinal(), StateUpdateNotifiers.phaseChangeNotifier);
 	}
 
-	public static void addCommonUniforms(DynamicUniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier, FogMode fogMode) {
+	public static void addCommonUniforms(DynamicUniformHolder uniforms, IdMap idMap, ShaderProperties directives, FrameUpdateNotifier updateNotifier, FogMode fogMode) {
 		CommonUniforms.addNonDynamicUniforms(uniforms, idMap, directives, updateNotifier);
 		CommonUniforms.addDynamicUniforms(uniforms, fogMode);
 	}
 
-	public static void addNonDynamicUniforms(UniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier) {
+	public static void addNonDynamicUniforms(UniformHolder uniforms, IdMap idMap, ShaderProperties directives, FrameUpdateNotifier updateNotifier) {
 		CameraUniforms.addCameraUniforms(uniforms, updateNotifier);
 		ViewportUniforms.addViewportUniforms(uniforms);
 		WorldTimeUniforms.addWorldTimeUniforms(uniforms);
 		SystemTimeUniforms.addSystemTimeUniforms(uniforms);
 		BiomeUniforms.addBiomeUniforms(uniforms);
-		new CelestialUniforms(directives.getSunPathRotation()).addCelestialUniforms(uniforms);
+		new CelestialUniforms(directives.packOptions.sunPathRotation).addCelestialUniforms(uniforms);
 		IrisExclusiveUniforms.addIrisExclusiveUniforms(uniforms);
 		IrisTimeUniforms.addTimeUniforms(uniforms);
 		MatrixUniforms.addMatrixUniforms(uniforms, directives);
-		IdMapUniforms.addIdMapUniforms(updateNotifier, uniforms, idMap, directives.isOldHandLight());
+		IdMapUniforms.addIdMapUniforms(updateNotifier, uniforms, idMap);
 		CommonUniforms.generalCommonUniforms(uniforms, updateNotifier, directives);
 	}
 
-	public static void generalCommonUniforms(UniformHolder uniforms, FrameUpdateNotifier updateNotifier, PackDirectives directives) {
+	public static void generalCommonUniforms(UniformHolder uniforms, FrameUpdateNotifier updateNotifier, ShaderProperties directives) {
 		ExternallyManagedUniforms.addExternallyManagedUniforms117(uniforms);
 
-		SmoothedVec2f eyeBrightnessSmooth = new SmoothedVec2f(directives.getEyeBrightnessHalfLife(), directives.getEyeBrightnessHalfLife(), CommonUniforms::getEyeBrightness, updateNotifier);
+		// TODO EYE BRIGHTNESS
+		//SmoothedVec2f eyeBrightnessSmooth = new SmoothedVec2f(directives.getEyeBrightnessHalfLife(), directives.getEyeBrightnessHalfLife(), CommonUniforms::getEyeBrightness, updateNotifier);
 
 		uniforms
 			.uniform1b(PER_FRAME, "hideGUI", () -> client.options.hideGui)
@@ -158,12 +160,12 @@ public final class CommonUniforms {
 			.uniform1f(PER_TICK, "playerMood", CommonUniforms::getPlayerMood)
 			.uniform1f(PER_TICK, "constantMood", CommonUniforms::getConstantMood)
 			.uniform2i(PER_FRAME, "eyeBrightness", CommonUniforms::getEyeBrightness)
-			.uniform2i(PER_FRAME, "eyeBrightnessSmooth", () -> {
-				Vector2f smoothed = eyeBrightnessSmooth.get();
-				return new Vector2i((int) smoothed.x(), (int) smoothed.y());
-			})
+			//.uniform2i(PER_FRAME, "eyeBrightnessSmooth", () -> {
+				//Vector2f smoothed = eyeBrightnessSmooth.get();
+			//	return new Vector2i((int) smoothed.x(), (int) smoothed.y());
+			//})
 			.uniform1f(PER_TICK, "rainStrength", CommonUniforms::getRainStrength)
-			.uniform1f(PER_TICK, "wetness", new SmoothedFloat(directives.getWetnessHalfLife(), directives.getDrynessHalfLife(), CommonUniforms::getRainStrength, updateNotifier))
+			//.uniform1f(PER_TICK, "wetness", new SmoothedFloat(directives.getWetnessHalfLife(), directives.getDrynessHalfLife(), CommonUniforms::getRainStrength, updateNotifier))
 			.uniform3d(PER_FRAME, "skyColor", CommonUniforms::getSkyColor)
 			.uniform1f(PER_FRAME, "dhFarPlane", DHCompat::getFarPlane)
 			.uniform1f(PER_FRAME, "dhNearPlane", DHCompat::getNearPlane)
